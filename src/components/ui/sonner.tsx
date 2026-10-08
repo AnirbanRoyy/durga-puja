@@ -8,8 +8,8 @@ import {
     InformationCircleIcon,
     Alert02Icon,
     MultiplicationSignCircleIcon,
-    Loading03Icon,
 } from "@hugeicons/core-free-icons";
+import { DholSpinner } from "@/components/loaders/dhol-loader";
 
 const Toaster = ({ ...props }: ToasterProps) => {
     const { theme = "system" } = useTheme();
@@ -41,13 +41,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
                         className="size-4"
                     />
                 ),
-                loading: (
-                    <HugeiconsIcon
-                        icon={Loading03Icon}
-                        strokeWidth={2}
-                        className="size-4 animate-spin"
-                    />
-                ),
+                loading: <DholSpinner />,
             }}
             style={
                 {

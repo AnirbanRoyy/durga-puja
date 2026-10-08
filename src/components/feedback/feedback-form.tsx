@@ -3,7 +3,8 @@
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Loading03Icon, Message01Icon } from "@hugeicons/core-free-icons";
+import { Message01Icon } from "@hugeicons/core-free-icons";
+import { DholSpinner } from "@/components/loaders/dhol-loader";
 import { submitFeedback } from "@/actions/public";
 import { Button } from "@/components/ui/button";
 import { FormAlert, Honeypot, TextField } from "@/components/forms/form-bits";
@@ -73,11 +74,11 @@ export function FeedbackForm() {
             </div>
             <FormAlert state={state} />
             <Button type="submit" size="lg" disabled={pending} className="h-11 rounded-full">
-                <HugeiconsIcon
-                    icon={pending ? Loading03Icon : Message01Icon}
-                    className={pending ? "animate-spin" : undefined}
-                    data-icon="inline-start"
-                />
+                {pending ? (
+                    <DholSpinner data-icon="inline-start" />
+                ) : (
+                    <HugeiconsIcon icon={Message01Icon} data-icon="inline-start" />
+                )}
                 {t("submit")}
             </Button>
         </form>

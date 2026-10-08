@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Loading03Icon, SquareLock01Icon } from "@hugeicons/core-free-icons";
+import { SquareLock01Icon } from "@hugeicons/core-free-icons";
+import { DholSpinner } from "@/components/loaders/dhol-loader";
 import { login } from "@/actions/admin-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,11 +32,11 @@ export function LoginForm({ next }: { next: string }) {
                 </p>
             )}
             <Button type="submit" size="lg" disabled={pending} className="h-10">
-                <HugeiconsIcon
-                    icon={pending ? Loading03Icon : SquareLock01Icon}
-                    className={pending ? "animate-spin" : undefined}
-                    data-icon="inline-start"
-                />
+                {pending ? (
+                    <DholSpinner data-icon="inline-start" />
+                ) : (
+                    <HugeiconsIcon icon={SquareLock01Icon} data-icon="inline-start" />
+                )}
                 Sign in
             </Button>
         </form>

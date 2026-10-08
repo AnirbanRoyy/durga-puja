@@ -201,3 +201,117 @@
             );
     }
 }
+
+/* ---------------------------------------------------------------------------
+   Dhol player loader. One 1.2s phrase: right hand, right hand, left hand, right + left.
+   Arms rotate about the shoulder; the matching drum head thumps and "sound arcs" flash on each hit.
+   --------------------------------------------------------------------------- */
+@keyframes dhol-arm-right {
+    0%,
+    24%,
+    60%,
+    84%,
+    100% {
+        transform: rotate(0deg);
+    }
+    12%,
+    72% {
+        transform: rotate(24deg);
+    }
+}
+@keyframes dhol-arm-left {
+    0%,
+    30%,
+    48%,
+    80%,
+    100% {
+        transform: rotate(0deg);
+    }
+    38%,
+    90% {
+        transform: rotate(-24deg);
+    }
+}
+@keyframes dhol-head-right {
+    0%,
+    24%,
+    60%,
+    84%,
+    100% {
+        transform: scaleX(1);
+        opacity: 0;
+    }
+    12%,
+    72% {
+        transform: scaleX(0.82);
+        opacity: 1;
+    }
+}
+@keyframes dhol-head-left {
+    0%,
+    30%,
+    48%,
+    80%,
+    100% {
+        transform: scaleX(1);
+        opacity: 0;
+    }
+    38%,
+    90% {
+        transform: scaleX(0.82);
+        opacity: 1;
+    }
+}
+@keyframes dhol-sway {
+    0%,
+    100% {
+        transform: rotate(-1.6deg) translateY(0);
+    }
+    50% {
+        transform: rotate(1.6deg) translateY(-1.5px);
+    }
+}
+
+.dhol-sway {
+    transform-origin: 80px 106px;
+    animation: dhol-sway 1.2s ease-in-out infinite;
+}
+.dhol-arm-right {
+    transform-origin: 100px 62px;
+    animation: dhol-arm-right 1.2s ease-in-out infinite;
+}
+.dhol-arm-left {
+    transform-origin: 60px 62px;
+    animation: dhol-arm-left 1.2s ease-in-out infinite;
+}
+.dhol-wave-right {
+    transform-box: fill-box;
+    transform-origin: left center;
+    animation: dhol-head-right 1.2s ease-out infinite;
+}
+.dhol-wave-left {
+    transform-box: fill-box;
+    transform-origin: right center;
+    animation: dhol-head-left 1.2s ease-out infinite;
+}
+/* Mini spinner variant (buttons): same arm motion about each stick's pivot. */
+.dhol-mini-right {
+    transform-origin: 17px 5px;
+    animation: dhol-arm-right 0.9s ease-in-out infinite;
+}
+.dhol-mini-left {
+    transform-origin: 7px 5px;
+    animation: dhol-arm-left 0.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dhol-sway,
+    .dhol-arm-right,
+    .dhol-arm-left,
+    .dhol-wave-right,
+    .dhol-wave-left,
+    .dhol-mini-right,
+    .dhol-mini-left {
+        animation: none;
+    }
+}

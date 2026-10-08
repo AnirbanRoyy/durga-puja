@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { getAmbientSettings } from "@/lib/queries";
@@ -11,10 +12,17 @@ async function ambientSrc(): Promise<string | null> {
     }
 }
 
-export default async function SiteLayout({ children }: LayoutProps<"/">) {
+/** Only the music button depends on the database, so the header paints right away without it. */
+async function HeaderWithAmbient() {
+    return <SiteHeader ambientSrc={await ambientSrc()} />;
+}
+
+export default function SiteLayout({ children }: LayoutProps<"/">) {
     return (
         <>
-            <SiteHeader ambientSrc={await ambientSrc()} />
+            <Suspense fallback={<SiteHeader />}>
+                <HeaderWithAmbient />
+            </Suspense>
             <main className="flex-1">{children}</main>
             <SiteFooter />
         </>

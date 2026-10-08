@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Loading03Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { Tick02Icon } from "@hugeicons/core-free-icons";
+import { DholSpinner } from "@/components/loaders/dhol-loader";
 import { saveProgramme } from "@/actions/admin/programmes";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
@@ -197,11 +198,11 @@ export function ProgrammeForm({ programme }: { programme?: Programme }) {
             )}
             <div>
                 <Button type="submit" disabled={pending} size="lg" className="h-10">
-                    <HugeiconsIcon
-                        icon={pending ? Loading03Icon : Tick02Icon}
-                        className={pending ? "animate-spin" : undefined}
-                        data-icon="inline-start"
-                    />
+                    {pending ? (
+                        <DholSpinner data-icon="inline-start" />
+                    ) : (
+                        <HugeiconsIcon icon={Tick02Icon} data-icon="inline-start" />
+                    )}
                     {programme ? "Save changes" : "Create programme"}
                 </Button>
             </div>

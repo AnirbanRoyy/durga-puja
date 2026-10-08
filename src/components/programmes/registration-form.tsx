@@ -3,7 +3,8 @@
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Loading03Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { Tick02Icon } from "@hugeicons/core-free-icons";
+import { DholSpinner } from "@/components/loaders/dhol-loader";
 import { registerForProgramme } from "@/actions/public";
 import { Button } from "@/components/ui/button";
 import { FormAlert, Honeypot, TextField } from "@/components/forms/form-bits";
@@ -90,11 +91,11 @@ export function RegistrationForm({
                 disabled={pending}
                 className="h-11 rounded-full sm:col-span-2"
             >
-                <HugeiconsIcon
-                    icon={pending ? Loading03Icon : Tick02Icon}
-                    className={pending ? "animate-spin" : undefined}
-                    data-icon="inline-start"
-                />
+                {pending ? (
+                    <DholSpinner data-icon="inline-start" />
+                ) : (
+                    <HugeiconsIcon icon={Tick02Icon} data-icon="inline-start" />
+                )}
                 {t("register")}
             </Button>
         </form>

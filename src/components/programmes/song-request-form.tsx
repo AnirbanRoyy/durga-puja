@@ -3,7 +3,8 @@
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Loading03Icon, MusicNote03Icon } from "@hugeicons/core-free-icons";
+import { MusicNote03Icon } from "@hugeicons/core-free-icons";
+import { DholSpinner } from "@/components/loaders/dhol-loader";
 import { requestSong } from "@/actions/public";
 import { Button } from "@/components/ui/button";
 import { FormAlert, Honeypot, TextField } from "@/components/forms/form-bits";
@@ -49,11 +50,11 @@ export function SongRequestForm() {
             />
             <FormAlert state={state} />
             <Button type="submit" disabled={pending} size="lg" className="h-10 rounded-full">
-                <HugeiconsIcon
-                    icon={pending ? Loading03Icon : MusicNote03Icon}
-                    className={pending ? "animate-spin" : undefined}
-                    data-icon="inline-start"
-                />
+                {pending ? (
+                    <DholSpinner data-icon="inline-start" />
+                ) : (
+                    <HugeiconsIcon icon={MusicNote03Icon} data-icon="inline-start" />
+                )}
                 {t("requestSong")}
             </Button>
         </form>
