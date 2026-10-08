@@ -77,6 +77,25 @@ export function parseYouTubeId(input: string): string | null {
     return null;
 }
 
+/**
+ * Accepts a WhatsApp community/group invite (chat.whatsapp.com/<code>) or channel link and returns
+ * it normalised (https, no query string), or null if it isn't one.
+ */
+export function parseWhatsappInvite(input: string): string | null {
+    try {
+        const url = new URL(input.trim());
+        if (url.protocol !== "https:") return null;
+        const host = url.hostname.replace(/^www\./, "");
+        const path = url.pathname.replace(/\/$/, "");
+        const ok =
+            (host === "chat.whatsapp.com" && /^\/[A-Za-z0-9]{10,}$/.test(path)) ||
+            (host === "whatsapp.com" && /^\/(channel|invite)\/[A-Za-z0-9_-]+$/.test(path));
+        return ok ? `https://${host}${path}` : null;
+    } catch {
+        return null;
+    }
+}
+
 export type FieldErrors = Record<string, string>;
 
 export function fieldErrors(error: z.ZodError): FieldErrors {

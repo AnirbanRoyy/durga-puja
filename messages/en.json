@@ -14,7 +14,8 @@
         "about": "About Puja",
         "feedback": "Feedback",
         "donate": "Donate",
-        "menu": "Open menu"
+        "menu": "Open menu",
+        "community": "WhatsApp"
     },
     "player": {
         "nowPlaying": "Now playing",
@@ -72,6 +73,11 @@
             "hours": "Hours",
             "minutes": "Minutes",
             "seconds": "Seconds"
+        },
+        "community": {
+            "title": "Join our WhatsApp community",
+            "body": "Get schedule changes, results and announcements right on your phone.",
+            "cta": "Join now"
         }
     },
     "programmes": {
@@ -286,5 +292,23 @@
         "contact": "Phone or email (optional)",
         "contactHint": "Only if you'd like a reply.",
         "submit": "Send feedback"
+    },
+    "community": {
+        "eyebrow": "Stay in the loop",
+        "title": "Join our WhatsApp community",
+        "description": "Schedule changes, results, reminders and important announcements — straight to your phone.",
+        "qrAlt": "QR code to join the WhatsApp community",
+        "qrComingSoon": "Link coming soon",
+        "scanHint": "Scan with your phone camera",
+        "howTitle": "How to join",
+        "step1": "On your phone, open the camera or WhatsApp and scan the QR code — or just tap the button below.",
+        "step2": "Tap “Join community” when WhatsApp opens.",
+        "step3": "Keep notifications on so you never miss an announcement.",
+        "join": "Join on WhatsApp",
+        "getTitle": "What you'll get",
+        "get1": "Programme timings and last-minute changes",
+        "get2": "Results and winners as soon as they're announced",
+        "get3": "Reminders and important notices from the organisers",
+        "comingSoonBody": "The community link will be shared here soon. Check back shortly!"
     }
 }

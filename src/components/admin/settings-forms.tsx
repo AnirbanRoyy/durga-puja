@@ -6,6 +6,7 @@ import {
     saveAmbientSettings,
     saveDonationSettings,
     saveEventSettings,
+    saveWhatsappSettings,
 } from "@/actions/admin/content";
 import { UploadButton } from "@/components/admin/upload-button";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { isoToIstLocal } from "@/lib/datetime";
-import type { AmbientSettings, DonationSettings, EventSettings } from "@/lib/queries";
+import type {
+    AmbientSettings,
+    DonationSettings,
+    EventSettings,
+    WhatsappSettings,
+} from "@/lib/queries";
 import { initialActionState } from "@/lib/validators";
 
 function Labeled({
@@ -178,6 +184,68 @@ export function AmbientForm({ ambient }: { ambient: AmbientSettings }) {
             <div className="flex items-center gap-4">
                 <Button type="submit" disabled={pending}>
                     Save background music
+                </Button>
+                <Message ok={state.ok} code={state.code} />
+            </div>
+        </form>
+    );
+}
+
+export function WhatsappForm({ whatsapp }: { whatsapp: WhatsappSettings }) {
+    const [state, action, pending] = useActionState(saveWhatsappSettings, initialActionState);
+    const [qr, setQr] = useState(whatsapp.qr_image_url ?? "");
+    return (
+        <form action={action} className="grid gap-4">
+            <input type="hidden" name="qr_image_url" value={qr} />
+            <Labeled
+                label="Community invite link"
+                hint="In WhatsApp: your community → ⋮ → Invite via link → Copy link. It looks like https://chat.whatsapp.com/AbCdEf…"
+            >
+                <Input
+                    name="invite_url"
+                    type="url"
+                    defaultValue={whatsapp.invite_url ?? ""}
+                    placeholder="https://chat.whatsapp.com/…"
+                />
+            </Labeled>
+            <div className="grid gap-2">
+                <Label>QR code image (optional)</Label>
+                <p className="text-xs text-muted-foreground">
+                    Leave this empty and the site generates a QR code from the invite link
+                    automatically. Upload your own only if you want a custom-designed one.
+                </p>
+                <div className="flex items-center gap-4">
+                    {qr && (
+                        <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-xl border bg-white">
+                            <Image
+                                src={qr}
+                                alt="Custom WhatsApp QR"
+                                width={96}
+                                height={96}
+                                className="size-full object-contain"
+                            />
+                        </div>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                        <UploadButton
+                            kind="image"
+                            folder="whatsapp"
+                            variant="outline"
+                            onUploaded={(file) => setQr(file.url)}
+                        >
+                            {qr ? "Replace QR image" : "Upload QR image"}
+                        </UploadButton>
+                        {qr && (
+                            <Button type="button" variant="ghost" onClick={() => setQr("")}>
+                                Use the generated QR
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            </div>
+            <div className="flex items-center gap-4">
+                <Button type="submit" disabled={pending}>
+                    Save WhatsApp community
                 </Button>
                 <Message ok={state.ok} code={state.code} />
             </div>

@@ -1,14 +1,25 @@
 import { AdminCard, AdminTitle } from "@/components/admin/admin-bits";
-import { AmbientForm, DonationForm, EventForm } from "@/components/admin/settings-forms";
-import { getAmbientSettings, getDonationSettings, getEventSettings } from "@/lib/queries";
+import {
+    AmbientForm,
+    DonationForm,
+    EventForm,
+    WhatsappForm,
+} from "@/components/admin/settings-forms";
+import {
+    getAmbientSettings,
+    getDonationSettings,
+    getEventSettings,
+    getWhatsappSettings,
+} from "@/lib/queries";
 
 export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
-    const [event, donation, ambient] = await Promise.all([
+    const [event, donation, ambient, whatsapp] = await Promise.all([
         getEventSettings(),
         getDonationSettings(),
         getAmbientSettings(),
+        getWhatsappSettings(),
     ]);
     return (
         <>
@@ -19,6 +30,9 @@ export default async function SettingsPage() {
                 </AdminCard>
                 <AdminCard title="Background music">
                     <AmbientForm ambient={ambient} />
+                </AdminCard>
+                <AdminCard title="WhatsApp community">
+                    <WhatsappForm whatsapp={whatsapp} />
                 </AdminCard>
                 <AdminCard title="Donations">
                     <DonationForm donation={donation} />

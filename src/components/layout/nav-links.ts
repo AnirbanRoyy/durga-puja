@@ -7,6 +7,7 @@ import {
     MusicNote03Icon,
     QrCodeIcon,
     StarIcon,
+    WhatsappIcon,
 } from "@hugeicons/core-free-icons";
 
 export const NAV_LINKS = [
@@ -16,6 +17,7 @@ export const NAV_LINKS = [
     { href: "/music", key: "music", icon: MusicNote03Icon },
     { href: "/results", key: "results", icon: Award01Icon },
     { href: "/about", key: "about", icon: InformationCircleIcon },
+    { href: "/community", key: "community", icon: WhatsappIcon },
     { href: "/feedback", key: "feedback", icon: Message01Icon },
     { href: "/donate", key: "donate", icon: QrCodeIcon },
 ] as const;

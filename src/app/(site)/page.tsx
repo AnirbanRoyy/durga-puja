@@ -7,6 +7,7 @@ import {
     HeadphonesIcon,
     QrCodeIcon,
     StarIcon,
+    WhatsappIcon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Alpana } from "@/components/decor/alpana";
@@ -170,6 +171,32 @@ export default async function HomePage() {
                         </Link>
                     </Button>
                 </div>
+            </section>
+
+            {/* WhatsApp community */}
+            <section className="mx-auto max-w-6xl px-4 pt-20">
+                <Link
+                    href="/community"
+                    className="group relative flex flex-wrap items-center gap-5 overflow-hidden rounded-3xl bg-[#075E54] p-6 text-white shadow-xl shadow-[#075E54]/25 sm:p-8"
+                >
+                    <Alpana className="absolute -top-20 -right-16 size-72 text-white/10" />
+                    <span className="relative grid size-14 shrink-0 place-items-center rounded-2xl bg-[#25D366]">
+                        <HugeiconsIcon icon={WhatsappIcon} className="size-8" />
+                    </span>
+                    <div className="relative min-w-0 flex-1 basis-60">
+                        <h2 className="text-2xl font-semibold sm:text-3xl">
+                            {t("community.title")}
+                        </h2>
+                        <p className="mt-1 text-white/80">{t("community.body")}</p>
+                    </div>
+                    <span className="relative inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-5 py-2.5 font-semibold">
+                        {t("community.cta")}
+                        <HugeiconsIcon
+                            icon={ArrowRight01Icon}
+                            className="size-4 transition-transform group-hover:translate-x-1"
+                        />
+                    </span>
+                </Link>
             </section>
 
             {/* About teaser + donate */}

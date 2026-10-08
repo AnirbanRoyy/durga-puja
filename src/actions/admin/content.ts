@@ -7,7 +7,7 @@ import { destroyCloudinaryAsset } from "@/lib/cloudinary";
 import { istLocalToIso } from "@/lib/datetime";
 import type { FeedbackStatus, SongCategory, SongRequestStatus } from "@/lib/database.types";
 import { db } from "@/lib/supabase/server";
-import { parseYouTubeId, type ActionState } from "@/lib/validators";
+import { parseWhatsappInvite, parseYouTubeId, type ActionState } from "@/lib/validators";
 
 const CATEGORIES = [
     "mahalaya",
@@ -423,4 +423,26 @@ export async function saveAmbientSettings(
     await saveSetting("ambient", { audio_url: url });
     refresh();
     return { ok: true, code: url ? "Background music saved." : "Background music removed." };
+}
+
+export async function saveWhatsappSettings(
+    _prev: ActionState,
+    formData: FormData,
+): Promise<ActionState> {
+    await requireAdmin();
+    const rawInvite = String(formData.get("invite_url") ?? "").trim();
+    const invite = rawInvite ? parseWhatsappInvite(rawInvite) : null;
+    if (rawInvite && !invite) {
+        return {
+            ok: false,
+            code: "That doesn't look like a WhatsApp invite link (expected https://chat.whatsapp.com/…).",
+        };
+    }
+    const qr = String(formData.get("qr_image_url") ?? "").trim() || null;
+    if (qr && !/^https:\/\/res\.cloudinary\.com\//.test(qr)) {
+        return { ok: false, code: "QR image must be uploaded through the button." };
+    }
+    await saveSetting("whatsapp", { invite_url: invite, qr_image_url: qr });
+    refresh();
+    return { ok: true, code: "WhatsApp community saved." };
 }

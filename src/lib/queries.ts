@@ -34,6 +34,13 @@ export type AmbientSettings = {
     audio_url: string | null;
 };
 
+export type WhatsappSettings = {
+    invite_url: string | null;
+    qr_image_url: string | null;
+};
+
+const DEFAULT_WHATSAPP: WhatsappSettings = { invite_url: null, qr_image_url: null };
+
 const DEFAULT_AMBIENT: AmbientSettings = { audio_url: null };
 
 const DEFAULT_EVENT: EventSettings = {
@@ -71,6 +78,9 @@ async function getSetting<T extends object>(key: string, fallback: T): Promise<T
 }
 
 export const getEventSettings = cache(() => getSetting<EventSettings>("event", DEFAULT_EVENT));
+export const getWhatsappSettings = cache(() =>
+    getSetting<WhatsappSettings>("whatsapp", DEFAULT_WHATSAPP),
+);
 export const getAmbientSettings = cache(() =>
     getSetting<AmbientSettings>("ambient", DEFAULT_AMBIENT),
 );

@@ -351,3 +351,34 @@ export function FeedbackSkeleton() {
         </>
     );
 }
+
+export function CommunitySkeleton() {
+    return (
+        <>
+            <PageHeaderSkeleton />
+            <div className="mx-auto max-w-4xl px-4 pt-12">
+                <div className="grid items-center gap-10 md:grid-cols-[minmax(0,340px)_1fr]">
+                    <Skeleton className="mx-auto aspect-square w-full max-w-[340px] rounded-3xl" />
+                    <div>
+                        <Skeleton className="h-9 w-48" />
+                        <div className="mt-5 space-y-4">
+                            {[0, 1, 2].map((i) => (
+                                <div key={i} className="flex gap-3">
+                                    <Skeleton className="size-7 rounded-full" />
+                                    <Skeleton className="h-5 flex-1" />
+                                </div>
+                            ))}
+                        </div>
+                        <Skeleton className="mt-6 h-12 w-52 rounded-full" />
+                        <Skeleton className="mt-10 h-6 w-36" />
+                        <div className="mt-3 space-y-3">
+                            {[0, 1, 2].map((i) => (
+                                <Skeleton key={i} className="h-4 w-4/5" />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+}
