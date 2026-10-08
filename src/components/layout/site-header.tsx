@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { LocaleToggle } from "@/components/layout/locale-toggle";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { NAV_LINKS } from "@/components/layout/nav-links";
+import { AmbientMusic } from "@/components/music/ambient-music";
 import { cn } from "@/lib/utils";
 
 const DESKTOP_KEYS = new Set(["programmes", "timeline", "music", "results", "about"]);
@@ -19,7 +20,7 @@ function isActive(pathname: string, href: string) {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-export function SiteHeader() {
+export function SiteHeader({ ambientSrc }: { ambientSrc?: string | null }) {
     const t = useTranslations("nav");
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
@@ -59,6 +60,7 @@ export function SiteHeader() {
 
                 <div className="ml-auto flex items-center gap-1.5 lg:ml-2">
                     <LocaleToggle />
+                    {ambientSrc && <AmbientMusic src={ambientSrc} />}
                     <ThemeToggle />
                     <Button asChild size="lg" className="hidden rounded-full sm:inline-flex">
                         <Link href="/donate">

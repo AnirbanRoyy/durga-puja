@@ -2,14 +2,18 @@
 
 import { useActionState, useState } from "react";
 import Image from "next/image";
-import { saveDonationSettings, saveEventSettings } from "@/actions/admin/content";
+import {
+    saveAmbientSettings,
+    saveDonationSettings,
+    saveEventSettings,
+} from "@/actions/admin/content";
 import { UploadButton } from "@/components/admin/upload-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { isoToIstLocal } from "@/lib/datetime";
-import type { DonationSettings, EventSettings } from "@/lib/queries";
+import type { AmbientSettings, DonationSettings, EventSettings } from "@/lib/queries";
 import { initialActionState } from "@/lib/validators";
 
 function Labeled({
@@ -137,6 +141,43 @@ export function DonationForm({ donation }: { donation: DonationSettings }) {
             <div className="flex items-center gap-4 sm:col-span-2">
                 <Button type="submit" disabled={pending}>
                     Save donation settings
+                </Button>
+                <Message ok={state.ok} code={state.code} />
+            </div>
+        </form>
+    );
+}
+
+export function AmbientForm({ ambient }: { ambient: AmbientSettings }) {
+    const [state, action, pending] = useActionState(saveAmbientSettings, initialActionState);
+    const [url, setUrl] = useState(ambient.audio_url ?? "");
+    return (
+        <form action={action} className="grid gap-4">
+            <input type="hidden" name="audio_url" value={url} />
+            <p className="text-sm text-muted-foreground">
+                A looping track (e.g. dhak beats) that every visitor can switch on from the drum
+                button in the header. It never starts by itself, and plays at 50% volume. Use a
+                seamless loop of 30–90 seconds as an MP3 or OGG.
+            </p>
+            {url && <audio src={url} controls loop className="w-full" />}
+            <div className="flex flex-wrap items-center gap-3">
+                <UploadButton
+                    kind="audio"
+                    folder="ambient"
+                    variant="outline"
+                    onUploaded={(file) => setUrl(file.url)}
+                >
+                    {url ? "Replace track" : "Upload track"}
+                </UploadButton>
+                {url && (
+                    <Button type="button" variant="ghost" onClick={() => setUrl("")}>
+                        Remove track
+                    </Button>
+                )}
+            </div>
+            <div className="flex items-center gap-4">
+                <Button type="submit" disabled={pending}>
+                    Save background music
                 </Button>
                 <Message ok={state.ok} code={state.code} />
             </div>

@@ -27,6 +27,10 @@
         "collapse": "Hide video",
         "close": "Close player"
     },
+    "ambient": {
+        "on": "Turn off dhak beats",
+        "off": "Play dhak beats"
+    },
     "footer": {
         "blessing": "Asche bochor abar hobe!",
         "about": "Our community's celebration of Maa Durga — programmes, music, games and memories for everyone.",

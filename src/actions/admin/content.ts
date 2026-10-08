@@ -410,3 +410,17 @@ export async function saveDonationSettings(
     refresh();
     return { ok: true, code: "Donation settings saved." };
 }
+
+export async function saveAmbientSettings(
+    _prev: ActionState,
+    formData: FormData,
+): Promise<ActionState> {
+    await requireAdmin();
+    const url = String(formData.get("audio_url") ?? "").trim() || null;
+    if (url && !/^https:\/\/res\.cloudinary\.com\//.test(url)) {
+        return { ok: false, code: "Audio must be uploaded through the button." };
+    }
+    await saveSetting("ambient", { audio_url: url });
+    refresh();
+    return { ok: true, code: url ? "Background music saved." : "Background music removed." };
+}

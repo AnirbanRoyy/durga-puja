@@ -30,6 +30,12 @@ export type DonationSettings = {
     note_bn: string | null;
 };
 
+export type AmbientSettings = {
+    audio_url: string | null;
+};
+
+const DEFAULT_AMBIENT: AmbientSettings = { audio_url: null };
+
 const DEFAULT_EVENT: EventSettings = {
     name_en: "Sarbojanin Durgotsav",
     name_bn: "সর্বজনীন দুর্গোৎসব",
@@ -65,6 +71,9 @@ async function getSetting<T extends object>(key: string, fallback: T): Promise<T
 }
 
 export const getEventSettings = cache(() => getSetting<EventSettings>("event", DEFAULT_EVENT));
+export const getAmbientSettings = cache(() =>
+    getSetting<AmbientSettings>("ambient", DEFAULT_AMBIENT),
+);
 export const getDonationSettings = cache(() =>
     getSetting<DonationSettings>("donation", DEFAULT_DONATION),
 );
