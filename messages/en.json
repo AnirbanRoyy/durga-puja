@@ -1,0 +1,286 @@
+{
+    "meta": {
+        "title": "Durga Puja",
+        "description": "Programmes, music, results and everything for our community Durga Puja."
+    },
+    "nav": {
+        "brand": "Durgotsav",
+        "tagline": "Sharodiya Puja",
+        "home": "Home",
+        "programmes": "Programmes",
+        "timeline": "Timeline",
+        "music": "Music",
+        "results": "Results",
+        "about": "About Puja",
+        "feedback": "Feedback",
+        "donate": "Donate",
+        "menu": "Open menu"
+    },
+    "player": {
+        "nowPlaying": "Now playing",
+        "queue": "{count} in queue",
+        "previous": "Previous",
+        "pause": "Pause",
+        "play": "Play",
+        "next": "Next",
+        "expand": "Show video",
+        "collapse": "Hide video",
+        "close": "Close player"
+    },
+    "footer": {
+        "blessing": "Asche bochor abar hobe!",
+        "about": "Our community's celebration of Maa Durga — programmes, music, games and memories for everyone.",
+        "madeWith": "Made with love for our Puja family.",
+        "organisers": "Organisers"
+    },
+    "status": {
+        "upcoming": "Upcoming",
+        "pending": "Pending",
+        "ongoing": "Happening now",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+    },
+    "home": {
+        "subtitle": "Five days of dhak, dhunuchi and togetherness. Join our programmes, sing along, vote for little artists and celebrate with the whole para.",
+        "ctaProgrammes": "Explore programmes",
+        "ctaMahalaya": "Listen to Mahalaya",
+        "now": "Happening now",
+        "next": "Up next",
+        "programmesEyebrow": "Join the fun",
+        "programmesTitle": "Programmes you can be part of",
+        "seeAll": "See all",
+        "timelineEyebrow": "The schedule",
+        "timelineTitle": "Day by day",
+        "fullTimeline": "Full timeline",
+        "mahalayaEyebrow": "Mahalaya",
+        "mahalayaBody": "The morning that begins it all. Listen to Mahishasuramardini and our curated playlist of Agomoni, Dhunuchi and Puja favourites.",
+        "aboutTitle": "What is Durga Puja?",
+        "aboutBody": "The story, the rituals and the meaning behind the biggest festival of Bengal — why, what and when we celebrate.",
+        "readMore": "Read the story",
+        "donateTitle": "Contribute to the Puja",
+        "donateBody": "Scan the QR code and donate. Every contribution helps us bring Maa home.",
+        "donateCta": "Donate now",
+        "countdown": {
+            "until": "Shashthi begins in",
+            "during": "Maa is here. Shubho Pujo!",
+            "after": "Asche bochor abar hobe!",
+            "days": "Days",
+            "hours": "Hours",
+            "minutes": "Minutes",
+            "seconds": "Seconds"
+        }
+    },
+    "programmes": {
+        "eyebrow": "What's on",
+        "title": "Programmes",
+        "description": "Competitions and games for everyone. Pick one and register — it takes a minute.",
+        "empty": "Programmes will be announced soon.",
+        "registeredCount": "{count, plural, one {# registered} other {# registered}}",
+        "registerNow": "Register now",
+        "viewDetails": "View details",
+        "allProgrammes": "All programmes",
+        "seeResults": "See results",
+        "cancelled": "This programme has been cancelled.",
+        "rules": "Rules",
+        "register": "Register",
+        "registerHint": "Fill in your details and we'll see you there.",
+        "registrationClosed": "Registration for this programme is not open right now."
+    },
+    "timeline": {
+        "eyebrow": "The schedule",
+        "title": "Timeline",
+        "description": "Every programme across the Puja days, in order.",
+        "empty": "The schedule will be published soon.",
+        "happeningNow": "Happening now"
+    },
+    "pujaDays": {
+        "shashthi": "Shashthi",
+        "saptami1": "Saptami · Day 1",
+        "saptami2": "Saptami · Day 2",
+        "ashtami": "Ashtami",
+        "navami": "Navami",
+        "dashami": "Dashami"
+    },
+    "forms": {
+        "name": "Full name",
+        "yourName": "Your name",
+        "yourNameOptional": "Your name (optional)",
+        "phone": "Phone number",
+        "phoneHint": "10-digit mobile number. Only the organisers can see it.",
+        "age": "Age",
+        "guardianName": "Parent / guardian name",
+        "notes": "Anything we should know?",
+        "songChoice": "Song you'll sing",
+        "danceStyle": "Dance style",
+        "register": "Register",
+        "songTitle": "Song title",
+        "artist": "Singer / movie",
+        "link": "Link (YouTube etc.)",
+        "requestSong": "Request this song",
+        "errors": {
+            "generic": "Something went wrong. Please try again.",
+            "invalid": "Please check this field.",
+            "name": "Please enter your name (2–80 characters).",
+            "phone": "Enter a valid 10-digit Indian mobile number.",
+            "age": "Enter a valid age.",
+            "title": "Please enter the song title.",
+            "link": "Enter a valid link starting with http(s)://",
+            "message": "Please write a few words (at least 5 characters).",
+            "rateLimited": "Too many attempts. Please wait a little and try again.",
+            "registrationClosed": "Registration is closed for this programme.",
+            "full": "Sorry, this programme is full.",
+            "duplicate": "You are already registered with this name and phone number."
+        },
+        "success": {
+            "generic": "Done!",
+            "registered": "You're registered! See you at the Puja. 🎉",
+            "requested": "Thanks! Your song request has been added.",
+            "feedbackSent": "Thank you for your feedback — the organisers will read it."
+        }
+    },
+    "lineup": {
+        "title": "Performance order",
+        "locked": "Final order",
+        "provisional": "Subject to change until locked",
+        "notDrawn": "The order is drawn randomly just before the event. {count, plural, =0 {No one has registered yet.} one {# person has registered so far.} other {# people have registered so far.}}",
+        "onStage": "On stage",
+        "upNext": "Up next",
+        "status": {
+            "waiting": "Waiting",
+            "on_stage": "On stage",
+            "done": "Done",
+            "absent": "Absent"
+        }
+    },
+    "drawing": {
+        "title": "The drawings",
+        "votingOpen": "Voting is open",
+        "votingClosed": "Voting closed",
+        "howTo": "Tap the heart on your favourite. You can vote once, so choose wisely!",
+        "thanks": "Thank you for voting!",
+        "closedHint": "Voting is not open right now.",
+        "empty": "The drawings will appear here once the kids have submitted them.",
+        "viewLarger": "View {name}'s drawing larger",
+        "drawingBy": "Drawing by {name}",
+        "age": "age {age}",
+        "voteFor": "Vote for {name}",
+        "voted": "You voted for {name}!",
+        "vote": "Vote",
+        "yourVote": "Your vote",
+        "voteError": {
+            "already_voted": "You've already voted in this competition.",
+            "closed": "Voting is closed.",
+            "not_found": "That drawing no longer exists.",
+            "rate_limited": "Too many votes from this network. Try again later."
+        }
+    },
+    "musicalChair": {
+        "roundsTitle": "Rounds",
+        "round": "Round {n}",
+        "out": "{name} is out",
+        "requestTitle": "Request a song",
+        "requestHint": "Pick the songs we dance to. The organisers add the most-requested ones to the game.",
+        "requestedSongs": "Requested so far",
+        "noRequests": "No requests yet — be the first!",
+        "by": "by {name}",
+        "requestStatus": {
+            "pending": "Pending",
+            "rejected": "Not added",
+            "added": "In the game"
+        },
+        "live": {
+            "playing": "Music playing…",
+            "stop": "STOP! Grab a chair!",
+            "idle": "Waiting for the next round",
+            "idleHint": "This screen updates live while the game is on."
+        }
+    },
+    "music": {
+        "eyebrow": "Listen",
+        "title": "Mahalaya & Puja music",
+        "description": "The sound of Puja — from the pre-dawn Mahalaya to Agomoni, dhak beats and bhajans.",
+        "empty": "The playlist is being prepared. Check back soon!",
+        "featured": "Featured",
+        "featuredBody": "For generations, Bengal has woken before dawn on Mahalaya to this recitation. Press play and let the Puja begin. The player keeps going while you browse.",
+        "listen": "Listen now",
+        "pause": "Pause",
+        "all": "All",
+        "playAll": "Play all",
+        "shuffle": "Shuffle"
+    },
+    "songCategories": {
+        "mahalaya": "Mahalaya",
+        "agomoni": "Agomoni",
+        "dhunuchi": "Dhunuchi",
+        "bhajan": "Bhajan",
+        "modern": "Modern",
+        "bollywood": "Bollywood",
+        "other": "Other"
+    },
+    "results": {
+        "eyebrow": "Scoreboard",
+        "title": "Results",
+        "description": "Every programme and where it stands. Tap a completed one for insights and the leaderboard.",
+        "summary": {
+            "completed": "Completed",
+            "pending": "Pending",
+            "cancelled": "Cancelled"
+        },
+        "allResults": "All results",
+        "cancelledHint": "This programme was cancelled.",
+        "pendingHint": "This programme hasn't happened yet — results will appear here once it's completed.",
+        "insights": "Insights",
+        "minutes": "{n} min",
+        "insight": {
+            "duration": "Duration",
+            "participants": "Participants",
+            "rounds": "Rounds played",
+            "songsPlayed": "Different songs",
+            "entries": "Drawings",
+            "votes": "Votes cast",
+            "performed": "Performed",
+            "absent": "Absent"
+        },
+        "leaderboard": "Leaderboard",
+        "noLeaderboard": "The leaderboard will be published soon."
+    },
+    "about": {
+        "eyebrow": "Know the festival",
+        "title": "About Durga Puja",
+        "description": "Why we celebrate, what happens each day and when it all takes place.",
+        "contents": "On this page"
+    },
+    "donate": {
+        "eyebrow": "Contribute",
+        "title": "Donate to the Puja",
+        "description": "Your generosity makes the pandal, the bhog and the programmes possible.",
+        "qrAlt": "UPI QR code for donations",
+        "qrComingSoon": "QR code coming soon",
+        "howTitle": "How to donate",
+        "step1": "Open any UPI app — Google Pay, PhonePe, Paytm or your bank app.",
+        "step2": "Scan the QR code (or use the UPI ID below).",
+        "step3": "Enter any amount you wish, add your name in the note, and pay.",
+        "upiId": "UPI ID",
+        "copy": "Copy",
+        "copied": "Copied",
+        "copyFailed": "Couldn't copy. Please copy it manually.",
+        "payWithApp": "Pay with UPI app",
+        "disclaimer": "Always check that the payee name matches the Puja committee before paying."
+    },
+    "feedback": {
+        "eyebrow": "We're listening",
+        "title": "Feedback & suggestions",
+        "description": "Loved something? Spotted a problem? Have an idea for next year? Tell the organisers.",
+        "kind": "What is this about?",
+        "kinds": {
+            "suggestion": "Suggestion",
+            "complaint": "Complaint",
+            "appreciation": "Appreciation"
+        },
+        "message": "Your message",
+        "messagePlaceholder": "Write here…",
+        "contact": "Phone or email (optional)",
+        "contactHint": "Only if you'd like a reply.",
+        "submit": "Send feedback"
+    }
+}

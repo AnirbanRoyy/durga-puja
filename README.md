@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Durga Puja community app
 
-## Getting Started
+Next.js 16 · Tailwind v4 · shadcn/ui · Hugeicons · Supabase · Cloudinary · next-intl (English / বাংলা)
 
-First, run the development server:
+## Setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. **Install**: `bun install`
+2. **Supabase**: create a project, then run `supabase/migrations/0001_init.sql` and `supabase/seed.sql` in the SQL editor.
+3. **Cloudinary**: create a free account and note the cloud name, API key and API secret.
+4. **Env**: copy `.env.example` to `.env.local` and fill it in.
+5. **Run**: `bun dev` → http://localhost:3000 · admin at `/admin` (password from `ADMIN_PASSWORD`).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command                | What it does              |
+| ---------------------- | ------------------------- |
+| `bun dev`              | Dev server                |
+| `bun run build`        | Production build          |
+| `bun run typecheck`    | TypeScript check          |
+| `bun run lint`         | ESLint                    |
+| `bun run format`       | Prettier (4-space indent) |
+| `bun run format:check` | Verify formatting         |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How things work
 
-## Learn More
+- **Public site** lives in `src/app/(site)`, admin in `src/app/admin`. Admin is guarded by `src/proxy.ts` and
+  re-checked in every server action with `requireAdmin()`.
+- **All writes** go through server actions using the Supabase service-role key. The browser only has the anon key,
+  which can read public tables and listen to Realtime. Phone numbers are stored in `registration_contacts`, which
+  anon cannot read.
+- **Songs**: the music page uses YouTube links (`songs.pool = 'music_page'`). Musical chair uses MP3s uploaded to
+  Cloudinary (`pool = 'musical_chair'`).
+- **Musical chair console** (`/admin/programmes/<id>/musical-chair`): Space starts a round at a random point in a
+  random song and stops at a random moment; the public page mirrors it live via a Realtime broadcast channel.
+- **Votes**: one per device per drawing competition (`votes` has `unique(programme_id, voter_hash)`).
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy (Vercel)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Import the repo, add the env vars from `.env.example`, and deploy. Add the Vercel domain to nothing else —
+Supabase and Cloudinary need no allow-listing for this setup.
