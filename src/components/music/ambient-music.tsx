@@ -22,13 +22,17 @@ function subscribePref(onChange: () => void) {
     };
 }
 
+/** On by default: only an explicit "off" from the visitor is remembered. */
 function readPref(): boolean {
     try {
-        return localStorage.getItem(STORAGE_KEY) === "1";
+        return localStorage.getItem(STORAGE_KEY) !== "0";
     } catch {
-        return false;
+        return true;
     }
 }
+
+// Events browsers accept as a user gesture for starting audio (touch needs pointerup/touchend).
+const GESTURES = ["pointerup", "touchend", "click", "keydown"] as const;
 
 function writePref(on: boolean) {
     try {
@@ -56,9 +60,9 @@ function fade(audio: HTMLAudioElement, to: number, ms: number): Promise<void> {
 }
 
 /**
- * Opt-in background loop. Browsers block audio before a user gesture, so it never starts on its
- * own: the visitor taps the button once, and their choice is remembered for later visits (the
- * track then resumes on their first tap or key press). It steps aside while the YouTube player runs.
+ * Background loop, on by default. Browsers block sound until the visitor interacts with the page,
+ * so it starts on their first tap, click or key press (or immediately where the browser allows it).
+ * Turning it off is remembered. It steps aside while the YouTube player runs.
  */
 export function AmbientMusic({ src }: { src: string }) {
     const t = useTranslations("ambient");
@@ -114,7 +118,7 @@ export function AmbientMusic({ src }: { src: string }) {
         [],
     );
 
-    // Opted in earlier: resume now if the browser allows it, otherwise on the first gesture.
+    // Wanted (the default): start now if the browser allows it, otherwise on the first gesture.
     useEffect(() => {
         if (!ready || !wanted || youtubePlaying || audible || document.hidden) return;
         let cancelled = false;
@@ -124,13 +128,11 @@ export function AmbientMusic({ src }: { src: string }) {
             });
         };
         const detach = () => {
-            window.removeEventListener("pointerdown", resume);
-            window.removeEventListener("keydown", resume);
+            for (const type of GESTURES) window.removeEventListener(type, resume);
         };
         void start().then((ok) => {
             if (!ok && !cancelled) {
-                window.addEventListener("pointerdown", resume);
-                window.addEventListener("keydown", resume);
+                for (const type of GESTURES) window.addEventListener(type, resume);
             }
         });
         return () => {
