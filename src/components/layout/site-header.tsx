@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Menu01Icon, QrCodeIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
+import { BrandMark } from "@/components/layout/brand-mark";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LocaleToggle } from "@/components/layout/locale-toggle";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -36,9 +37,7 @@ export function SiteHeader({
         <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md">
             <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-3">
                 <Link href="/" className="flex items-center gap-2.5">
-                    <span className="grid size-9 place-items-center rounded-full bg-primary font-heading text-lg text-primary-foreground shadow-md shadow-primary/30">
-                        দু
-                    </span>
+                    <BrandMark priority />
                     <span className="leading-tight">
                         <span className="block font-heading text-base font-semibold">
                             {t("brand")}

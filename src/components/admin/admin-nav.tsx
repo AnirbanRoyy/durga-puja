@@ -15,6 +15,7 @@ import {
     StarIcon,
 } from "@hugeicons/core-free-icons";
 import { logout } from "@/actions/admin-auth";
+import { BrandMark } from "@/components/layout/brand-mark";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -33,9 +34,7 @@ export function AdminNav() {
     return (
         <aside className="border-b bg-card lg:sticky lg:top-0 lg:h-screen lg:w-60 lg:shrink-0 lg:border-r lg:border-b-0">
             <div className="flex items-center gap-2.5 px-4 py-4">
-                <span className="grid size-9 place-items-center rounded-full bg-primary font-heading text-primary-foreground">
-                    দু
-                </span>
+                <BrandMark />
                 <span className="font-heading font-semibold">Puja Admin</span>
                 <div className="ml-auto lg:hidden">
                     <ThemeToggle />
