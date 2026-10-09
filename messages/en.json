@@ -142,7 +142,8 @@
             "rateLimited": "Too many attempts. Please wait a little and try again.",
             "registrationClosed": "Registration is closed for this programme.",
             "full": "Sorry, this programme is full.",
-            "duplicate": "You are already registered with this name and phone number."
+            "duplicate": "You are already registered with this name and phone number.",
+            "deviceUsed": "Someone from this device or network has already registered for this programme."
         },
         "success": {
             "generic": "Done!",

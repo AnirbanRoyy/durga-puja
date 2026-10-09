@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { claimDevice, releaseDevice } from "@/lib/device-lock";
 import { rateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/supabase/server";
 import {
@@ -40,14 +41,15 @@ export async function registerForProgramme(
     if (!parsed.success) return fail(formData, "invalid", fieldErrors(parsed.error));
     const input = parsed.data;
 
-    if (!(await rateLimit(`register:${await getClientIp()}`, 15, 600))) {
+    const ip = await getClientIp();
+    if (!(await rateLimit(`register:${ip}`, 15, 600))) {
         return fail(formData, "rateLimited");
     }
 
     const supabase = db();
     const { data: programme, error: programmeError } = await supabase
         .from("programmes")
-        .select("id, registration_open, status, max_participants, order_locked")
+        .select("id, slug, registration_open, status, max_participants, order_locked")
         .eq("id", input.programmeId)
         .maybeSingle();
     if (programmeError) throw programmeError;
@@ -60,6 +62,7 @@ export async function registerForProgramme(
         return fail(formData, "registrationClosed");
     }
 
+    // Checked late so closed/full programmes never use up an address's one entry.
     const { data: existing, error: countError } = await supabase
         .from("registrations")
         .select("sequence_no")
@@ -68,6 +71,8 @@ export async function registerForProgramme(
     if (programme.max_participants && existing.length >= programme.max_participants) {
         return fail(formData, "full");
     }
+
+    if (!(await claimDevice(ip, programme.slug))) return fail(formData, "deviceUsed");
 
     // Once the call order is locked, late entries go to the end of the line.
     const sequenceNo = programme.order_locked
@@ -83,7 +88,10 @@ export async function registerForProgramme(
         })
         .select("id")
         .single();
-    if (insertError) throw insertError;
+    if (insertError) {
+        await releaseDevice(ip, programme.slug);
+        throw insertError;
+    }
 
     const { error: contactError } = await supabase.from("registration_contacts").insert({
         registration_id: registration.id,
@@ -96,6 +104,7 @@ export async function registerForProgramme(
     });
     if (contactError) {
         await supabase.from("registrations").delete().eq("id", registration.id);
+        await releaseDevice(ip, programme.slug);
         if (contactError.code === "23505") return fail(formData, "duplicate");
         throw contactError;
     }
