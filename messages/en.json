@@ -32,7 +32,8 @@
     },
     "ambient": {
         "on": "Turn off dhak beats",
-        "off": "Play dhak beats"
+        "off": "Play dhak beats",
+        "hint": "🥁 Tap anywhere to start the dhak beats"
     },
     "footer": {
         "blessing": "Asche bochor abar hobe!",

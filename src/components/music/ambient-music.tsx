@@ -69,6 +69,7 @@ export function AmbientMusic({ src }: { src: string }) {
     const { isPlaying: youtubePlaying } = usePlayer();
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [audible, setAudible] = useState(false);
+    const [blocked, setBlocked] = useState(false);
 
     // Both are false on the server and on first hydration, then pick up localStorage.
     const wanted = useSyncExternalStore(subscribePref, readPref, () => false);
@@ -132,6 +133,7 @@ export function AmbientMusic({ src }: { src: string }) {
         };
         void start().then((ok) => {
             if (!ok && !cancelled) {
+                setBlocked(true);
                 for (const type of GESTURES) window.addEventListener(type, resume);
             }
         });
@@ -169,26 +171,36 @@ export function AmbientMusic({ src }: { src: string }) {
     if (!ready) return null;
 
     return (
-        <Button
-            type="button"
-            variant={wanted ? "default" : "ghost"}
-            size="icon"
-            onClick={toggle}
-            aria-pressed={wanted}
-            aria-label={wanted ? t("on") : t("off")}
-            title={wanted ? t("on") : t("off")}
-            className="relative rounded-full"
-        >
-            <HugeiconsIcon
-                icon={DrumIcon}
-                className={cn("size-4.5", wanted && audible && "animate-dhak")}
-            />
-            {!wanted && (
-                <span
-                    className="absolute h-0.5 w-5 -rotate-45 rounded bg-current opacity-70"
-                    aria-hidden
-                />
+        <>
+            {wanted && blocked && !audible && !youtubePlaying && (
+                <p
+                    role="status"
+                    className="pointer-events-none fixed inset-x-4 top-[4.75rem] z-30 mx-auto w-fit max-w-full animate-pulse rounded-full bg-maroon/95 px-4 py-2 text-center text-sm text-kash shadow-lg"
+                >
+                    {t("hint")}
+                </p>
             )}
-        </Button>
+            <Button
+                type="button"
+                variant={wanted ? "default" : "ghost"}
+                size="icon"
+                onClick={toggle}
+                aria-pressed={wanted}
+                aria-label={wanted ? t("on") : t("off")}
+                title={wanted ? t("on") : t("off")}
+                className="relative rounded-full"
+            >
+                <HugeiconsIcon
+                    icon={DrumIcon}
+                    className={cn("size-4.5", wanted && audible && "animate-dhak")}
+                />
+                {!wanted && (
+                    <span
+                        className="absolute h-0.5 w-5 -rotate-45 rounded bg-current opacity-70"
+                        aria-hidden
+                    />
+                )}
+            </Button>
+        </>
     );
 }

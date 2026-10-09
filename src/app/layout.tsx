@@ -47,6 +47,8 @@ export async function generateMetadata(): Promise<Metadata> {
                 "max-snippet": -1,
             },
         },
+        // The site has its own EN/বাং toggle, so stop Chrome offering to translate it.
+        other: { google: "notranslate" },
         category: "events",
     };
 }
@@ -63,6 +65,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     return (
         <html
             lang={locale}
+            translate="no"
             suppressHydrationWarning
             className={`${inter.variable} ${fraunces.variable} ${hindSiliguri.variable} h-full antialiased`}
         >
