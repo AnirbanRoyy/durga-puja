@@ -17,13 +17,18 @@ export function KashFlowers({ className }: { className?: string }) {
     return (
         <div
             aria-hidden
-            className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}
+            className={cn(
+                "pointer-events-none absolute inset-0 overflow-hidden contain-paint",
+                className,
+            )}
         >
             {FLOWERS.map((f, i) => (
                 <svg
                     key={i}
                     viewBox="0 0 24 40"
-                    className="absolute top-0 animate-drift text-white/90 motion-reduce:hidden dark:text-white/70"
+                    className={cn(
+                        "absolute top-0 animate-drift text-white/90 motion-reduce:hidden dark:text-white/70",
+                    )}
                     style={{
                         left: `${f.left}%`,
                         width: f.size,

@@ -84,15 +84,16 @@
             transform: scale(1.05);
         }
     }
+    /* Opacity and transform only: animating a blur filter forces a repaint every frame. */
     @keyframes glow {
         0%,
         100% {
             opacity: 0.55;
-            filter: blur(18px);
+            transform: scale(1);
         }
         50% {
             opacity: 0.9;
-            filter: blur(24px);
+            transform: scale(1.12);
         }
     }
 }

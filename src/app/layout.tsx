@@ -13,8 +13,8 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"] });
 const hindSiliguri = Hind_Siliguri({
     variable: "--font-bengali",
-    subsets: ["bengali", "latin"],
-    weight: ["400", "500", "600", "700"],
+    subsets: ["bengali"],
+    weight: ["400", "600", "700"],
 });
 
 export async function generateMetadata(): Promise<Metadata> {

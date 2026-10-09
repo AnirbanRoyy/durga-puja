@@ -87,7 +87,7 @@ export default async function HomePage() {
                 <Alpana className="absolute top-1/2 left-1/2 size-[46rem] -translate-x-1/2 -translate-y-1/2 animate-spin-slow text-marigold/20 sm:size-[60rem]" />
                 <div className="relative mx-auto flex max-w-6xl flex-col items-center px-4 pt-16 pb-20 text-center sm:pt-24">
                     <div className="relative w-full max-w-md">
-                        <div className="absolute inset-x-10 top-6 h-24 animate-glow rounded-full bg-marigold/50" />
+                        <div className="absolute inset-x-10 top-6 h-24 animate-glow rounded-full bg-marigold/50 blur-xl will-change-[opacity,transform]" />
                         <Trinayan className="relative w-full text-maroon dark:text-kash" />
                     </div>
                     <p className="mt-8 text-sm font-semibold tracking-[0.3em] text-primary uppercase">

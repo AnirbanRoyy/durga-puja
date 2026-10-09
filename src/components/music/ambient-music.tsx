@@ -45,6 +45,20 @@ function writePref(on: boolean) {
 
 const noopSubscribe = () => () => {};
 
+/** Runs `fn` a moment after the window's load event; returns a cancel function. */
+function afterPageLoad(fn: () => void, delayMs = 2000): () => void {
+    let timer: number | undefined;
+    const run = () => {
+        timer = window.setTimeout(fn, delayMs);
+    };
+    if (document.readyState === "complete") run();
+    else window.addEventListener("load", run, { once: true });
+    return () => {
+        window.clearTimeout(timer);
+        window.removeEventListener("load", run);
+    };
+}
+
 function fade(audio: HTMLAudioElement, to: number, ms: number): Promise<void> {
     return new Promise((resolve) => {
         const from = audio.volume;
@@ -119,7 +133,9 @@ export function AmbientMusic({ src }: { src: string }) {
         [],
     );
 
-    // Wanted (the default): start now if the browser allows it, otherwise on the first gesture.
+    // Wanted (the default): start on the first gesture, or by itself where the browser allows it.
+    // The track is large, so the automatic attempt waits until the page has finished loading and
+    // never competes with the content the visitor came to see.
     useEffect(() => {
         if (!ready || !wanted || youtubePlaying || audible || document.hidden) return;
         let cancelled = false;
@@ -131,14 +147,16 @@ export function AmbientMusic({ src }: { src: string }) {
         const detach = () => {
             for (const type of GESTURES) window.removeEventListener(type, resume);
         };
-        void start().then((ok) => {
-            if (!ok && !cancelled) {
-                setBlocked(true);
-                for (const type of GESTURES) window.addEventListener(type, resume);
-            }
+        for (const type of GESTURES) window.addEventListener(type, resume);
+        const cancelAttempt = afterPageLoad(() => {
+            void start().then((ok) => {
+                if (ok) detach();
+                else if (!cancelled) setBlocked(true);
+            });
         });
         return () => {
             cancelled = true;
+            cancelAttempt();
             detach();
         };
     }, [ready, wanted, youtubePlaying, audible, start]);
