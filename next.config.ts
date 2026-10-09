@@ -6,6 +6,16 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig: NextConfig = {
     // Locale comes from a cookie and most data is live, so every route renders per request.
     cacheComponents: false,
+    async redirects() {
+        // Results used to live at /results/<slug>; they now sit under their programme.
+        return [
+            {
+                source: "/results/:slug",
+                destination: "/programmes/:slug/results",
+                permanent: true,
+            },
+        ];
+    },
     images: {
         remotePatterns: [
             { protocol: "https", hostname: "res.cloudinary.com" },

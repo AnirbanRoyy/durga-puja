@@ -1,13 +1,16 @@
 /**
- * How many in-app navigations happened since the page was first loaded. Zero means the visitor
- * landed on this page directly (a shared link, a search result), so "back" must not leave the site.
+ * In-app navigation memory, kept in module state so it survives route changes (but not a full
+ * page load). Used by the back button to decide between "go back" and "go up".
  */
 let navigations = 0;
+let previous: string | null = null;
 
-export function recordNavigation(): void {
+export function recordNavigation(from: string): void {
     navigations += 1;
+    previous = from;
 }
 
-export function hasInAppHistory(): boolean {
-    return navigations > 0;
+/** The page the visitor was on before this one, or null if they landed here directly. */
+export function previousPath(): string | null {
+    return navigations > 0 ? previous : null;
 }

@@ -90,7 +90,7 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
                 <div className="flex flex-wrap gap-2">
                     {programme.status === "completed" && (
                         <Button asChild size="sm" variant="secondary">
-                            <Link href={`/results/${programme.slug}`}>
+                            <Link href={`/programmes/${programme.slug}/results`}>
                                 <HugeiconsIcon icon={Award01Icon} data-icon="inline-start" />
                                 {t("seeResults")}
                             </Link>

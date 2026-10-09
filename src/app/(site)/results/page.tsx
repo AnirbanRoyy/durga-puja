@@ -111,7 +111,10 @@ export default async function ResultsPage() {
                             return (
                                 <li key={p.id}>
                                     {status === "completed" ? (
-                                        <Link href={`/results/${p.slug}`} className={className}>
+                                        <Link
+                                            href={`/programmes/${p.slug}/results`}
+                                            className={className}
+                                        >
                                             {body}
                                         </Link>
                                     ) : (

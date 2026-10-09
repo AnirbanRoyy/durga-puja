@@ -10,7 +10,7 @@ import { resultStatus } from "@/lib/programme-meta";
 import { getProgrammeBySlug } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
-export async function generateMetadata(props: PageProps<"/results/[slug]">) {
+export async function generateMetadata(props: PageProps<"/programmes/[slug]/results">) {
     const { slug } = await props.params;
     const [programme, locale, t] = await Promise.all([
         getProgrammeBySlug(slug),
@@ -24,7 +24,7 @@ export async function generateMetadata(props: PageProps<"/results/[slug]">) {
     };
 }
 
-export default async function ResultDetailPage(props: PageProps<"/results/[slug]">) {
+export default async function ResultDetailPage(props: PageProps<"/programmes/[slug]/results">) {
     const { slug } = await props.params;
     const programme = await getProgrammeBySlug(slug);
     if (!programme) notFound();

@@ -10,8 +10,8 @@ export function NavTracker() {
     const previous = useRef(pathname);
     useEffect(() => {
         if (previous.current !== pathname) {
+            recordNavigation(previous.current);
             previous.current = pathname;
-            recordNavigation();
         }
     }, [pathname]);
     return null;
