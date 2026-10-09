@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Hind_Siliguri, Inter } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { Providers } from "@/components/layout/providers";
@@ -85,6 +86,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 <NextIntlClientProvider>
                     <Providers>{children}</Providers>
                 </NextIntlClientProvider>
+                <SpeedInsights />
             </body>
         </html>
     );
