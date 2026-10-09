@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
-import { invalidateCatalog } from "@/lib/cache";
+import { invalidateCatalog, invalidateSettings } from "@/lib/cache";
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
 import { istLocalToIso } from "@/lib/datetime";
 import type { FeedbackStatus, SongCategory, SongRequestStatus } from "@/lib/database.types";
@@ -364,6 +364,7 @@ async function saveSetting(key: string, value: Record<string, unknown>) {
         .from("settings")
         .upsert({ key, value, updated_at: new Date().toISOString() });
     if (error) throw error;
+    invalidateSettings();
 }
 
 export async function saveEventSettings(

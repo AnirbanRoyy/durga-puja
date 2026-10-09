@@ -13,7 +13,7 @@ import type {
     SongPool,
     SongRequest,
 } from "@/lib/database.types";
-import { EDITIONS_TAG, PROGRAMMES_TAG } from "@/lib/cache";
+import { CACHE_VERSION, EDITIONS_TAG, PROGRAMMES_TAG, SETTINGS_TAG } from "@/lib/cache";
 import { db } from "@/lib/supabase/server";
 
 export type EventSettings = {
@@ -72,30 +72,36 @@ function unwrap<T>(result: { data: T | null; error: { message: string } | null }
     return result.data as T;
 }
 
+/** Safety net only: data is normally refreshed the moment an admin action changes it. */
+const CACHE_EXPIRY_SECONDS = 60 * 60 * 24;
+
+const fetchSettingValue = unstable_cache(
+    async (key: string): Promise<Record<string, unknown> | null> => {
+        const { data, error } = await db()
+            .from("settings")
+            .select("value")
+            .eq("key", key)
+            .maybeSingle();
+        if (error) throw new Error(`Failed to load settings: ${error.message}`);
+        return (data?.value as Record<string, unknown> | null) ?? null;
+    },
+    ["setting", CACHE_VERSION],
+    { tags: [SETTINGS_TAG], revalidate: CACHE_EXPIRY_SECONDS },
+);
+
 async function getSetting<T extends object>(key: string, fallback: T): Promise<T> {
-    const { data, error } = await db()
-        .from("settings")
-        .select("value")
-        .eq("key", key)
-        .maybeSingle();
-    if (error) throw new Error(`Failed to load settings: ${error.message}`);
-    return { ...fallback, ...((data?.value as Partial<T>) ?? {}) };
+    return { ...fallback, ...(((await fetchSettingValue(key)) as Partial<T> | null) ?? {}) };
 }
 
-/**
- * Cached across requests: the years rarely change but nearly every page reads them. Admin actions
- * call invalidateCatalog(); the time limit is only a safety net for edits made outside the app.
- */
-const CATALOG_REVALIDATE_SECONDS = 120;
-
+/** The years rarely change but nearly every page reads them, so they are cached for everyone. */
 const fetchEditions = unstable_cache(
     async (): Promise<Edition[]> =>
         unwrap(
             await db().from("editions").select("*").order("year", { ascending: false }),
             "editions",
         ),
-    ["editions"],
-    { tags: [EDITIONS_TAG], revalidate: CATALOG_REVALIDATE_SECONDS },
+    ["editions", CACHE_VERSION],
+    { tags: [EDITIONS_TAG], revalidate: CACHE_EXPIRY_SECONDS },
 );
 
 /** All years, newest first. */
@@ -148,8 +154,8 @@ const fetchProgrammes = unstable_cache(
                 .order("sort_order", { ascending: true }),
             "programmes",
         ),
-    ["programmes-by-year"],
-    { tags: [PROGRAMMES_TAG], revalidate: CATALOG_REVALIDATE_SECONDS },
+    ["programmes-by-year", CACHE_VERSION],
+    { tags: [PROGRAMMES_TAG], revalidate: CACHE_EXPIRY_SECONDS },
 );
 
 /** Programmes of one year (default: the current year). Cached across requests. */
