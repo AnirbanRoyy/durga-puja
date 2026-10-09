@@ -22,6 +22,11 @@ function lockKey(ip: string, programme: string): string {
     return `user:${ip}:${programme}`;
 }
 
+/** The key for this address and programme, or null when no check is active. */
+export function deviceKey(ip: string, programme: string): string | null {
+    return redis() && ip !== "unknown" ? lockKey(ip, programme) : null;
+}
+
 /** Atomically sets the bit. Returns false if this address had already registered. */
 export async function claimDevice(ip: string, programme: string): Promise<boolean> {
     const r = redis();
@@ -39,10 +44,15 @@ export async function claimDevice(ip: string, programme: string): Promise<boolea
 
 /** Clears the bit again, e.g. when the registration did not actually go through. */
 export async function releaseDevice(ip: string, programme: string): Promise<void> {
+    const key = deviceKey(ip, programme);
+    if (key) await releaseKey(key);
+}
+
+export async function releaseKey(key: string): Promise<void> {
     const r = redis();
-    if (!r || ip === "unknown") return;
+    if (!r) return;
     try {
-        await r.setbit(lockKey(ip, programme), 0, 0);
+        await r.setbit(key, 0, 0);
     } catch (error) {
         console.error("device-lock: release failed", error);
     }

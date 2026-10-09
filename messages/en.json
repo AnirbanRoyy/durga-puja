@@ -143,14 +143,31 @@
             "registrationClosed": "Registration is closed for this programme.",
             "full": "Sorry, this programme is full.",
             "duplicate": "You are already registered with this name and phone number.",
-            "deviceUsed": "Someone from this device or network has already registered for this programme."
+            "deviceUsed": "Someone from this device or network has already registered for this programme.",
+            "notYours": "We couldn't verify this registration. Use the phone number you registered with.",
+            "noMatch": "No registration found for that number from this network."
         },
         "success": {
             "generic": "Done!",
             "registered": "You're registered! See you at the Puja. 🎉",
             "requested": "Thanks! Your song request has been added.",
-            "feedbackSent": "Thank you for your feedback — the organisers will read it."
-        }
+            "feedbackSent": "Thank you for your feedback — the organisers will read it.",
+            "updated": "Saved. Your registration is updated.",
+            "withdrawn": "You have withdrawn. You can register again any time.",
+            "recovered": "Found it! Your registration is shown here."
+        },
+        "recoverTitle": "Already registered from here?",
+        "recoverHint": "Enter the phone number you registered with to view, edit or withdraw your entry.",
+        "recoverSubmit": "Find my registration",
+        "saveChanges": "Save changes",
+        "done": "Done",
+        "yourRegistration": "Your registration",
+        "edit": "Edit",
+        "withdraw": "Withdraw",
+        "withdrawConfirm": "Withdraw from this programme?",
+        "withdrawYes": "Yes, withdraw",
+        "keep": "Keep it",
+        "rememberHint": "You can edit or withdraw until the programme starts."
     },
     "lineup": {
         "title": "Performance order",

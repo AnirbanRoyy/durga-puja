@@ -54,6 +54,8 @@ export type RegistrationContact = {
     age: number | null;
     guardian_name: string | null;
     notes: string | null;
+    edit_token_hash: string | null;
+    claim_key: string | null;
 };
 
 export type Song = {

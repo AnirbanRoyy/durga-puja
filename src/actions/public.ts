@@ -1,13 +1,21 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { claimDevice, releaseDevice } from "@/lib/device-lock";
+import { z } from "zod";
+import { claimDevice, deviceKey, releaseDevice, releaseKey } from "@/lib/device-lock";
+import {
+    forgetRegistration,
+    getMyRegistration,
+    newEditToken,
+    rememberRegistration,
+} from "@/lib/my-registration";
 import { rateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/supabase/server";
 import {
     feedbackSchema,
     fieldErrors,
     normalizeSongKey,
+    phoneSchema,
     registrationSchema,
     songRequestSchema,
     type ActionState,
@@ -93,7 +101,10 @@ export async function registerForProgramme(
         throw insertError;
     }
 
+    const edit = newEditToken();
     const { error: contactError } = await supabase.from("registration_contacts").insert({
+        edit_token_hash: edit.hash,
+        claim_key: deviceKey(ip, programme.slug),
         registration_id: registration.id,
         programme_id: programme.id,
         phone: input.phone,
@@ -109,8 +120,106 @@ export async function registerForProgramme(
         throw contactError;
     }
 
+    await rememberRegistration(programme.id, registration.id, edit.token);
     refresh();
     return { ok: true, code: "registered" };
+}
+
+/** Edit the visitor's own registration (proven by the secret in their browser). */
+export async function updateMyRegistration(
+    _prev: ActionState,
+    formData: FormData,
+): Promise<ActionState> {
+    const parsed = registrationSchema.safeParse(formObject(formData));
+    if (!parsed.success) return fail(formData, "invalid", fieldErrors(parsed.error));
+    const input = parsed.data;
+
+    const mine = await getMyRegistration(input.programmeId);
+    if (!mine) return fail(formData, "notYours");
+
+    const supabase = db();
+    const { error: contactError } = await supabase
+        .from("registration_contacts")
+        .update({
+            phone: input.phone,
+            name_key: input.name.toLowerCase().replace(/\s+/g, " "),
+            age: input.age,
+            guardian_name: input.guardianName,
+            notes: input.notes,
+        })
+        .eq("registration_id", mine.registrationId);
+    if (contactError) {
+        if (contactError.code === "23505") return fail(formData, "duplicate");
+        throw contactError;
+    }
+    const { error } = await supabase
+        .from("registrations")
+        .update({ name: input.name })
+        .eq("id", mine.registrationId);
+    if (error) throw error;
+
+    refresh();
+    return { ok: true, code: "updated" };
+}
+
+/** Withdraw: removes the registration and frees this network to register again. */
+export async function withdrawMyRegistration(programmeId: string): Promise<ActionState> {
+    const mine = await getMyRegistration(programmeId);
+    if (!mine) return { ok: false, code: "notYours" };
+
+    const { error } = await db().from("registrations").delete().eq("id", mine.registrationId);
+    if (error) throw error;
+    if (mine.claimKey) await releaseKey(mine.claimKey);
+    await forgetRegistration(programmeId);
+    refresh();
+    return { ok: true, code: "withdrawn" };
+}
+
+/**
+ * For someone blocked on a shared network or a new browser: proves ownership with the phone
+ * number used to register, and only for a registration made from this same network.
+ */
+export async function recoverRegistration(
+    _prev: ActionState,
+    formData: FormData,
+): Promise<ActionState> {
+    const programmeId = String(formData.get("programmeId") ?? "");
+    const phone = phoneSchema.safeParse(String(formData.get("phone") ?? ""));
+    if (!z.uuid().safeParse(programmeId).success || !phone.success) {
+        return fail(formData, "invalid", { phone: "phone" });
+    }
+
+    const ip = await getClientIp();
+    if (!(await rateLimit(`recover:${ip}`, 8, 600))) return fail(formData, "rateLimited");
+
+    const supabase = db();
+    const { data: programme } = await supabase
+        .from("programmes")
+        .select("slug")
+        .eq("id", programmeId)
+        .maybeSingle();
+    const key = programme ? deviceKey(ip, programme.slug) : null;
+    if (!key) return fail(formData, "noMatch");
+
+    const { data: contact } = await supabase
+        .from("registration_contacts")
+        .select("registration_id")
+        .eq("programme_id", programmeId)
+        .eq("phone", phone.data)
+        .eq("claim_key", key)
+        .maybeSingle();
+    if (!contact) return fail(formData, "noMatch");
+
+    const edit = newEditToken();
+    const { error } = await supabase
+        .from("registration_contacts")
+        .update({ edit_token_hash: edit.hash })
+        .eq("registration_id", contact.registration_id);
+    if (error) throw error;
+
+    await rememberRegistration(programmeId, contact.registration_id, edit.token);
+    refresh();
+    return { ok: true, code: "recovered" };
 }
 
 export async function requestSong(_prev: ActionState, formData: FormData): Promise<ActionState> {

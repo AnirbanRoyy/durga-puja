@@ -14,12 +14,14 @@ import { PageHeader } from "@/components/layout/page-header";
 import { DrawingGallery } from "@/components/programmes/drawing-gallery";
 import { Lineup } from "@/components/programmes/lineup";
 import { MusicalChairPublic } from "@/components/programmes/musical-chair-public";
+import { MyRegistration } from "@/components/programmes/my-registration";
 import { RegistrationForm } from "@/components/programmes/registration-form";
 import { StatusBadge } from "@/components/programmes/status-badge";
 import { LiveRefresh } from "@/components/realtime/live-refresh";
 import { pick } from "@/lib/localize";
 import { acceptsRegistrations, isLineupType, TYPE_ICON } from "@/lib/programme-meta";
 import { getProgrammeBySlug, hasVoted, listDrawings, listRegistrations } from "@/lib/queries";
+import { getMyRegistration } from "@/lib/my-registration";
 import { peekVoterHash } from "@/lib/visitor";
 
 export async function generateMetadata(props: PageProps<"/programmes/[slug]">) {
@@ -44,6 +46,7 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
     const description = pick(locale, programme.description_en, programme.description_bn);
     const rules = pick(locale, programme.rules_en, programme.rules_bn);
     const open = acceptsRegistrations(programme);
+    const mine = programme.status === "completed" ? null : await getMyRegistration(programme.id);
 
     return (
         <>
@@ -141,7 +144,21 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
                     <aside className="lg:sticky lg:top-24 lg:self-start">
                         <div className="rounded-3xl border bg-card p-6 shadow-sm">
                             <h2 className="text-2xl font-semibold">{t("register")}</h2>
-                            {open ? (
+                            {mine ? (
+                                <div className="mt-4">
+                                    <MyRegistration
+                                        programmeId={programme.id}
+                                        programmeType={programme.type}
+                                        mine={{
+                                            name: mine.name,
+                                            phone: mine.phone,
+                                            age: mine.age,
+                                            guardianName: mine.guardianName,
+                                            notes: mine.notes,
+                                        }}
+                                    />
+                                </div>
+                            ) : open ? (
                                 <>
                                     <p className="mt-1 mb-5 text-sm text-muted-foreground">
                                         {t("registerHint")}

@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/auth";
 import type { PerformanceStatus, Programme } from "@/lib/database.types";
 import { istLocalToIso } from "@/lib/datetime";
 import { PROGRAMME_STATUSES, PROGRAMME_TYPES } from "@/lib/programme-meta";
+import { releaseKey } from "@/lib/device-lock";
 import { db } from "@/lib/supabase/server";
 import { fieldErrors, type ActionState } from "@/lib/validators";
 
@@ -272,8 +273,14 @@ export async function moveToEnd(registrationId: string) {
 
 export async function deleteRegistration(registrationId: string) {
     await requireAdmin();
+    const { data: contact } = await db()
+        .from("registration_contacts")
+        .select("claim_key")
+        .eq("registration_id", registrationId)
+        .maybeSingle();
     const { error } = await db().from("registrations").delete().eq("id", registrationId);
     if (error) throw error;
+    if (contact?.claim_key) await releaseKey(contact.claim_key);
     refresh();
 }
 
