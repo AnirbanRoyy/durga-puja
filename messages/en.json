@@ -18,7 +18,8 @@
         "donate": "Donate",
         "menu": "Open menu",
         "community": "WhatsApp",
-        "archive": "Past years"
+        "archive": "Past years",
+        "back": "Go back"
     },
     "player": {
         "nowPlaying": "Now playing",

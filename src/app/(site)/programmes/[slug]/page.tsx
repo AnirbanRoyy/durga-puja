@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-    ArrowLeft01Icon,
     Award01Icon,
     Clock01Icon,
     Location01Icon,
@@ -89,12 +88,6 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
 
             <div className="mx-auto max-w-6xl px-4 pt-8">
                 <div className="flex flex-wrap gap-2">
-                    <Button asChild variant="ghost" size="sm">
-                        <Link href="/programmes">
-                            <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
-                            {t("allProgrammes")}
-                        </Link>
-                    </Button>
                     {programme.status === "completed" && (
                         <Button asChild size="sm" variant="secondary">
                             <Link href={`/results/${programme.slug}`}>

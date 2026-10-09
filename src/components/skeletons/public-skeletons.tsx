@@ -6,9 +6,12 @@ import { cn } from "@/lib/utils";
 export function PageHeaderSkeleton({ stats = false }: { stats?: boolean }) {
     return (
         <section className="bg-puja-radial relative overflow-hidden border-b">
-            <div className="relative mx-auto max-w-6xl px-4 pt-14 pr-32 pb-12 sm:pr-4">
+            <div className="relative mx-auto max-w-6xl px-4 pt-12 pr-32 pb-12 sm:pt-14 sm:pr-4">
                 <Skeleton className="h-4 w-28" />
-                <Skeleton className="mt-4 h-10 w-3/5 max-w-sm sm:h-12" />
+                <div className="mt-2 flex items-center gap-1">
+                    <Skeleton className="-ml-2.5 size-11 rounded-full" />
+                    <Skeleton className="h-10 w-3/5 max-w-sm sm:h-12" />
+                </div>
                 <Skeleton className="mt-4 h-5 w-full max-w-xl" />
                 <Skeleton className="mt-2 h-5 w-2/3 max-w-md" />
                 {stats && (

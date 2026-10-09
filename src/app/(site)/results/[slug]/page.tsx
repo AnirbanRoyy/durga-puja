@@ -1,9 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon, CrownIcon, Medal01Icon } from "@hugeicons/core-free-icons";
-import { Button } from "@/components/ui/button";
+import { CrownIcon, Medal01Icon } from "@hugeicons/core-free-icons";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/programmes/status-badge";
 import { buildInsights, type LeaderboardEntry } from "@/lib/insights";
@@ -35,15 +33,6 @@ export default async function ResultDetailPage(props: PageProps<"/results/[slug]
     const title = pick(locale, programme.title_en, programme.title_bn);
     const status = resultStatus(programme.status);
 
-    const back = (
-        <Button asChild variant="ghost" size="sm">
-            <Link href="/results">
-                <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" />
-                {t("allResults")}
-            </Link>
-        </Button>
-    );
-
     if (status !== "completed") {
         return (
             <>
@@ -51,7 +40,6 @@ export default async function ResultDetailPage(props: PageProps<"/results/[slug]
                     <StatusBadge status={status} />
                 </PageHeader>
                 <div className="mx-auto max-w-4xl px-4 pt-8">
-                    {back}
                     <p className="mt-6 text-muted-foreground">
                         {status === "cancelled"
                             ? (programme.admin_notes ?? t("cancelledHint"))
@@ -72,8 +60,6 @@ export default async function ResultDetailPage(props: PageProps<"/results/[slug]
                 <StatusBadge status="completed" />
             </PageHeader>
             <div className="mx-auto max-w-4xl px-4 pt-8">
-                {back}
-
                 <section className="mt-6">
                     <h2 className="text-2xl font-semibold">{t("insights")}</h2>
                     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">

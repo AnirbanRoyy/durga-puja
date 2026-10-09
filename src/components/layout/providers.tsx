@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { ThemeProvider } from "next-themes";
+import { NavTracker } from "@/components/layout/nav-tracker";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { YouTubePlayerProvider } from "@/components/music/youtube-player-provider";
@@ -16,6 +17,7 @@ export function Providers({ children }: { children: ReactNode }) {
             disableTransitionOnChange
         >
             <TooltipProvider>
+                <NavTracker />
                 <YouTubePlayerProvider>
                     {children}
                     <MiniPlayer />
