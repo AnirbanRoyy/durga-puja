@@ -53,22 +53,27 @@ export function istDateKey(iso: string | Date): string {
     return new Intl.DateTimeFormat("en-CA", { timeZone: IST }).format(new Date(iso));
 }
 
-// 2026: Saptami runs for two days, so the six slots below cover 16–21 October.
-export const PUJA_DAYS = [
-    "shashthi",
-    "saptami1",
-    "saptami2",
-    "ashtami",
-    "navami",
-    "dashami",
-] as const;
-export type PujaDay = (typeof PUJA_DAYS)[number];
+// Usually five days; some years (2026) Saptami spans two days, making six.
+const FIVE_DAYS = ["shashthi", "saptami", "ashtami", "navami", "dashami"] as const;
+const SIX_DAYS = ["shashthi", "saptami1", "saptami2", "ashtami", "navami", "dashami"] as const;
+export type PujaDay = (typeof FIVE_DAYS)[number] | (typeof SIX_DAYS)[number];
 
-/** Maps each Puja day to its IST date, starting from the configured Shashthi. */
-export function pujaDayDates(shashthiIso: string): { day: PujaDay; date: string }[] {
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Maps each Puja day to its IST date, from Shashthi up to Dashami. */
+export function pujaDayDates(
+    shashthiIso: string,
+    dashamiIso?: string,
+): { day: PujaDay; date: string }[] {
     const start = new Date(shashthiIso);
-    return PUJA_DAYS.map((day, i) => ({
+    const span = dashamiIso
+        ? Math.round(
+              (Date.parse(istDateKey(dashamiIso)) - Date.parse(istDateKey(start))) / DAY_MS,
+          ) + 1
+        : SIX_DAYS.length;
+    const days: readonly PujaDay[] = span === FIVE_DAYS.length ? FIVE_DAYS : SIX_DAYS;
+    return days.map((day, i) => ({
         day,
-        date: istDateKey(new Date(start.getTime() + i * 24 * 60 * 60 * 1000)),
+        date: istDateKey(new Date(start.getTime() + i * DAY_MS)),
     }));
 }

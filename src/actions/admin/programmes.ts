@@ -9,6 +9,7 @@ import type { PerformanceStatus, Programme } from "@/lib/database.types";
 import { istLocalToIso } from "@/lib/datetime";
 import { PROGRAMME_STATUSES, PROGRAMME_TYPES } from "@/lib/programme-meta";
 import { releaseKey } from "@/lib/device-lock";
+import { getCurrentYear } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
 import { fieldErrors, type ActionState } from "@/lib/validators";
 
@@ -96,7 +97,11 @@ export async function saveProgramme(_prev: ActionState, formData: FormData): Pro
     const supabase = db();
     const query = id
         ? supabase.from("programmes").update(row).eq("id", id).select("id").single()
-        : supabase.from("programmes").insert(row).select("id").single();
+        : supabase
+              .from("programmes")
+              .insert({ ...row, year: await getCurrentYear() })
+              .select("id")
+              .single();
     const { data, error } = await query;
     if (error) {
         if (error.code === "23505") {

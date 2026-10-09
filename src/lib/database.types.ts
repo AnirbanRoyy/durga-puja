@@ -11,8 +11,21 @@ export type SongRequestStatus = "pending" | "rejected" | "added";
 export type FeedbackKind = "suggestion" | "complaint" | "appreciation";
 export type FeedbackStatus = "new" | "reviewed" | "resolved";
 
+export type Edition = {
+    year: number;
+    name_en: string;
+    name_bn: string | null;
+    venue: string | null;
+    mahalaya: string | null;
+    shashthi: string;
+    dashami: string;
+    is_current: boolean;
+    created_at: string;
+};
+
 export type Programme = {
     id: string;
+    year: number;
     slug: string;
     type: ProgrammeType;
     title_en: string;
@@ -166,7 +179,8 @@ type Table<Row, Required extends keyof Row> = {
 export type Database = {
     public: {
         Tables: {
-            programmes: Table<Programme, "slug" | "type" | "title_en">;
+            editions: Table<Edition, "year" | "name_en" | "shashthi" | "dashami">;
+            programmes: Table<Programme, "year" | "slug" | "type" | "title_en">;
             registrations: Table<Registration, "programme_id" | "name">;
             registration_contacts: Table<
                 RegistrationContact,
@@ -197,6 +211,23 @@ export type Database = {
                     p_normalized_key: string;
                 };
                 Returns: SongRequest;
+            };
+            start_edition: {
+                Args: {
+                    p_year: number;
+                    p_name_en: string;
+                    p_name_bn: string | null;
+                    p_venue: string | null;
+                    p_mahalaya: string | null;
+                    p_shashthi: string;
+                    p_dashami: string;
+                    p_copy_programmes: boolean;
+                };
+                Returns: undefined;
+            };
+            set_current_edition: {
+                Args: { p_year: number };
+                Returns: undefined;
             };
             hit_rate_limit: {
                 Args: { p_key: string; p_max: number; p_window_seconds: number };

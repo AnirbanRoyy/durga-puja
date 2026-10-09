@@ -1,7 +1,8 @@
-import { getLocale, getTranslations } from "next-intl/server";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { Alpana } from "@/components/decor/alpana";
 import { PageHeader } from "@/components/layout/page-header";
-import { aboutContent } from "@/content/about";
+import { aboutContent, THIS_YEAR_DATES } from "@/content/about";
+import { getEventSettings } from "@/lib/queries";
 
 export async function generateMetadata() {
     const t = await getTranslations("about");
@@ -9,8 +10,23 @@ export async function generateMetadata() {
 }
 
 export default async function AboutPage() {
-    const [t, locale] = await Promise.all([getTranslations("about"), getLocale()]);
-    const sections = aboutContent(locale);
+    const [t, locale, format, event] = await Promise.all([
+        getTranslations("about"),
+        getLocale(),
+        getFormatter(),
+        getEventSettings(),
+    ]);
+    const day = (iso: string) => format.dateTime(new Date(iso), { day: "numeric", month: "long" });
+    const datesLine = t("thisYearDates", {
+        year: format.number(event.year, { useGrouping: false }),
+        mahalaya: day(event.mahalaya),
+        shashthi: day(event.shashthi),
+        dashami: day(event.dashami),
+    });
+    const sections = aboutContent(locale).map((s) => ({
+        ...s,
+        paragraphs: s.paragraphs.map((p) => (p === THIS_YEAR_DATES ? datesLine : p)),
+    }));
 
     return (
         <>

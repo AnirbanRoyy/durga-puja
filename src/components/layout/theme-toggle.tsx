@@ -5,13 +5,14 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
     const { resolvedTheme, setTheme } = useTheme();
     return (
         <Button
             variant="ghost"
             size="icon"
             aria-label="Toggle dark mode"
+            className={className}
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
         >
             <HugeiconsIcon icon={Sun03Icon} className="hidden dark:block" />

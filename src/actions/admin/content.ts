@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
 import { istLocalToIso } from "@/lib/datetime";
 import type { FeedbackStatus, SongCategory, SongRequestStatus } from "@/lib/database.types";
+import { getCurrentYear } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
 import { parseWhatsappInvite, parseYouTubeId, type ActionState } from "@/lib/validators";
 
@@ -374,16 +375,69 @@ export async function saveEventSettings(
     if (!get("name_en") || !mahalaya || !shashthi || !dashami) {
         return { ok: false, code: "Name and all three dates are required." };
     }
-    await saveSetting("event", {
-        name_en: get("name_en").slice(0, 120),
-        name_bn: get("name_bn").slice(0, 120),
-        venue: get("venue").slice(0, 120),
-        mahalaya,
-        shashthi,
-        dashami,
-    });
+    const { error } = await db()
+        .from("editions")
+        .update({
+            name_en: get("name_en").slice(0, 120),
+            name_bn: get("name_bn").slice(0, 120) || null,
+            venue: get("venue").slice(0, 120) || null,
+            mahalaya,
+            shashthi,
+            dashami,
+        })
+        .eq("year", await getCurrentYear());
+    if (error) throw error;
     refresh();
     return { ok: true, code: "Event settings saved." };
+}
+
+// ---------------------------------------------------------------------------
+// Years (editions)
+// ---------------------------------------------------------------------------
+
+/** Starts a new year: it becomes current, last year's sign-ups and voting close. */
+export async function startEdition(_prev: ActionState, formData: FormData): Promise<ActionState> {
+    await requireAdmin();
+    const get = (k: string) => String(formData.get(k) ?? "").trim();
+    const year = Number(get("year"));
+    const mahalaya = istLocalToIso(get("mahalaya"));
+    const shashthi = istLocalToIso(get("shashthi"));
+    const dashami = istLocalToIso(get("dashami"));
+    if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+        return { ok: false, code: "Enter a valid year." };
+    }
+    if (!get("name_en") || !shashthi || !dashami) {
+        return { ok: false, code: "Name, Shashthi and Dashami are required." };
+    }
+    if (new Date(dashami) <= new Date(shashthi)) {
+        return { ok: false, code: "Dashami must be after Shashthi." };
+    }
+    const { error } = await db().rpc("start_edition", {
+        p_year: year,
+        p_name_en: get("name_en").slice(0, 120),
+        p_name_bn: get("name_bn").slice(0, 120) || null,
+        p_venue: get("venue").slice(0, 120) || null,
+        p_mahalaya: mahalaya,
+        p_shashthi: shashthi,
+        p_dashami: dashami,
+        p_copy_programmes: formData.get("copy_programmes") === "on",
+    });
+    if (error) {
+        if (error.message.includes("edition_exists")) {
+            return { ok: false, code: `${year} already exists.` };
+        }
+        throw error;
+    }
+    refresh();
+    return { ok: true, code: `${year} started. The public site now shows ${year}.` };
+}
+
+/** Switch which year the public site treats as "this year". */
+export async function makeEditionCurrent(year: number) {
+    await requireAdmin();
+    const { error } = await db().rpc("set_current_edition", { p_year: year });
+    if (error) throw error;
+    refresh();
 }
 
 export async function saveDonationSettings(

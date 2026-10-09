@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Hind_Siliguri, Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { Providers } from "@/components/layout/providers";
+import { getEventSettings } from "@/lib/queries";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -15,14 +16,25 @@ const hindSiliguri = Hind_Siliguri({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-    const [t, locale] = await Promise.all([getTranslations("meta"), getLocale()]);
-    const title = t("title");
-    const description = t("description");
+    const [t, locale, format, event] = await Promise.all([
+        getTranslations("meta"),
+        getLocale(),
+        getFormatter(),
+        getEventSettings().catch(() => null),
+    ]);
+    const day = (iso: string) => format.dateTime(new Date(iso), { day: "numeric", month: "short" });
+    const values = {
+        year: format.number(event?.year ?? new Date().getFullYear(), { useGrouping: false }),
+        start: event ? day(event.shashthi) : "",
+        end: event ? day(event.dashami) : "",
+    };
+    const title = t("title", values);
+    const description = t("description", values);
     return {
         metadataBase: new URL(SITE_URL),
         title: { default: title, template: `%s · ${t("siteName")}` },
         description,
-        keywords: t("keywords")
+        keywords: t("keywords", values)
             .split(",")
             .map((k) => k.trim()),
         applicationName: t("siteName"),

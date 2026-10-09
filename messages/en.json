@@ -1,8 +1,8 @@
 {
     "meta": {
-        "title": "Sodepur Durga Puja 2026, Asansol – Programmes, Timeline & Results",
-        "description": "Sodepur Durga Puja 2026 in Asansol, West Bengal: Shashthi 16 Oct to Dashami 21 Oct. Programme schedule, singing, dance and drawing competitions, musical chair, Mahalaya and Bengali songs, results and donations.",
-        "keywords": "Sodepur Durga Puja, Sodepur Durga Puja 2026, Asansol Durga Puja, Asansol Durga Puja 2026, Durga Puja West Bengal, Paschim Bardhaman Durga Puja, Durga Puja programme, Durga Puja schedule, Shashthi 2026, Mahalaya 2026, Bengali songs, community Durga Puja, Durga Puja competition, Sodepur Asansol",
+        "title": "Sodepur Durga Puja {year}, Asansol – Programmes, Timeline & Results",
+        "description": "Sodepur Durga Puja {year} in Asansol, West Bengal: Shashthi {start} to Dashami {end}. Programme schedule, singing, dance and drawing competitions, musical chair, Mahalaya and Bengali songs, results and donations.",
+        "keywords": "Sodepur Durga Puja, Sodepur Durga Puja {year}, Asansol Durga Puja, Asansol Durga Puja {year}, Durga Puja West Bengal, Paschim Bardhaman Durga Puja, Durga Puja programme, Durga Puja schedule, Shashthi {year}, Mahalaya {year}, Bengali songs, community Durga Puja, Durga Puja competition, Sodepur Asansol",
         "siteName": "Sodepur Durga Puja"
     },
     "nav": {
@@ -17,7 +17,8 @@
         "feedback": "Feedback",
         "donate": "Donate",
         "menu": "Open menu",
-        "community": "WhatsApp"
+        "community": "WhatsApp",
+        "archive": "Past years"
     },
     "player": {
         "nowPlaying": "Now playing",
@@ -108,6 +109,7 @@
     },
     "pujaDays": {
         "shashthi": "Shashthi",
+        "saptami": "Saptami",
         "saptami1": "Saptami · Day 1",
         "saptami2": "Saptami · Day 2",
         "ashtami": "Ashtami",
@@ -273,13 +275,15 @@
             "absent": "Absent"
         },
         "leaderboard": "Leaderboard",
-        "noLeaderboard": "The leaderboard will be published soon."
+        "noLeaderboard": "The leaderboard will be published soon.",
+        "pastYears": "Winners from earlier years"
     },
     "about": {
         "eyebrow": "Know the festival",
         "title": "About Durga Puja",
         "description": "Why we celebrate, what happens each day and when it all takes place.",
-        "contents": "On this page"
+        "contents": "On this page",
+        "thisYearDates": "In {year}, Mahalaya falls on {mahalaya}, and the Puja runs from Shashthi on {shashthi} to Vijaya Dashami on {dashami}."
     },
     "donate": {
         "eyebrow": "Contribute",
@@ -331,5 +335,33 @@
         "get2": "Results and winners as soon as they're announced",
         "get3": "Reminders and important notices from the organisers",
         "comingSoonBody": "The community link will be shared here soon. Check back shortly!"
+    },
+    "archive": {
+        "title": "Puja archive",
+        "eyebrow": "Every year, remembered",
+        "description": "Programmes, participants, winners and drawings from every year of our Puja.",
+        "onlyOne": "This is the first year on the website. From next year, every earlier Puja will appear here.",
+        "thisYear": "This year",
+        "open": "Open this year",
+        "goLive": "See what’s on now",
+        "pickYear": "Choose a year",
+        "allYears": "All years",
+        "yearTitle": "Durga Puja {year}",
+        "yearDescription": "Sodepur Durga Puja {year}, Asansol: programmes, participants, winners and drawings.",
+        "isCurrent": "This is this year’s Puja.",
+        "viewingPast": "You’re looking at {year}. Registrations and voting are closed.",
+        "backToCurrent": "Back to {year}",
+        "winnersTitle": "Winners",
+        "noWinners": "No results were recorded this year.",
+        "programmesTitle": "All programmes",
+        "participants": "{count, plural, =0 {No participants} one {# participant} other {# participants}}",
+        "noParticipants": "No one registered online for this one.",
+        "votes": "{count, plural, one {# vote} other {# votes}}",
+        "stats": {
+            "programmes": "Programmes",
+            "participants": "Participants",
+            "winners": "Prize winners",
+            "drawings": "Drawings"
+        }
     }
 }

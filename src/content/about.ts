@@ -1,5 +1,8 @@
 import type { Locale } from "@/i18n/config";
 
+/** Placeholder paragraph: the page fills in this year's dates from the admin settings. */
+export const THIS_YEAR_DATES = "{{this-year-dates}}";
+
 export type AboutSection = {
     id: string;
     title: string;
@@ -33,7 +36,7 @@ const en: AboutSection[] = [
         paragraphs: [
             "Durga Puja falls in the Bengali month of Ashwin (September–October), during the bright half of the lunar fortnight. The exact dates follow the panjika (almanac), so they change every year.",
             "The countdown begins on Mahalaya, the new-moon day that ends Pitri Paksha (the fortnight of the ancestors) and begins Devi Paksha (the fortnight of the Goddess). Since 1931, Bengal has woken before dawn on Mahalaya to Birendra Krishna Bhadra's recitation of 'Mahishasuramardini' on the radio. The main festival runs for five days, from Shashthi to Dashami.",
-            "In 2026, Mahalaya falls on 10 October, and the Puja runs from Shashthi on 16 October to Vijaya Dashami on 21 October. Saptami spans two days this year, 17 and 18 October.",
+            THIS_YEAR_DATES,
         ],
     },
     {
@@ -124,7 +127,7 @@ const bn: AboutSection[] = [
         paragraphs: [
             "দুর্গাপুজো হয় বাংলা আশ্বিন মাসে (সেপ্টেম্বর–অক্টোবর), শুক্লপক্ষে। তিথি পঞ্জিকা মেনে ঠিক হয়, তাই প্রতি বছর তারিখ বদলায়।",
             "শুরুটা হয় মহালয়ায় — অমাবস্যার এই দিনে পিতৃপক্ষ শেষ হয়ে দেবীপক্ষের সূচনা হয়। ১৯৩১ সাল থেকে মহালয়ার ভোরে বাংলা জেগে ওঠে রেডিওতে বীরেন্দ্রকৃষ্ণ ভদ্রের কণ্ঠে 'মহিষাসুরমর্দিনী' শুনে। মূল উৎসব চলে পাঁচ দিন — ষষ্ঠী থেকে দশমী।",
-            "২০২৬ সালে মহালয়া ১০ অক্টোবর, আর পুজো চলবে ১৬ অক্টোবর ষষ্ঠী থেকে ২১ অক্টোবর বিজয়া দশমী পর্যন্ত। এ বছর সপ্তমী দুই দিন — ১৭ ও ১৮ অক্টোবর।",
+            THIS_YEAR_DATES,
         ],
     },
     {

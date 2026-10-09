@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { getAmbientSettings } from "@/lib/queries";
+import { getAmbientSettings, getCurrentYear, listEditions } from "@/lib/queries";
 
 async function ambientSrc(): Promise<string | null> {
     try {
@@ -12,16 +12,26 @@ async function ambientSrc(): Promise<string | null> {
     }
 }
 
-/** Only the music button depends on the database, so the header paints right away without it. */
-async function HeaderWithAmbient() {
-    return <SiteHeader ambientSrc={await ambientSrc()} />;
+async function yearsInfo(): Promise<{ years: number[]; currentYear: number } | null> {
+    try {
+        const [editions, currentYear] = await Promise.all([listEditions(), getCurrentYear()]);
+        return { years: editions.map((e) => e.year), currentYear };
+    } catch {
+        return null;
+    }
+}
+
+/** Only the music button and year pill need the database, so the header paints right away. */
+async function HeaderWithData() {
+    const [src, years] = await Promise.all([ambientSrc(), yearsInfo()]);
+    return <SiteHeader ambientSrc={src} years={years} />;
 }
 
 export default function SiteLayout({ children }: LayoutProps<"/">) {
     return (
         <>
             <Suspense fallback={<SiteHeader />}>
-                <HeaderWithAmbient />
+                <HeaderWithData />
             </Suspense>
             <main className="flex-1">{children}</main>
             <SiteFooter />

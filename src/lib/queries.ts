@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import type {
     Drawing,
+    Edition,
     Feedback,
     MusicalChairRound,
     Programme,
@@ -14,6 +15,7 @@ import type {
 import { db } from "@/lib/supabase/server";
 
 export type EventSettings = {
+    year: number;
     name_en: string;
     name_bn: string;
     mahalaya: string;
@@ -44,6 +46,7 @@ const DEFAULT_WHATSAPP: WhatsappSettings = { invite_url: null, qr_image_url: nul
 const DEFAULT_AMBIENT: AmbientSettings = { audio_url: null };
 
 const DEFAULT_EVENT: EventSettings = {
+    year: 2026,
     name_en: "Sarbojanin Durgotsav",
     name_bn: "সর্বজনীন দুর্গোৎসব",
     mahalaya: "2026-10-10T04:00:00+05:30",
@@ -77,7 +80,47 @@ async function getSetting<T extends object>(key: string, fallback: T): Promise<T
     return { ...fallback, ...((data?.value as Partial<T>) ?? {}) };
 }
 
-export const getEventSettings = cache(() => getSetting<EventSettings>("event", DEFAULT_EVENT));
+/** All years, newest first. */
+export const listEditions = cache(async (): Promise<Edition[]> => {
+    return unwrap(
+        await db().from("editions").select("*").order("year", { ascending: false }),
+        "editions",
+    );
+});
+
+export const getEdition = cache(async (year: number): Promise<Edition | null> => {
+    return unwrap(
+        await db().from("editions").select("*").eq("year", year).maybeSingle(),
+        "edition",
+    );
+});
+
+function toEventSettings(edition: Edition): EventSettings {
+    return {
+        year: edition.year,
+        name_en: edition.name_en,
+        name_bn: edition.name_bn ?? edition.name_en,
+        mahalaya: edition.mahalaya ?? edition.shashthi,
+        shashthi: edition.shashthi,
+        dashami: edition.dashami,
+        venue: edition.venue ?? "",
+    };
+}
+
+/** This year's Puja: the current edition (what the public site shows by default). */
+export const getEventSettings = cache(async (): Promise<EventSettings> => {
+    const { data, error } = await db()
+        .from("editions")
+        .select("*")
+        .eq("is_current", true)
+        .maybeSingle();
+    if (error) throw new Error(`Failed to load edition: ${error.message}`);
+    return data ? toEventSettings(data) : DEFAULT_EVENT;
+});
+
+export async function getCurrentYear(): Promise<number> {
+    return (await getEventSettings()).year;
+}
 export const getWhatsappSettings = cache(() =>
     getSetting<WhatsappSettings>("whatsapp", DEFAULT_WHATSAPP),
 );
@@ -88,23 +131,32 @@ export const getDonationSettings = cache(() =>
     getSetting<DonationSettings>("donation", DEFAULT_DONATION),
 );
 
-export const listProgrammes = cache(async (): Promise<Programme[]> => {
+/** Programmes of one year; defaults to the current year. */
+export const listProgrammes = cache(async (year?: number): Promise<Programme[]> => {
     return unwrap(
         await db()
             .from("programmes")
             .select("*")
+            .eq("year", year ?? (await getCurrentYear()))
             .order("starts_at", { ascending: true, nullsFirst: false })
             .order("sort_order", { ascending: true }),
         "programmes",
     );
 });
 
-export const getProgrammeBySlug = cache(async (slug: string): Promise<Programme | null> => {
-    return unwrap(
-        await db().from("programmes").select("*").eq("slug", slug).maybeSingle(),
-        "programme",
-    );
-});
+export const getProgrammeBySlug = cache(
+    async (slug: string, year?: number): Promise<Programme | null> => {
+        return unwrap(
+            await db()
+                .from("programmes")
+                .select("*")
+                .eq("year", year ?? (await getCurrentYear()))
+                .eq("slug", slug)
+                .maybeSingle(),
+            "programme",
+        );
+    },
+);
 
 export const getProgrammeById = cache(async (id: string): Promise<Programme | null> => {
     return unwrap(
@@ -222,9 +274,16 @@ export const listResults = cache(async (programmeId: string): Promise<Result[]> 
     );
 });
 
-export const listAllResults = cache(async (): Promise<Result[]> => {
+/** Results for every programme of one year (defaults to the current year). */
+export const listAllResults = cache(async (year?: number): Promise<Result[]> => {
+    const ids = (await listProgrammes(year)).map((p) => p.id);
+    if (!ids.length) return [];
     return unwrap(
-        await db().from("results").select("*").order("position", { ascending: true }),
+        await db()
+            .from("results")
+            .select("*")
+            .in("programme_id", ids)
+            .order("position", { ascending: true }),
         "results",
     );
 });
@@ -255,3 +314,85 @@ export async function hasVoted(programmeId: string, voterHash: string): Promise<
     if (error) throw new Error(`Failed to check vote: ${error.message}`);
     return data?.drawing_id ?? null;
 }
+
+export type EditionSummary = Edition & {
+    programmes: number;
+    participants: number;
+    drawings: number;
+};
+
+/** Every year with headline counts, newest first. */
+export const listEditionSummaries = cache(async (): Promise<EditionSummary[]> => {
+    const [editions, programmes, registrations, drawings] = await Promise.all([
+        listEditions(),
+        db()
+            .from("programmes")
+            .select("id, year, status")
+            .then((r) => unwrap(r, "programmes")),
+        db()
+            .from("registrations")
+            .select("programme_id")
+            .then((r) => unwrap(r, "registrations")),
+        db()
+            .from("drawings")
+            .select("programme_id")
+            .then((r) => unwrap(r, "drawings")),
+    ]);
+    const yearOf = new Map(programmes.map((p) => [p.id, p.year]));
+    const tally = (rows: { programme_id: string }[]) => {
+        const counts = new Map<number, number>();
+        for (const row of rows) {
+            const year = yearOf.get(row.programme_id);
+            if (year !== undefined) counts.set(year, (counts.get(year) ?? 0) + 1);
+        }
+        return counts;
+    };
+    const participants = tally(registrations);
+    const drawingCounts = tally(drawings);
+    return editions.map((edition) => ({
+        ...edition,
+        programmes: programmes.filter((p) => p.year === edition.year && p.status !== "cancelled")
+            .length,
+        participants: participants.get(edition.year) ?? 0,
+        drawings: drawingCounts.get(edition.year) ?? 0,
+    }));
+});
+
+export type YearSnapshot = {
+    edition: Edition;
+    programmes: Programme[];
+    registrations: Registration[];
+    results: Result[];
+    drawings: Drawing[];
+};
+
+/** Everything public about one year, for the archive. */
+export const getYearSnapshot = cache(async (year: number): Promise<YearSnapshot | null> => {
+    const edition = await getEdition(year);
+    if (!edition) return null;
+    const programmes = await listProgrammes(year);
+    const ids = programmes.map((p) => p.id);
+    if (!ids.length) return { edition, programmes, registrations: [], results: [], drawings: [] };
+    const [registrations, results, drawings] = await Promise.all([
+        db()
+            .from("registrations")
+            .select("*")
+            .in("programme_id", ids)
+            .order("sequence_no", { ascending: true, nullsFirst: false })
+            .order("created_at", { ascending: true })
+            .then((r) => unwrap(r, "registrations")),
+        db()
+            .from("results")
+            .select("*")
+            .in("programme_id", ids)
+            .order("position", { ascending: true })
+            .then((r) => unwrap(r, "results")),
+        db()
+            .from("drawings")
+            .select("*")
+            .in("programme_id", ids)
+            .order("vote_count", { ascending: false })
+            .then((r) => unwrap(r, "drawings")),
+    ]);
+    return { edition, programmes, registrations, results, drawings };
+});

@@ -382,3 +382,46 @@ export function CommunitySkeleton() {
         </>
     );
 }
+
+export function ArchiveSkeleton() {
+    return (
+        <>
+            <PageHeaderSkeleton />
+            <div className="mx-auto grid max-w-5xl gap-5 px-4 pt-12 sm:grid-cols-2">
+                {[0, 1].map((i) => (
+                    <div key={i} className="rounded-3xl border bg-card p-6">
+                        <Skeleton className="h-12 w-28" />
+                        <Skeleton className="mt-3 h-5 w-40" />
+                        <Skeleton className="mt-2 h-4 w-48" />
+                        <div className="mt-5 grid grid-cols-3 gap-2">
+                            {[0, 1, 2].map((j) => (
+                                <Skeleton key={j} className="h-14 rounded-xl" />
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </>
+    );
+}
+
+export function ArchiveYearSkeleton() {
+    return (
+        <>
+            <PageHeaderSkeleton stats />
+            <div className="mx-auto max-w-5xl space-y-10 px-4 pt-8">
+                <Skeleton className="h-12 w-full rounded-2xl" />
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[0, 1, 2].map((i) => (
+                        <Skeleton key={i} className="h-40 rounded-3xl" />
+                    ))}
+                </div>
+                <div className="space-y-3">
+                    {[0, 1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-20 rounded-2xl" />
+                    ))}
+                </div>
+            </div>
+        </>
+    );
+}

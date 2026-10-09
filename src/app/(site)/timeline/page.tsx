@@ -21,7 +21,11 @@ export default async function TimelinePage() {
             <LiveRefresh tables={["programmes"]} />
             <PageHeader eyebrow={t("eyebrow")} title={t("title")} description={t("description")} />
             <div className="mx-auto max-w-3xl px-4 pt-12">
-                <Timeline programmes={programmes} shashthi={event.shashthi} />
+                <Timeline
+                    programmes={programmes}
+                    shashthi={event.shashthi}
+                    dashami={event.dashami}
+                />
             </div>
         </>
     );

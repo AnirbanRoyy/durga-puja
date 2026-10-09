@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
-import { listProgrammes } from "@/lib/queries";
+import { listEditions, listProgrammes } from "@/lib/queries";
 import { SITE_URL } from "@/lib/site";
 
 const STATIC: {
     path: string;
     priority: number;
-    changeFrequency: "daily" | "weekly" | "monthly";
+    changeFrequency: "daily" | "weekly" | "monthly" | "yearly";
 }[] = [
     { path: "", priority: 1, changeFrequency: "daily" },
     { path: "/programmes", priority: 0.9, changeFrequency: "daily" },
@@ -27,9 +27,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority,
     }));
     try {
-        const programmes = await listProgrammes();
+        const [programmes, editions] = await Promise.all([listProgrammes(), listEditions()]);
         return [
             ...pages,
+            ...editions
+                .filter((e) => !e.is_current)
+                .map((e) => ({
+                    url: `${SITE_URL}/archive/${e.year}`,
+                    lastModified: now,
+                    changeFrequency: "yearly" as const,
+                    priority: 0.5,
+                })),
             ...programmes.map((p) => ({
                 url: `${SITE_URL}/programmes/${p.slug}`,
                 lastModified: now,

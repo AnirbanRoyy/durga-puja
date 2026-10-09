@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { LocaleToggle } from "@/components/layout/locale-toggle";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { NAV_LINKS } from "@/components/layout/nav-links";
+import { YearSwitcher } from "@/components/layout/year-switcher";
 import { AmbientMusic } from "@/components/music/ambient-music";
 import { cn } from "@/lib/utils";
 
@@ -20,14 +21,20 @@ function isActive(pathname: string, href: string) {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-export function SiteHeader({ ambientSrc }: { ambientSrc?: string | null }) {
+export function SiteHeader({
+    ambientSrc,
+    years,
+}: {
+    ambientSrc?: string | null;
+    years?: { years: number[]; currentYear: number } | null;
+}) {
     const t = useTranslations("nav");
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
 
     return (
         <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md">
-            <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
+            <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-3">
                 <Link href="/" className="flex items-center gap-2.5">
                     <span className="grid size-9 place-items-center rounded-full bg-primary font-heading text-lg text-primary-foreground shadow-md shadow-primary/30">
                         দু
@@ -36,11 +43,18 @@ export function SiteHeader({ ambientSrc }: { ambientSrc?: string | null }) {
                         <span className="block font-heading text-base font-semibold">
                             {t("brand")}
                         </span>
-                        <span className="block text-[11px] text-muted-foreground">
+                        <span className="hidden text-[11px] text-muted-foreground sm:block">
                             {t("tagline")}
                         </span>
                     </span>
                 </Link>
+                {years && (
+                    <YearSwitcher
+                        years={years.years}
+                        currentYear={years.currentYear}
+                        className="hidden lg:inline-flex"
+                    />
+                )}
 
                 <nav className="ml-auto hidden items-center gap-1 lg:flex">
                     {NAV_LINKS.filter((l) => DESKTOP_KEYS.has(l.key)).map((link) => (
@@ -58,7 +72,7 @@ export function SiteHeader({ ambientSrc }: { ambientSrc?: string | null }) {
                     ))}
                 </nav>
 
-                <div className="ml-auto flex items-center gap-1.5 lg:ml-2">
+                <div className="ml-auto flex items-center gap-1 sm:gap-1.5 lg:ml-2">
                     <LocaleToggle />
                     {ambientSrc && <AmbientMusic src={ambientSrc} />}
                     <ThemeToggle />
@@ -82,6 +96,14 @@ export function SiteHeader({ ambientSrc }: { ambientSrc?: string | null }) {
                         <SheetContent side="right" className="w-72">
                             <SheetHeader>
                                 <SheetTitle className="font-heading">{t("brand")}</SheetTitle>
+                                {years && (
+                                    <YearSwitcher
+                                        years={years.years}
+                                        currentYear={years.currentYear}
+                                        onNavigate={() => setOpen(false)}
+                                        className="mt-1 self-start"
+                                    />
+                                )}
                             </SheetHeader>
                             <nav className="flex flex-col gap-1 px-3">
                                 {NAV_LINKS.map((link) => (

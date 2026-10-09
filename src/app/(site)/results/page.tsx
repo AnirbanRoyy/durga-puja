@@ -121,6 +121,13 @@ export default async function ResultsPage() {
                             );
                         })}
                 </ul>
+                <Link
+                    href="/archive"
+                    className="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                    {t("pastYears")}
+                    <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
+                </Link>
             </div>
         </>
     );

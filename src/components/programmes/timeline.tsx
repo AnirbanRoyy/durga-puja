@@ -12,8 +12,8 @@ const noonIst = (date: string) => new Date(`${date}T12:00:00+05:30`);
 
 type DayGroup = { date: string; day: PujaDay | null; programmes: Programme[] };
 
-function groupByDay(programmes: Programme[], shashthi: string): DayGroup[] {
-    const dayByDate = new Map(pujaDayDates(shashthi).map((d) => [d.date, d.day]));
+function groupByDay(programmes: Programme[], shashthi: string, dashami?: string): DayGroup[] {
+    const dayByDate = new Map(pujaDayDates(shashthi, dashami).map((d) => [d.date, d.day]));
     const groups = new Map<string, Programme[]>();
     for (const p of programmes) {
         if (!p.starts_at) continue;
@@ -28,17 +28,19 @@ function groupByDay(programmes: Programme[], shashthi: string): DayGroup[] {
 export function Timeline({
     programmes,
     shashthi,
+    dashami,
     compact = false,
 }: {
     programmes: Programme[];
     shashthi: string;
+    dashami?: string;
     compact?: boolean;
 }) {
     const t = useTranslations("timeline");
     const days = useTranslations("pujaDays");
     const locale = useLocale();
     const format = useFormatter();
-    const groups = groupByDay(programmes, shashthi);
+    const groups = groupByDay(programmes, shashthi, dashami);
 
     if (groups.length === 0) {
         return <p className="text-muted-foreground">{t("empty")}</p>;

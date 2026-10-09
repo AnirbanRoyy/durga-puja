@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
     ArrowRight01Icon,
@@ -22,9 +22,10 @@ import { SITE_URL } from "@/lib/site";
 import { countRegistrationsByProgramme, getEventSettings, listProgrammes } from "@/lib/queries";
 
 export default async function HomePage() {
-    const [t, locale, event, programmes, counts] = await Promise.all([
+    const [t, locale, format, event, programmes, counts] = await Promise.all([
         getTranslations("home"),
         getLocale(),
+        getFormatter(),
         getEventSettings(),
         listProgrammes(),
         countRegistrationsByProgramme(),
@@ -48,7 +49,7 @@ export default async function HomePage() {
             },
             {
                 "@type": "Event",
-                name: `${event.name_en} · Sodepur Durga Puja 2026, Asansol`,
+                name: `${event.name_en} · Sodepur Durga Puja ${event.year}, Asansol`,
                 alternateName: event.name_bn,
                 description: t("subtitle"),
                 startDate: event.shashthi,
@@ -90,7 +91,8 @@ export default async function HomePage() {
                         <Trinayan className="relative w-full text-maroon dark:text-kash" />
                     </div>
                     <p className="mt-8 text-sm font-semibold tracking-[0.3em] text-primary uppercase">
-                        {pick(locale, event.name_en, event.name_bn)}
+                        {pick(locale, event.name_en, event.name_bn)} ·{" "}
+                        {format.number(event.year, { useGrouping: false })}
                     </p>
                     <h1 className="text-gradient-puja mt-3 font-heading text-6xl leading-tight font-bold sm:text-8xl">
                         শুভ শারদীয়া
@@ -189,6 +191,7 @@ export default async function HomePage() {
                         <Timeline
                             programmes={programmes.slice(0, 6)}
                             shashthi={event.shashthi}
+                            dashami={event.dashami}
                             compact
                         />
                     </div>

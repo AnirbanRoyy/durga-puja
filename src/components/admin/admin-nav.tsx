@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
     ArrowUpRight01Icon,
+    Calendar03Icon,
     DashboardSquare01Icon,
     Logout01Icon,
     Message01Icon,
@@ -23,6 +24,7 @@ const LINKS = [
     { href: "/admin/songs", label: "Songs", icon: MusicNote03Icon },
     { href: "/admin/song-requests", label: "Song requests", icon: PlayListIcon },
     { href: "/admin/feedback", label: "Feedback", icon: Message01Icon },
+    { href: "/admin/years", label: "Years", icon: Calendar03Icon },
     { href: "/admin/settings", label: "Settings", icon: Settings01Icon },
 ];
 

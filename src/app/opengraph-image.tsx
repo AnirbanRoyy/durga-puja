@@ -1,10 +1,24 @@
 import { ImageResponse } from "next/og";
+import { getEventSettings } from "@/lib/queries";
 
-export const alt = "Sodepur Durga Puja 2026, Asansol";
+// Picks up a new year without a redeploy.
+export const revalidate = 3600;
+
+export const alt = "Sodepur Durga Puja, Asansol";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OpengraphImage() {
+function shortDate(iso: string) {
+    return new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "numeric",
+        month: "short",
+    }).format(new Date(iso));
+}
+
+export default async function OpengraphImage() {
+    const event = await getEventSettings().catch(() => null);
+    const year = event?.year ?? new Date().getFullYear();
     return new ImageResponse(
         <div
             style={{
@@ -18,12 +32,14 @@ export default function OpengraphImage() {
                 color: "#fff7e6",
             }}
         >
-            <div style={{ fontSize: 104, fontWeight: 700 }}>Sodepur Durga Puja 2026</div>
+            <div style={{ fontSize: 104, fontWeight: 700 }}>{`Sodepur Durga Puja ${year}`}</div>
             <div style={{ fontSize: 44, marginTop: 24, opacity: 0.9 }}>
                 Asansol, West Bengal · Programmes · Music · Results
             </div>
             <div style={{ fontSize: 34, marginTop: 40, color: "#fcd34d" }}>
-                Shashthi 16 Oct – Dashami 21 Oct
+                {event
+                    ? `Shashthi ${shortDate(event.shashthi)} – Dashami ${shortDate(event.dashami)}`
+                    : ""}
             </div>
         </div>,
         size,
