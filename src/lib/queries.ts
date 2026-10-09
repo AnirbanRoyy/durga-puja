@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import type {
     Drawing,
@@ -12,6 +13,7 @@ import type {
     SongPool,
     SongRequest,
 } from "@/lib/database.types";
+import { EDITIONS_TAG, PROGRAMMES_TAG } from "@/lib/cache";
 import { db } from "@/lib/supabase/server";
 
 export type EventSettings = {
@@ -80,20 +82,29 @@ async function getSetting<T extends object>(key: string, fallback: T): Promise<T
     return { ...fallback, ...((data?.value as Partial<T>) ?? {}) };
 }
 
-/** All years, newest first. */
-export const listEditions = cache(async (): Promise<Edition[]> => {
-    return unwrap(
-        await db().from("editions").select("*").order("year", { ascending: false }),
-        "editions",
-    );
-});
+/**
+ * Cached across requests: the years rarely change but nearly every page reads them. Admin actions
+ * call invalidateCatalog(); the time limit is only a safety net for edits made outside the app.
+ */
+const CATALOG_REVALIDATE_SECONDS = 120;
 
-export const getEdition = cache(async (year: number): Promise<Edition | null> => {
-    return unwrap(
-        await db().from("editions").select("*").eq("year", year).maybeSingle(),
-        "edition",
-    );
-});
+const fetchEditions = unstable_cache(
+    async (): Promise<Edition[]> =>
+        unwrap(
+            await db().from("editions").select("*").order("year", { ascending: false }),
+            "editions",
+        ),
+    ["editions"],
+    { tags: [EDITIONS_TAG], revalidate: CATALOG_REVALIDATE_SECONDS },
+);
+
+/** All years, newest first. */
+export const listEditions = cache((): Promise<Edition[]> => fetchEditions());
+
+export const getEdition = cache(
+    async (year: number): Promise<Edition | null> =>
+        (await listEditions()).find((e) => e.year === year) ?? null,
+);
 
 function toEventSettings(edition: Edition): EventSettings {
     return {
@@ -109,13 +120,8 @@ function toEventSettings(edition: Edition): EventSettings {
 
 /** This year's Puja: the current edition (what the public site shows by default). */
 export const getEventSettings = cache(async (): Promise<EventSettings> => {
-    const { data, error } = await db()
-        .from("editions")
-        .select("*")
-        .eq("is_current", true)
-        .maybeSingle();
-    if (error) throw new Error(`Failed to load edition: ${error.message}`);
-    return data ? toEventSettings(data) : DEFAULT_EVENT;
+    const current = (await listEditions()).find((e) => e.is_current);
+    return current ? toEventSettings(current) : DEFAULT_EVENT;
 });
 
 export async function getCurrentYear(): Promise<number> {
@@ -131,31 +137,29 @@ export const getDonationSettings = cache(() =>
     getSetting<DonationSettings>("donation", DEFAULT_DONATION),
 );
 
-/** Programmes of one year; defaults to the current year. */
-export const listProgrammes = cache(async (year?: number): Promise<Programme[]> => {
-    return unwrap(
-        await db()
-            .from("programmes")
-            .select("*")
-            .eq("year", year ?? (await getCurrentYear()))
-            .order("starts_at", { ascending: true, nullsFirst: false })
-            .order("sort_order", { ascending: true }),
-        "programmes",
-    );
-});
-
-export const getProgrammeBySlug = cache(
-    async (slug: string, year?: number): Promise<Programme | null> => {
-        return unwrap(
+const fetchProgrammes = unstable_cache(
+    async (year: number): Promise<Programme[]> =>
+        unwrap(
             await db()
                 .from("programmes")
                 .select("*")
-                .eq("year", year ?? (await getCurrentYear()))
-                .eq("slug", slug)
-                .maybeSingle(),
-            "programme",
-        );
-    },
+                .eq("year", year)
+                .order("starts_at", { ascending: true, nullsFirst: false })
+                .order("sort_order", { ascending: true }),
+            "programmes",
+        ),
+    ["programmes-by-year"],
+    { tags: [PROGRAMMES_TAG], revalidate: CATALOG_REVALIDATE_SECONDS },
+);
+
+/** Programmes of one year (default: the current year). Cached across requests. */
+export const listProgrammes = cache(async (year?: number): Promise<Programme[]> =>
+    fetchProgrammes(year ?? (await getCurrentYear())),
+);
+
+export const getProgrammeBySlug = cache(
+    async (slug: string, year?: number): Promise<Programme | null> =>
+        (await listProgrammes(year)).find((p) => p.slug === slug) ?? null,
 );
 
 export const getProgrammeById = cache(async (id: string): Promise<Programme | null> => {

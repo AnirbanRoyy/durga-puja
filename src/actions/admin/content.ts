@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
+import { invalidateCatalog } from "@/lib/cache";
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
 import { istLocalToIso } from "@/lib/datetime";
 import type { FeedbackStatus, SongCategory, SongRequestStatus } from "@/lib/database.types";
@@ -249,6 +250,7 @@ export async function publishDrawingResults(programmeId: string) {
         if (insertError) throw insertError;
     }
     await supabase.from("programmes").update({ status: "completed" }).eq("id", programmeId);
+    invalidateCatalog();
     refresh();
 }
 
@@ -331,6 +333,7 @@ export async function finishMusicalChair(programmeId: string, winner: string) {
         if (insertError) throw insertError;
     }
     await supabase.from("programmes").update({ status: "completed" }).eq("id", programmeId);
+    invalidateCatalog();
     refresh();
 }
 
@@ -387,6 +390,7 @@ export async function saveEventSettings(
         })
         .eq("year", await getCurrentYear());
     if (error) throw error;
+    invalidateCatalog();
     refresh();
     return { ok: true, code: "Event settings saved." };
 }
@@ -428,6 +432,7 @@ export async function startEdition(_prev: ActionState, formData: FormData): Prom
         }
         throw error;
     }
+    invalidateCatalog();
     refresh();
     return { ok: true, code: `${year} started. The public site now shows ${year}.` };
 }
@@ -437,6 +442,7 @@ export async function makeEditionCurrent(year: number) {
     await requireAdmin();
     const { error } = await db().rpc("set_current_edition", { p_year: year });
     if (error) throw error;
+    invalidateCatalog();
     refresh();
 }
 

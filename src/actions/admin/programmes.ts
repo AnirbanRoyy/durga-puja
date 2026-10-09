@@ -5,6 +5,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
+import { invalidateCatalog } from "@/lib/cache";
 import type { PerformanceStatus, Programme } from "@/lib/database.types";
 import { istLocalToIso } from "@/lib/datetime";
 import { PROGRAMME_STATUSES, PROGRAMME_TYPES } from "@/lib/programme-meta";
@@ -114,6 +115,7 @@ export async function saveProgramme(_prev: ActionState, formData: FormData): Pro
         }
         throw error;
     }
+    invalidateCatalog();
     if (!id) redirect(`/admin/programmes/${data.id}`);
     refresh();
     return { ok: true, code: "Saved." };
@@ -123,6 +125,7 @@ export async function deleteProgramme(id: string) {
     await requireAdmin();
     const { error } = await db().from("programmes").delete().eq("id", id);
     if (error) throw error;
+    invalidateCatalog();
     redirect("/admin/programmes");
 }
 
@@ -137,6 +140,7 @@ export async function patchProgramme(id: string, patch: QuickPatch) {
     await requireAdmin();
     const { error } = await db().from("programmes").update(patch).eq("id", id);
     if (error) throw error;
+    invalidateCatalog();
     refresh();
 }
 
@@ -186,6 +190,7 @@ export async function shuffleLineup(
                 }),
         ),
     );
+    invalidateCatalog();
     refresh();
     return { ok: true };
 }
@@ -197,6 +202,7 @@ export async function setOrderLocked(programmeId: string, locked: boolean) {
         .update({ order_locked: locked })
         .eq("id", programmeId);
     if (error) throw error;
+    invalidateCatalog();
     refresh();
 }
 
@@ -328,5 +334,6 @@ export async function saveResults(
     if (markCompleted) {
         await supabase.from("programmes").update({ status: "completed" }).eq("id", programmeId);
     }
+    invalidateCatalog();
     refresh();
 }
