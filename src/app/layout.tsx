@@ -3,6 +3,7 @@ import { Fraunces, Hind_Siliguri, Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Providers } from "@/components/layout/providers";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -14,10 +15,39 @@ const hindSiliguri = Hind_Siliguri({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-    const t = await getTranslations("meta");
+    const [t, locale] = await Promise.all([getTranslations("meta"), getLocale()]);
+    const title = t("title");
+    const description = t("description");
     return {
-        title: { default: t("title"), template: `%s · ${t("title")}` },
-        description: t("description"),
+        metadataBase: new URL(SITE_URL),
+        title: { default: title, template: `%s · ${t("siteName")}` },
+        description,
+        keywords: t("keywords")
+            .split(",")
+            .map((k) => k.trim()),
+        applicationName: t("siteName"),
+        alternates: { canonical: "./" },
+        openGraph: {
+            type: "website",
+            siteName: t("siteName"),
+            title,
+            description,
+            url: "./",
+            locale: locale === "bn" ? "bn_IN" : "en_IN",
+            alternateLocale: locale === "bn" ? ["en_IN"] : ["bn_IN"],
+        },
+        twitter: { card: "summary_large_image", title, description },
+        robots: {
+            index: true,
+            follow: true,
+            googleBot: {
+                index: true,
+                follow: true,
+                "max-image-preview": "large",
+                "max-snippet": -1,
+            },
+        },
+        category: "events",
     };
 }
 

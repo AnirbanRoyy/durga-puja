@@ -1,7 +1,7 @@
 import { LoginForm } from "@/components/admin/login-form";
 import { Alpana } from "@/components/decor/alpana";
 
-export const metadata = { title: "Organiser login" };
+export const metadata = { title: "Organiser login", robots: { index: false, follow: false } };
 
 export default async function AdminLoginPage(props: PageProps<"/admin/login">) {
     const { next } = await props.searchParams;

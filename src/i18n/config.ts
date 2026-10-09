@@ -1,6 +1,6 @@
 export const locales = ["en", "bn"] as const;
 export type Locale = (typeof locales)[number];
-export const defaultLocale: Locale = "en";
+export const defaultLocale: Locale = "bn";
 export const LOCALE_COOKIE = "NEXT_LOCALE";
 
 export function isLocale(value: unknown): value is Locale {

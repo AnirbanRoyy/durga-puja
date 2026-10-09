@@ -18,6 +18,7 @@ import { Countdown } from "@/components/home/countdown";
 import { ProgrammeCard } from "@/components/programmes/programme-card";
 import { Timeline } from "@/components/programmes/timeline";
 import { pick } from "@/lib/localize";
+import { SITE_URL } from "@/lib/site";
 import { countRegistrationsByProgramme, getEventSettings, listProgrammes } from "@/lib/queries";
 
 export default async function HomePage() {
@@ -34,8 +35,51 @@ export default async function HomePage() {
     const upNext = active.find((p) => p.status === "upcoming");
     const featured = active.filter((p) => p.type !== "other").slice(0, 4);
 
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebSite",
+                "@id": `${SITE_URL}/#website`,
+                url: SITE_URL,
+                name: event.name_en,
+                alternateName: event.name_bn,
+                inLanguage: ["bn", "en"],
+            },
+            {
+                "@type": "Event",
+                name: `${event.name_en} · Sodepur Durga Puja 2026, Asansol`,
+                alternateName: event.name_bn,
+                description: t("subtitle"),
+                startDate: event.shashthi,
+                endDate: event.dashami,
+                eventStatus: "https://schema.org/EventScheduled",
+                eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+                location: {
+                    "@type": "Place",
+                    name: event.venue,
+                    address: {
+                        "@type": "PostalAddress",
+                        addressLocality: "Sodepur, Asansol",
+                        addressRegion: "West Bengal",
+                        addressCountry: "IN",
+                    },
+                },
+                image: `${SITE_URL}/opengraph-image`,
+                url: SITE_URL,
+                isAccessibleForFree: true,
+            },
+        ],
+    };
+
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+                }}
+            />
             {/* Hero */}
             <section className="bg-puja-radial relative overflow-hidden">
                 <KashFlowers />

@@ -2,7 +2,10 @@ import { redirect } from "next/navigation";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { isAdmin } from "@/lib/auth";
 
-export const metadata = { title: { default: "Admin", template: "%s · Admin" } };
+export const metadata = {
+    title: { default: "Admin", template: "%s · Admin" },
+    robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
     if (!(await isAdmin())) redirect("/admin/login");
