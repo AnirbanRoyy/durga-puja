@@ -347,6 +347,14 @@ export type Database = {
             approve_stream_request: { Args: { p_request_id: string }; Returns: undefined };
             reject_stream_request: { Args: { p_request_id: string }; Returns: undefined };
             advance_stream: { Args: { p_year: number }; Returns: undefined };
+            add_stream_songs: {
+                Args: {
+                    p_year: number;
+                    p_songs: { youtube_id: string; title: string; channel: string | null }[];
+                };
+                Returns: number;
+            };
+            remove_stream_song: { Args: { p_request_id: string }; Returns: string };
             start_stream: { Args: { p_year: number }; Returns: undefined };
             stop_stream: { Args: { p_year: number }; Returns: undefined };
             set_stream_up_next: {

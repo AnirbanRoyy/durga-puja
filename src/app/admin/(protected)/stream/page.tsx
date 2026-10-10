@@ -1,14 +1,20 @@
 import { AdminTitle } from "@/components/admin/admin-bits";
 import { StreamConsole } from "@/components/admin/stream-console";
-import { getStreamBoard, listPendingQuotaRequests } from "@/lib/queries";
+import { getStreamBoard, listPendingQuotaRequests, listSongs } from "@/lib/queries";
 
 export const metadata = { title: "Pandal stream" };
 
 export default async function StreamAdminPage() {
-    const [board, quotaRequests] = await Promise.all([
+    const [board, quotaRequests, songs] = await Promise.all([
         getStreamBoard(),
         listPendingQuotaRequests(),
+        listSongs("music_page"),
     ]);
+    const library = songs.flatMap((s) =>
+        s.source === "youtube" && s.youtube_id
+            ? [{ id: s.id, title: s.title, artist: s.artist, youtubeId: s.youtube_id }]
+            : [],
+    );
     return (
         <>
             <AdminTitle
@@ -22,6 +28,7 @@ export default async function StreamAdminPage() {
                 queue={board.queue}
                 pending={board.pending}
                 quotaRequests={quotaRequests}
+                library={library}
             />
         </>
     );
