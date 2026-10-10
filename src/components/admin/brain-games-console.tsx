@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
     askQuestion,
+    askRandomTeamQuestion,
     deleteQuestion,
     deleteRound,
+    hideQuestion,
     markQuestion,
     saveLeaderboardToResults,
     saveQuestion,
@@ -104,10 +106,16 @@ function LivePanel({
     const [roundId, setRoundId] = useState(
         live?.round_id ?? rounds.find((r) => r.status !== "done")?.id ?? rounds[0]?.id ?? "",
     );
-    const [teamFor, setTeamFor] = useState<Record<string, string>>({});
     const [manualPoints, setManualPoints] = useState("");
     const round = rounds.find((r) => r.id === roundId);
     const inRound = questions.filter((q) => q.round_id === roundId);
+    const teamQuestions = inRound.filter((q) => q.kind === "team");
+    const playedTeamIds = new Set(
+        teamQuestions.filter((q) => q.state !== "hidden" && q.team_id).map((q) => q.team_id),
+    );
+    const teamsLeft = teams.filter((team) => !playedTeamIds.has(team.id));
+    const unaskedTeamQuestions = teamQuestions.filter((q) => q.state === "hidden").length;
+    const shortBy = Math.max(0, teamsLeft.length - unaskedTeamQuestions);
     const teamName = (id: string | null) => teams.find((t) => t.id === id)?.name ?? "—";
     const liveRound = live ? rounds.find((r) => r.id === live.round_id) : null;
     const needsPoints = (outcome: "correct" | "wrong") =>
@@ -145,6 +153,18 @@ function LivePanel({
                                     Answer (only you can see this)
                                 </p>
                                 <p className="text-lg font-semibold">{live.answer_en}</p>
+                            </div>
+                            <div>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    disabled={pending}
+                                    onClick={() =>
+                                        run(() => hideQuestion(live.id), "Taken off screen")
+                                    }
+                                >
+                                    Take off screen (not scored)
+                                </Button>
                             </div>
                             {live.kind === "team" ? (
                                 <div className="grid gap-3">
@@ -282,6 +302,51 @@ function LivePanel({
                             </Button>
                         )}
                     </div>
+                    {round && (
+                        <div className="mb-4 grid gap-2 rounded-xl border bg-secondary/40 p-3">
+                            <p className="text-sm font-medium">Team questions</p>
+                            <p className="text-xs text-muted-foreground">
+                                Every team gets one question per round, in random order. Teams that
+                                have played: {teams.length - teamsLeft.length} of {teams.length}
+                                {teamsLeft.length > 0 && teamsLeft.length < teams.length
+                                    ? ` · still to play: ${teamsLeft.map((x) => x.name).join(", ")}`
+                                    : ""}
+                            </p>
+                            {shortBy > 0 && (
+                                <p className="text-xs text-destructive">
+                                    Not enough team questions left in this round: add {shortBy} more
+                                    in the Setup tab so every team gets a turn.
+                                </p>
+                            )}
+                            <div>
+                                <Button
+                                    disabled={
+                                        pending ||
+                                        Boolean(live) ||
+                                        teamsLeft.length === 0 ||
+                                        unaskedTeamQuestions === 0
+                                    }
+                                    onClick={() => {
+                                        setManualPoints("");
+                                        run(() => askRandomTeamQuestion(round.id));
+                                    }}
+                                >
+                                    Pick team &amp; ask
+                                </Button>
+                            </div>
+                            {teams.length > 0 && teamsLeft.length === 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                    Every team has had its turn. Finish this round and start the
+                                    next.
+                                </p>
+                            )}
+                            {live && (
+                                <p className="text-xs text-muted-foreground">
+                                    A question is on screen: mark it first.
+                                </p>
+                            )}
+                        </div>
+                    )}
                     <ul className="divide-y">
                         {inRound.map((q) => (
                             <li key={q.id} className="grid gap-2 py-3">
@@ -314,42 +379,24 @@ function LivePanel({
                                 </div>
                                 {q.state !== "revealed" && (
                                     <div className="flex flex-wrap items-center gap-2">
-                                        {q.kind === "team" && (
-                                            <select
-                                                className={cn(selectClass, "w-48")}
-                                                value={teamFor[q.id] ?? ""}
-                                                onChange={(e) =>
-                                                    setTeamFor((prev) => ({
-                                                        ...prev,
-                                                        [q.id]: e.target.value,
-                                                    }))
-                                                }
+                                        {q.kind === "audience" ? (
+                                            <Button
+                                                size="sm"
+                                                disabled={pending || q.state === "asked"}
+                                                onClick={() => {
+                                                    setManualPoints("");
+                                                    run(() => askQuestion(q.id, null));
+                                                }}
                                             >
-                                                <option value="">Which team?</option>
-                                                {teams.map((t) => (
-                                                    <option key={t.id} value={t.id}>
-                                                        {t.name}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                                {q.state === "asked" ? "On screen" : "Ask"}
+                                            </Button>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground">
+                                                {q.state === "asked"
+                                                    ? `On screen for ${teamName(q.team_id)}`
+                                                    : "Asked by “Pick team & ask”"}
+                                            </span>
                                         )}
-                                        <Button
-                                            size="sm"
-                                            disabled={pending || q.state === "asked"}
-                                            onClick={() => {
-                                                setManualPoints("");
-                                                run(() =>
-                                                    askQuestion(
-                                                        q.id,
-                                                        q.kind === "team"
-                                                            ? (teamFor[q.id] ?? null)
-                                                            : null,
-                                                    ),
-                                                );
-                                            }}
-                                        >
-                                            {q.state === "asked" ? "On screen" : "Ask"}
-                                        </Button>
                                     </div>
                                 )}
                             </li>
@@ -376,7 +423,7 @@ function LivePanel({
                     ))}
                     {!leaderboard.length && (
                         <li className="text-sm text-muted-foreground">
-                            No teams yet. Add teams in the programme’s Registrations page.
+                            No teams yet. Teams appear here once they register.
                         </li>
                     )}
                 </ol>

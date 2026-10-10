@@ -23,42 +23,63 @@ const text = (max: number) =>
         .optional()
         .transform((v) => v || null);
 
-const programmeSchema = z.object({
-    id: z
-        .uuid()
-        .optional()
-        .or(z.literal("").transform(() => undefined)),
-    title_en: z.string().trim().min(2, "Title is required").max(120),
-    title_bn: text(120),
-    slug: z
-        .string()
-        .trim()
-        .toLowerCase()
-        .max(80)
-        .regex(/^[a-z0-9-]*$/, "Use lowercase letters, numbers and dashes")
-        .optional(),
-    type: z.enum(PROGRAMME_TYPES as [string, ...string[]]),
-    status: z.enum(PROGRAMME_STATUSES as [string, ...string[]]),
-    description_en: text(2000),
-    description_bn: text(2000),
-    rules_en: text(4000),
-    rules_bn: text(4000),
-    venue: text(120),
-    cover_image_url: text(500),
-    starts_at: z.string().optional(),
-    ends_at: z.string().optional(),
-    max_participants: z
-        .string()
-        .optional()
-        .transform((v) => (v ? Number(v) : null))
-        .pipe(z.number().int().positive().nullable()),
-    sort_order: z
-        .string()
-        .optional()
-        .transform((v) => (v ? Number(v) : 0))
-        .pipe(z.number().int()),
-    admin_notes: text(2000),
-});
+/** Members per team: blank means the default (2 to 4). */
+const teamSize = z
+    .string()
+    .optional()
+    .transform((v) => (v ? Number(v) : null))
+    .pipe(z.number().int().min(1).max(20).nullable());
+
+const programmeSchema = z
+    .object({
+        id: z
+            .uuid()
+            .optional()
+            .or(z.literal("").transform(() => undefined)),
+        title_en: z.string().trim().min(2, "Title is required").max(120),
+        title_bn: text(120),
+        slug: z
+            .string()
+            .trim()
+            .toLowerCase()
+            .max(80)
+            .regex(/^[a-z0-9-]*$/, "Use lowercase letters, numbers and dashes")
+            .optional(),
+        type: z.enum(PROGRAMME_TYPES as [string, ...string[]]),
+        status: z.enum(PROGRAMME_STATUSES as [string, ...string[]]),
+        description_en: text(2000),
+        description_bn: text(2000),
+        rules_en: text(4000),
+        rules_bn: text(4000),
+        venue: text(120),
+        cover_image_url: text(500),
+        starts_at: z.string().optional(),
+        ends_at: z.string().optional(),
+        max_participants: z
+            .string()
+            .optional()
+            .transform((v) => (v ? Number(v) : null))
+            .pipe(z.number().int().positive().nullable()),
+        team_format: z.enum(["individual", "team", "pair"]),
+        team_min_size: teamSize,
+        team_max_size: teamSize,
+        sort_order: z
+            .string()
+            .optional()
+            .transform((v) => (v ? Number(v) : 0))
+            .pipe(z.number().int()),
+        admin_notes: text(2000),
+    })
+    .refine(
+        (p) =>
+            p.team_min_size == null ||
+            p.team_max_size == null ||
+            p.team_min_size <= p.team_max_size,
+        {
+            path: ["team_max_size"],
+            message: "Must be at least the minimum",
+        },
+    );
 
 function slugify(value: string): string {
     return value
@@ -97,6 +118,9 @@ export async function saveProgramme(_prev: ActionState, formData: FormData): Pro
         rules_bn,
         type: rest.type as Programme["type"],
         status: rest.status as Programme["status"],
+        // Only team programmes use the size limits; pairs are always exactly two.
+        team_min_size: rest.team_format === "team" ? rest.team_min_size : null,
+        team_max_size: rest.team_format === "team" ? rest.team_max_size : null,
         slug: slug || slugify(rest.title_en),
         starts_at: istLocalToIso(starts_at),
         ends_at: istLocalToIso(ends_at),

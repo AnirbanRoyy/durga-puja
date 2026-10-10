@@ -61,6 +61,8 @@ export function RegistrationsManager({
         const header = [
             "#",
             "Name",
+            "Members",
+            "Leader",
             "Phone",
             "Age",
             "Guardian",
@@ -71,6 +73,8 @@ export function RegistrationsManager({
         const rows = registrations.map((r) => [
             r.sequence_no,
             r.name,
+            r.members.map((m) => m.name).join("; "),
+            r.members.find((m) => m.role === "leader")?.name ?? "",
             r.phone,
             r.age,
             r.guardian_name,
@@ -199,7 +203,27 @@ export function RegistrationsManager({
                                         {r.sequence_no ?? "—"}
                                     </td>
                                 )}
-                                <td className="px-4 py-3 font-medium">{r.name}</td>
+                                <td className="px-4 py-3 font-medium">
+                                    {r.name}
+                                    {r.members.length > 0 && (
+                                        <p className="mt-0.5 text-xs font-normal text-muted-foreground">
+                                            {r.members.map((m, i) => (
+                                                <span key={`${m.role}-${m.name}`}>
+                                                    {i > 0 && ", "}
+                                                    <span
+                                                        className={cn(
+                                                            m.role === "leader" &&
+                                                                "font-semibold text-foreground",
+                                                        )}
+                                                    >
+                                                        {m.name}
+                                                        {m.role === "leader" && " (leader)"}
+                                                    </span>
+                                                </span>
+                                            ))}
+                                        </p>
+                                    )}
+                                </td>
                                 <td className="px-4 py-3 tabular-nums">{r.phone}</td>
                                 <td className="px-4 py-3">{r.age ?? "—"}</td>
                                 <td className="hidden max-w-60 truncate px-4 py-3 text-muted-foreground md:table-cell">

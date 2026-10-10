@@ -28,6 +28,47 @@ export const registrationSchema = z.object({
     notes: optionalText(300),
 });
 
+const personName = z.string().trim().min(2, "name").max(60, "name");
+
+/** A team: a name, 2–4 (configurable) member names, one of them the leader, and the leader's phone. */
+export function teamRegistrationSchema(min: number, max: number) {
+    return z
+        .object({
+            programmeId: z.uuid(),
+            teamName: z.string().trim().min(2, "name").max(60, "name"),
+            phone: phoneSchema,
+            notes: optionalText(300),
+            members: z.array(personName).min(min, "teamSize").max(max, "teamSize"),
+            /** Position of the leader among `members`; -1 when the chosen row was left blank. */
+            leader: z.number().int(),
+        })
+        .superRefine((team, ctx) => {
+            if (team.leader < 0 || team.leader >= team.members.length) {
+                ctx.addIssue({ code: "custom", path: ["leader"], message: "leaderRequired" });
+            }
+            const seen = new Set<string>();
+            team.members.forEach((name, i) => {
+                const key = name.toLowerCase().replace(/\s+/g, " ");
+                if (seen.has(key)) {
+                    ctx.addIssue({
+                        code: "custom",
+                        path: ["members", i],
+                        message: "duplicateMember",
+                    });
+                }
+                seen.add(key);
+            });
+        });
+}
+
+export const pairRegistrationSchema = z.object({
+    programmeId: z.uuid(),
+    brotherName: personName,
+    sisterName: personName,
+    phone: phoneSchema,
+    notes: optionalText(300),
+});
+
 export const songRequestSchema = z.object({
     title: z.string().trim().min(2, "title").max(120, "title"),
     artist: optionalText(80),
@@ -101,7 +142,11 @@ export type FieldErrors = Record<string, string>;
 export function fieldErrors(error: z.ZodError): FieldErrors {
     const out: FieldErrors = {};
     for (const issue of error.issues) {
-        const key = String(issue.path[0] ?? "form");
+        // Errors on one team-member row are keyed by the row's field name.
+        const key =
+            issue.path[0] === "members" && typeof issue.path[1] === "number"
+                ? `member_${issue.path[1]}`
+                : String(issue.path[0] ?? "form");
         out[key] ??= issue.message;
     }
     return out;

@@ -165,6 +165,36 @@ export async function askQuestion(
     return ok;
 }
 
+const PICK_MESSAGES = {
+    question_live: "A question is already on screen. Mark it, or take it off screen, first.",
+    all_teams_done:
+        "Every team has had its turn in this round. Finish the round and start the next one.",
+    no_questions: "No unasked team questions are left in this round. Add more in the Setup tab.",
+    no_teams: "No teams have registered yet.",
+} as const;
+
+/**
+ * Picks a random team that hasn't had its turn this round, and a random unasked team question,
+ * and puts it on everyone's screen.
+ */
+export async function askRandomTeamQuestion(roundId: string): Promise<QuizActionResult> {
+    await requireAdmin();
+    const { data, error } = await db().rpc("ask_random_team_question", { p_round_id: roundId });
+    if (error) return fail(describe(error));
+    if (data !== "asked") return fail(PICK_MESSAGES[data]);
+    refresh();
+    return ok;
+}
+
+/** Takes the question off screen without scoring it; its team can be picked again. */
+export async function hideQuestion(questionId: string): Promise<QuizActionResult> {
+    await requireAdmin();
+    const { error } = await db().rpc("hide_quiz_question", { p_question_id: questionId });
+    if (error) return fail(describe(error));
+    refresh();
+    return ok;
+}
+
 /**
  * Reveals the answer to everyone and scores it in the same step.
  * `pointsOverride` replaces the round's points (needed when the round left them blank).

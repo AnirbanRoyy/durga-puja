@@ -44,10 +44,20 @@ export type Programme = {
     hide_vote_counts: boolean;
     order_locked: boolean;
     max_participants: number | null;
+    team_format: TeamFormat;
+    team_min_size: number | null;
+    team_max_size: number | null;
     admin_notes: string | null;
     sort_order: number;
     created_at: string;
     updated_at: string;
+};
+
+export type TeamFormat = "individual" | "team" | "pair";
+
+export type TeamMember = {
+    name: string;
+    role: "leader" | "member" | "brother" | "sister";
 };
 
 export type Registration = {
@@ -55,6 +65,7 @@ export type Registration = {
     programme_id: string;
     name: string;
     sequence_no: number | null;
+    members: TeamMember[];
     performance_status: PerformanceStatus;
     created_at: string;
 };
@@ -321,6 +332,11 @@ export type Database = {
                 Args: { p_year: number; p_ip_hash: string; p_name: string; p_limit: number };
                 Returns: "created" | "pending" | "declined" | "not_needed";
             };
+            ask_random_team_question: {
+                Args: { p_round_id: string };
+                Returns: "asked" | "question_live" | "all_teams_done" | "no_questions" | "no_teams";
+            };
+            hide_quiz_question: { Args: { p_question_id: string }; Returns: undefined };
             approve_stream_quota_reset: { Args: { p_request_id: string }; Returns: undefined };
             reject_stream_quota_reset: { Args: { p_request_id: string }; Returns: undefined };
             stream_requests_used: { Args: { p_year: number; p_ip_hash: string }; Returns: number };

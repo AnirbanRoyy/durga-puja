@@ -19,6 +19,7 @@ import {
 import { rateLimit } from "@/lib/rate-limit";
 import { getCurrentYear, STREAM_REQUEST_LIMIT } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
+import { parseRegistration } from "@/lib/registration-input";
 import { fetchYouTubeInfo } from "@/lib/youtube-oembed";
 import {
     feedbackSchema,
@@ -26,7 +27,6 @@ import {
     normalizeSongKey,
     parseYouTubeId,
     phoneSchema,
-    registrationSchema,
     songRequestSchema,
     type ActionState,
 } from "@/lib/validators";
@@ -55,24 +55,21 @@ export async function registerForProgramme(
 ): Promise<ActionState> {
     if (isBot(formData)) return { ok: true, code: "registered" };
 
-    const parsed = registrationSchema.safeParse(formObject(formData));
-    if (!parsed.success) return fail(formData, "invalid", fieldErrors(parsed.error));
-    const input = parsed.data;
-
     const ip = await getClientIp();
     if (!(await rateLimit(`register:${ip}`, 15, 600))) {
         return fail(formData, "rateLimited");
     }
 
+    const parsed = await parseRegistration(formObject(formData));
+    if (!parsed.ok) {
+        return parsed.programme
+            ? fail(formData, "invalid", parsed.errors)
+            : fail(formData, "registrationClosed");
+    }
+    const { programme, input } = parsed;
+
     const supabase = db();
-    const { data: programme, error: programmeError } = await supabase
-        .from("programmes")
-        .select("id, slug, registration_open, status, max_participants, order_locked")
-        .eq("id", input.programmeId)
-        .maybeSingle();
-    if (programmeError) throw programmeError;
     if (
-        !programme ||
         !programme.registration_open ||
         programme.status === "completed" ||
         programme.status === "cancelled"
@@ -102,6 +99,7 @@ export async function registerForProgramme(
         .insert({
             programme_id: programme.id,
             name: input.name,
+            members: input.members,
             sequence_no: sequenceNo,
         })
         .select("id")
@@ -140,11 +138,11 @@ export async function updateMyRegistration(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    const parsed = registrationSchema.safeParse(formObject(formData));
-    if (!parsed.success) return fail(formData, "invalid", fieldErrors(parsed.error));
-    const input = parsed.data;
+    const parsed = await parseRegistration(formObject(formData));
+    if (!parsed.ok) return fail(formData, "invalid", parsed.errors);
+    const { programme, input } = parsed;
 
-    const mine = await getMyRegistration(input.programmeId);
+    const mine = await getMyRegistration(programme.id);
     if (!mine) return fail(formData, "notYours");
 
     const supabase = db();
@@ -164,7 +162,7 @@ export async function updateMyRegistration(
     }
     const { error } = await supabase
         .from("registrations")
-        .update({ name: input.name })
+        .update({ name: input.name, members: input.members })
         .eq("id", mine.registrationId);
     if (error) throw error;
 

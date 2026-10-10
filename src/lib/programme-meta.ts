@@ -45,6 +45,20 @@ export function isLineupType(type: ProgrammeType): boolean {
     return type === "singing" || type === "dance";
 }
 
+/** Sign-up size limits for team programmes (pairs are always exactly two). */
+export const DEFAULT_TEAM_MIN = 2;
+export const DEFAULT_TEAM_MAX = 4;
+
+export function teamLimits(p: Pick<Programme, "team_format" | "team_min_size" | "team_max_size">): {
+    min: number;
+    max: number;
+} {
+    if (p.team_format === "pair") return { min: 2, max: 2 };
+    const min = p.team_min_size ?? DEFAULT_TEAM_MIN;
+    const max = Math.max(min, p.team_max_size ?? DEFAULT_TEAM_MAX);
+    return { min, max };
+}
+
 export function acceptsRegistrations(p: Programme): boolean {
     return p.registration_open && p.status !== "completed" && p.status !== "cancelled";
 }

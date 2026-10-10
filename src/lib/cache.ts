@@ -9,7 +9,7 @@ import { updateTag } from "next/cache";
  * it calls one of the invalidate functions below (the long expiry in queries.ts is only a safety
  * net for edits made outside the app). Keep CACHE_VERSION in sync when a cached shape changes.
  */
-export const CACHE_VERSION = "v1";
+export const CACHE_VERSION = "v2";
 
 export const PROGRAMMES_TAG = "programmes";
 export const EDITIONS_TAG = "editions";

@@ -15,11 +15,12 @@ import { DrawingGallery } from "@/components/programmes/drawing-gallery";
 import { Lineup } from "@/components/programmes/lineup";
 import { MusicalChairPublic } from "@/components/programmes/musical-chair-public";
 import { MyRegistration } from "@/components/programmes/my-registration";
-import { RegistrationForm } from "@/components/programmes/registration-form";
+import { TeamList } from "@/components/programmes/team-list";
+import { RegistrationForm, type TeamSetup } from "@/components/programmes/registration-form";
 import { StatusBadge } from "@/components/programmes/status-badge";
 import { LiveRefresh } from "@/components/realtime/live-refresh";
 import { pick } from "@/lib/localize";
-import { acceptsRegistrations, isLineupType, TYPE_ICON } from "@/lib/programme-meta";
+import { acceptsRegistrations, isLineupType, teamLimits, TYPE_ICON } from "@/lib/programme-meta";
 import { getProgrammeBySlug, hasVoted, listDrawings, listRegistrations } from "@/lib/queries";
 import { getMyRegistration } from "@/lib/my-registration";
 import { peekVoterHash } from "@/lib/visitor";
@@ -46,6 +47,10 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
     const description = pick(locale, programme.description_en, programme.description_bn);
     const rules = pick(locale, programme.rules_en, programme.rules_bn);
     const open = acceptsRegistrations(programme);
+    const team: TeamSetup | undefined =
+        programme.team_format === "individual"
+            ? undefined
+            : { format: programme.team_format, ...teamLimits(programme) };
     const mine = programme.status === "completed" ? null : await getMyRegistration(programme.id);
 
     return (
@@ -82,7 +87,14 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
                     )}
                     <span className="inline-flex items-center gap-1.5">
                         <HugeiconsIcon icon={UserGroupIcon} className="size-4" />
-                        {t("registeredCount", { count: registrations.length })}
+                        {team
+                            ? programme.max_participants
+                                ? t("registeredTeamsOf", {
+                                      count: registrations.length,
+                                      max: programme.max_participants,
+                                  })
+                                : t("registeredTeams", { count: registrations.length })
+                            : t("registeredCount", { count: registrations.length })}
                     </span>
                 </div>
             </PageHeader>
@@ -123,6 +135,7 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
                         {programme.type === "musical_chair" && (
                             <MusicalChairPublic programmeId={programme.id} />
                         )}
+                        {team && <TeamList registrations={registrations} />}
                         {isLineupType(programme.type) && (
                             <Lineup registrations={registrations} locked={programme.order_locked} />
                         )}
@@ -144,8 +157,10 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
                                     <MyRegistration
                                         programmeId={programme.id}
                                         programmeType={programme.type}
+                                        team={team}
                                         mine={{
                                             name: mine.name,
+                                            members: mine.members,
                                             phone: mine.phone,
                                             age: mine.age,
                                             guardianName: mine.guardianName,
@@ -161,6 +176,7 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
                                     <RegistrationForm
                                         programmeId={programme.id}
                                         programmeType={programme.type}
+                                        team={team}
                                     />
                                 </>
                             ) : (

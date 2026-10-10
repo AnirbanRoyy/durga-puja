@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
     RegistrationForm,
     type ExistingRegistration,
+    type TeamSetup,
 } from "@/components/programmes/registration-form";
 import type { ProgrammeType } from "@/lib/database.types";
 
@@ -16,10 +17,12 @@ import type { ProgrammeType } from "@/lib/database.types";
 export function MyRegistration({
     programmeId,
     programmeType,
+    team,
     mine,
 }: {
     programmeId: string;
     programmeType: ProgrammeType;
+    team?: TeamSetup;
     mine: ExistingRegistration;
 }) {
     const t = useTranslations("forms");
@@ -37,8 +40,14 @@ export function MyRegistration({
         });
     }
 
+    const memberList = mine.members?.length
+        ? mine.members
+              .map((m) => (m.role === "leader" ? `${m.name} (${t("leader")})` : m.name))
+              .join(", ")
+        : null;
     const rows: [string, string | number | null][] = [
-        [t("name"), mine.name],
+        [team?.format === "team" ? t("teamName") : t("name"), mine.name],
+        [team?.format === "team" ? t("members") : "", team?.format === "team" ? memberList : null],
         [t("phone"), mine.phone],
         [t("age"), mine.age],
         [t("guardianName"), mine.guardianName],
@@ -50,6 +59,7 @@ export function MyRegistration({
             <RegistrationForm
                 programmeId={programmeId}
                 programmeType={programmeType}
+                team={team}
                 existing={mine}
                 onDone={() => setEditing(false)}
             />

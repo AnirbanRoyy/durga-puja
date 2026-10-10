@@ -17,6 +17,8 @@ import { isoToIstLocal } from "@/lib/datetime";
 import { PROGRAMME_STATUSES, PROGRAMME_TYPES } from "@/lib/programme-meta";
 import { initialActionState } from "@/lib/validators";
 
+const TEAM_FORMATS = ["individual", "team", "pair"] as const;
+
 function Row({
     name,
     label,
@@ -100,8 +102,50 @@ export function ProgrammeForm({ programme }: { programme?: Programme }) {
                     <Input id="venue" name="venue" defaultValue={v("venue")} />
                 </Row>
                 <Row
+                    name="team_format"
+                    label="Sign-up"
+                    hint="Individual: one person. Team: a team name, members and a leader. Pair: a brother and a sister."
+                >
+                    <NativeSelect
+                        id="team_format"
+                        name="team_format"
+                        defaultValue={v("team_format", "individual")}
+                        options={TEAM_FORMATS}
+                    />
+                </Row>
+                <Row
+                    name="team_min_size"
+                    label="Team size: fewest members"
+                    hint="Only for Team sign-up. Leave empty for 2."
+                    error={e.team_min_size}
+                >
+                    <Input
+                        id="team_min_size"
+                        name="team_min_size"
+                        type="number"
+                        min={1}
+                        max={20}
+                        defaultValue={v("team_min_size")}
+                    />
+                </Row>
+                <Row
+                    name="team_max_size"
+                    label="Team size: most members"
+                    hint="Only for Team sign-up. Leave empty for 4."
+                    error={e.team_max_size}
+                >
+                    <Input
+                        id="team_max_size"
+                        name="team_max_size"
+                        type="number"
+                        min={1}
+                        max={20}
+                        defaultValue={v("team_max_size")}
+                    />
+                </Row>
+                <Row
                     name="max_participants"
-                    label="Max participants"
+                    label="Max participants (teams, for team and pair sign-up)"
                     hint="Leave empty for no limit."
                 >
                     <Input
