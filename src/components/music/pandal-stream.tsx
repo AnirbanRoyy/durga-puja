@@ -87,7 +87,8 @@ export async function PandalStream() {
                 <p className="mt-4 rounded-xl bg-secondary/60 p-3 text-sm">{t("notStreaming")}</p>
             )}
 
-            <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1fr]">
+            {/* minmax(0, …) lets the columns shrink to the card on small phones instead of overflowing it. */}
+            <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <div>
                     <h3 className="text-lg font-semibold">{t("requestTitle")}</h3>
                     <p className="mt-1 mb-4 text-sm text-muted-foreground">{t("requestHint")}</p>
