@@ -9,6 +9,7 @@ import { istLocalToIso } from "@/lib/datetime";
 import type { FeedbackStatus, SongCategory, SongRequestStatus } from "@/lib/database.types";
 import { getCurrentYear } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
+import { bengaliOrTranslated } from "@/lib/translate";
 import { parseWhatsappInvite, parseYouTubeId, type ActionState } from "@/lib/validators";
 
 const CATEGORIES = [
@@ -383,7 +384,8 @@ export async function saveEventSettings(
         .from("editions")
         .update({
             name_en: get("name_en").slice(0, 120),
-            name_bn: get("name_bn").slice(0, 120) || null,
+            name_bn:
+                (await bengaliOrTranslated(get("name_en"), get("name_bn")))?.slice(0, 120) || null,
             venue: get("venue").slice(0, 120) || null,
             mahalaya,
             shashthi,
@@ -420,7 +422,8 @@ export async function startEdition(_prev: ActionState, formData: FormData): Prom
     const { error } = await db().rpc("start_edition", {
         p_year: year,
         p_name_en: get("name_en").slice(0, 120),
-        p_name_bn: get("name_bn").slice(0, 120) || null,
+        p_name_bn:
+            (await bengaliOrTranslated(get("name_en"), get("name_bn")))?.slice(0, 120) || null,
         p_venue: get("venue").slice(0, 120) || null,
         p_mahalaya: mahalaya,
         p_shashthi: shashthi,
@@ -466,7 +469,7 @@ export async function saveDonationSettings(
         upi_id: upi,
         payee_name: get("payee_name"),
         note_en: get("note_en"),
-        note_bn: get("note_bn"),
+        note_bn: await bengaliOrTranslated(get("note_en"), get("note_bn")),
     });
     refresh();
     return { ok: true, code: "Donation settings saved." };

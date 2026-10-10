@@ -6,12 +6,17 @@ import type {
     Edition,
     Feedback,
     MusicalChairRound,
+    QuizAnswer,
+    QuizQuestion,
+    QuizRound,
     Programme,
     Registration,
     Result,
     Song,
     SongPool,
     SongRequest,
+    StreamRequest,
+    StreamState,
 } from "@/lib/database.types";
 import { CACHE_VERSION, EDITIONS_TAG, PROGRAMMES_TAG, SETTINGS_TAG } from "@/lib/cache";
 import { db } from "@/lib/supabase/server";
@@ -406,3 +411,149 @@ export const getYearSnapshot = cache(async (year: number): Promise<YearSnapshot 
     ]);
     return { edition, programmes, registrations, results, drawings };
 });
+
+// ---------------------------------------------------------------------------
+// Brain games (live quiz). Always read live: scores and reveals must never be stale.
+// ---------------------------------------------------------------------------
+
+export type QuizTeamScore = { id: string; name: string; points: number; answered: number };
+
+export type QuizBoard = {
+    rounds: QuizRound[];
+    /** Only questions that have been asked or revealed; hidden ones never leave the server. */
+    questions: QuizQuestion[];
+    live: QuizQuestion | null;
+    leaderboard: QuizTeamScore[];
+};
+
+export async function getQuizBoard(programmeId: string): Promise<QuizBoard> {
+    const [rounds, questions, teams] = await Promise.all([
+        db()
+            .from("quiz_rounds")
+            .select("*")
+            .eq("programme_id", programmeId)
+            .order("round_no", { ascending: true })
+            .then((r) => unwrap(r, "quiz rounds")),
+        db()
+            .from("quiz_questions")
+            .select("*")
+            .eq("programme_id", programmeId)
+            .neq("state", "hidden")
+            .order("asked_at", { ascending: true })
+            .then((r) => unwrap(r, "quiz questions")),
+        listRegistrations(programmeId),
+    ]);
+    return {
+        rounds,
+        questions,
+        live: questions.find((q) => q.state === "asked") ?? null,
+        leaderboard: quizLeaderboard(teams, questions),
+    };
+}
+
+/** Team totals from revealed team questions, best first (ties share an order by name). */
+export function quizLeaderboard(
+    teams: { id: string; name: string }[],
+    questions: QuizQuestion[],
+): QuizTeamScore[] {
+    const scores = new Map(teams.map((t) => [t.id, { ...t, points: 0, answered: 0 }]));
+    for (const q of questions) {
+        if (q.state !== "revealed" || q.kind !== "team" || !q.team_id) continue;
+        const entry = scores.get(q.team_id);
+        if (!entry) continue;
+        entry.points += q.points_awarded ?? 0;
+        entry.answered += 1;
+    }
+    return [...scores.values()].sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+}
+
+export type QuizAdminQuestion = QuizQuestion & { answer_en: string; answer_bn: string | null };
+
+/** Admin only: every question, including hidden ones and their answers. */
+export async function getQuizAdmin(programmeId: string): Promise<{
+    rounds: QuizRound[];
+    questions: QuizAdminQuestion[];
+    teams: { id: string; name: string }[];
+}> {
+    const [rounds, questions, teams] = await Promise.all([
+        db()
+            .from("quiz_rounds")
+            .select("*")
+            .eq("programme_id", programmeId)
+            .order("round_no", { ascending: true })
+            .then((r) => unwrap(r, "quiz rounds")),
+        db()
+            .from("quiz_questions")
+            .select("*")
+            .eq("programme_id", programmeId)
+            .order("sort_no", { ascending: true })
+            .order("created_at", { ascending: true })
+            .then((r) => unwrap(r, "quiz questions")),
+        listRegistrations(programmeId),
+    ]);
+    const ids = questions.map((q) => q.id);
+    const answers: QuizAnswer[] = ids.length
+        ? unwrap(await db().from("quiz_answers").select("*").in("question_id", ids), "quiz answers")
+        : [];
+    const byQuestion = new Map(answers.map((a) => [a.question_id, a]));
+    return {
+        rounds,
+        teams: teams.map((t) => ({ id: t.id, name: t.name })),
+        questions: questions.map((q) => ({
+            ...q,
+            answer_en: byQuestion.get(q.id)?.answer_en ?? "",
+            answer_bn: byQuestion.get(q.id)?.answer_bn ?? null,
+        })),
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Pandal stream. Live reads: requests, votes and "up next" change by the minute.
+// ---------------------------------------------------------------------------
+
+export type StreamBoard = {
+    state: StreamState;
+    nowPlaying: StreamRequest | null;
+    upNext: StreamRequest | null;
+    /** Approved songs waiting to be played, most upvoted first. */
+    queue: StreamRequest[];
+    /** Requests waiting for the admin, most upvoted first. */
+    pending: StreamRequest[];
+    played: StreamRequest[];
+};
+
+export async function getStreamBoard(year?: number): Promise<StreamBoard> {
+    const y = year ?? (await getCurrentYear());
+    const [requests, state] = await Promise.all([
+        db()
+            .from("stream_requests")
+            .select("*")
+            .eq("year", y)
+            .neq("status", "rejected")
+            .order("upvotes", { ascending: false })
+            .order("created_at", { ascending: true })
+            .then((r) => unwrap(r, "stream requests")),
+        db()
+            .from("stream_state")
+            .select("*")
+            .eq("year", y)
+            .maybeSingle()
+            .then((r) => unwrap(r, "stream state")),
+    ]);
+    const current: StreamState = state ?? {
+        year: y,
+        is_streaming: false,
+        now_playing_id: null,
+        up_next_id: null,
+        updated_at: new Date(0).toISOString(),
+    };
+    const byId = new Map(requests.map((r) => [r.id, r]));
+    return {
+        state: current,
+        nowPlaying: current.now_playing_id ? (byId.get(current.now_playing_id) ?? null) : null,
+        upNext: current.up_next_id ? (byId.get(current.up_next_id) ?? null) : null,
+        queue: requests.filter((r) => r.status === "approved" && r.id !== current.now_playing_id),
+        pending: requests.filter((r) => r.status === "pending"),
+        played: requests.filter((r) => r.status === "played").reverse(),
+    };
+}

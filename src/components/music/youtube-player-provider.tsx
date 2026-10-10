@@ -10,6 +10,7 @@ import {
     useState,
     type ReactNode,
 } from "react";
+import { loadYouTubeApi, type YTPlayer } from "@/lib/youtube-api";
 
 export type PlayableTrack = {
     id: string;
@@ -33,58 +34,6 @@ type PlayerContextValue = {
 };
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
-
-// Minimal slice of the YouTube IFrame API we rely on.
-type YTPlayer = {
-    loadVideoById: (id: string) => void;
-    playVideo: () => void;
-    pauseVideo: () => void;
-    stopVideo: () => void;
-    destroy: () => void;
-};
-type YTNamespace = {
-    Player: new (
-        el: HTMLElement,
-        opts: {
-            videoId: string;
-            width?: string | number;
-            height?: string | number;
-            playerVars?: Record<string, number | string>;
-            events?: {
-                onReady?: (e: { target: YTPlayer }) => void;
-                onStateChange?: (e: { data: number; target: YTPlayer }) => void;
-            };
-        },
-    ) => YTPlayer;
-    PlayerState: { ENDED: number; PLAYING: number; PAUSED: number };
-};
-
-declare global {
-    interface Window {
-        YT?: YTNamespace;
-        onYouTubeIframeAPIReady?: () => void;
-    }
-}
-
-let apiPromise: Promise<YTNamespace> | null = null;
-
-function loadYouTubeApi(): Promise<YTNamespace> {
-    if (window.YT?.Player) return Promise.resolve(window.YT);
-    if (!apiPromise) {
-        apiPromise = new Promise((resolve) => {
-            const previous = window.onYouTubeIframeAPIReady;
-            window.onYouTubeIframeAPIReady = () => {
-                previous?.();
-                resolve(window.YT!);
-            };
-            const script = document.createElement("script");
-            script.src = "https://www.youtube.com/iframe_api";
-            script.async = true;
-            document.head.appendChild(script);
-        });
-    }
-    return apiPromise;
-}
 
 export function YouTubePlayerProvider({ children }: { children: ReactNode }) {
     const [queue, setQueue] = useState<PlayableTrack[]>([]);

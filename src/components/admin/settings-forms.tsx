@@ -8,6 +8,7 @@ import {
     saveEventSettings,
     saveWhatsappSettings,
 } from "@/actions/admin/content";
+import { FieldTranslateButton } from "@/components/admin/translate-button";
 import { UploadButton } from "@/components/admin/upload-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,10 +51,11 @@ export function EventForm({ event }: { event: EventSettings }) {
     return (
         <form action={action} className="grid gap-4 sm:grid-cols-2">
             <Labeled label="Festival name (English)">
-                <Input name="name_en" defaultValue={event.name_en} required />
+                <Input id="event_name_en" name="name_en" defaultValue={event.name_en} required />
             </Labeled>
             <Labeled label="Festival name (বাংলা)">
-                <Input name="name_bn" defaultValue={event.name_bn} />
+                <Input id="event_name_bn" name="name_bn" defaultValue={event.name_bn} />
+                <FieldTranslateButton from="event_name_en" to="event_name_bn" />
             </Labeled>
             <Labeled label="Mahalaya (IST)">
                 <Input
@@ -139,10 +141,21 @@ export function DonationForm({ donation }: { donation: DonationSettings }) {
                 <Input name="payee_name" defaultValue={donation.payee_name ?? ""} />
             </Labeled>
             <Labeled label="Message (English)">
-                <Textarea name="note_en" rows={2} defaultValue={donation.note_en ?? ""} />
+                <Textarea
+                    id="donation_note_en"
+                    name="note_en"
+                    rows={2}
+                    defaultValue={donation.note_en ?? ""}
+                />
             </Labeled>
             <Labeled label="Message (বাংলা)">
-                <Textarea name="note_bn" rows={2} defaultValue={donation.note_bn ?? ""} />
+                <Textarea
+                    id="donation_note_bn"
+                    name="note_bn"
+                    rows={2}
+                    defaultValue={donation.note_bn ?? ""}
+                />
+                <FieldTranslateButton from="donation_note_en" to="donation_note_bn" />
             </Labeled>
             <div className="flex items-center gap-4 sm:col-span-2">
                 <Button type="submit" disabled={pending}>

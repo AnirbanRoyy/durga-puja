@@ -10,6 +10,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
+import { BrainGamesLive } from "@/components/programmes/brain-games-live";
 import { DrawingGallery } from "@/components/programmes/drawing-gallery";
 import { Lineup } from "@/components/programmes/lineup";
 import { MusicalChairPublic } from "@/components/programmes/musical-chair-public";
@@ -118,6 +119,7 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
                                 hideCounts={programme.hide_vote_counts}
                             />
                         )}
+                        {programme.type === "quiz" && <BrainGamesLive programmeId={programme.id} />}
                         {programme.type === "musical_chair" && (
                             <MusicalChairPublic programmeId={programme.id} />
                         )}

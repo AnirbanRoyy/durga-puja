@@ -12,6 +12,7 @@ import { PROGRAMME_STATUSES, PROGRAMME_TYPES } from "@/lib/programme-meta";
 import { releaseKey } from "@/lib/device-lock";
 import { getCurrentYear } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
+import { fillBengali } from "@/lib/translate";
 import { fieldErrors, type ActionState } from "@/lib/validators";
 
 const text = (max: number) =>
@@ -83,8 +84,17 @@ export async function saveProgramme(_prev: ActionState, formData: FormData): Pro
         };
     }
     const { id, starts_at, ends_at, slug, ...rest } = parsed.data;
+    // Anything left blank in Bengali is translated from the English; typed Bengali is never replaced.
+    const [title_bn, description_bn, rules_bn] = await fillBengali([
+        { en: rest.title_en, bn: rest.title_bn },
+        { en: rest.description_en, bn: rest.description_bn },
+        { en: rest.rules_en, bn: rest.rules_bn },
+    ]);
     const row = {
         ...rest,
+        title_bn,
+        description_bn,
+        rules_bn,
         type: rest.type as Programme["type"],
         status: rest.status as Programme["status"],
         slug: slug || slugify(rest.title_en),

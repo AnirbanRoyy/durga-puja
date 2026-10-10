@@ -1,4 +1,5 @@
 import {
+    Brain02Icon,
     Chair01Icon,
     DrumIcon,
     Mic01Icon,
@@ -12,6 +13,7 @@ export const PROGRAMME_TYPES: ProgrammeType[] = [
     "singing",
     "dance",
     "drawing",
+    "quiz",
     "other",
 ];
 export const PROGRAMME_STATUSES: ProgrammeStatus[] = [
@@ -26,6 +28,7 @@ export const TYPE_ICON = {
     singing: Mic01Icon,
     dance: SparklesIcon,
     drawing: PaintBoardIcon,
+    quiz: Brain02Icon,
     other: DrumIcon,
 } satisfies Record<ProgrammeType, unknown>;
 

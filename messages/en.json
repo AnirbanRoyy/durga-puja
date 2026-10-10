@@ -148,7 +148,11 @@
             "duplicate": "You are already registered with this name and phone number.",
             "deviceUsed": "Someone from this device or network has already registered for this programme.",
             "notYours": "We couldn't verify this registration. Use the phone number you registered with.",
-            "noMatch": "No registration found for that number from this network."
+            "noMatch": "No registration found for that number from this network.",
+            "streamUnavailable": "That video can't be played here. Try another link (it may be private, removed or not embeddable).",
+            "streamRejected": "That song was not approved for the pandal playlist.",
+            "streamPlayed": "That song has already been played.",
+            "streamAlready": "You've already requested or upvoted this song."
         },
         "success": {
             "generic": "Done!",
@@ -157,7 +161,9 @@
             "feedbackSent": "Thank you for your feedback — the organisers will read it.",
             "updated": "Saved. Your registration is updated.",
             "withdrawn": "You have withdrawn. You can register again any time.",
-            "recovered": "Found it! Your registration is shown here."
+            "recovered": "Found it! Your registration is shown here.",
+            "streamAdded": "Thanks! Your song is on the list. Upvote it and ask friends to do the same.",
+            "streamUpvoted": "That song was already requested, so we counted your upvote!"
         },
         "recoverTitle": "Already registered from here?",
         "recoverHint": "Enter the phone number you registered with to view, edit or withdraw your entry.",
@@ -202,7 +208,7 @@
         "vote": "Vote",
         "yourVote": "Your vote",
         "voteError": {
-            "already_voted": "You've already voted in this competition.",
+            "already_voted": "You've already voted in this competition — one vote per phone and per network.",
             "closed": "Voting is closed.",
             "not_found": "That drawing no longer exists.",
             "rate_limited": "Too many votes from this network. Try again later."
@@ -364,5 +370,42 @@
             "winners": "Prize winners",
             "drawings": "Drawings"
         }
+    },
+    "quiz": {
+        "liveTitle": "On screen now",
+        "forTeam": "For team: {team}",
+        "forAudience": "For the audience",
+        "answerSoon": "The answer will appear here as soon as the host reveals it.",
+        "waitingNext": "Get ready — the next question is coming up!",
+        "notStarted": "The brain games haven’t started yet. Questions will appear here live.",
+        "justRevealed": "Answer revealed",
+        "answerLabel": "Answer",
+        "correct": "Correct!",
+        "wrong": "Wrong answer",
+        "leaderboard": "Leaderboard",
+        "noTeams": "Teams will appear here once they are registered.",
+        "previous": "Previous questions"
+    },
+    "stream": {
+        "title": "Pandal speaker playlist",
+        "subtitle": "Request your favourite song and it can play on the pandal's speaker. Upvote the songs you want to hear!",
+        "live": "LIVE",
+        "nowPlaying": "Now playing",
+        "upNext": "Up next",
+        "requestedBy": "Requested by {name}",
+        "notStreaming": "The pandal playlist isn't playing right now. Requests you add will be played when the organisers start it.",
+        "requestTitle": "Request a song",
+        "requestHint": "Paste a YouTube link to your favourite song and tell us your name.",
+        "linkLabel": "YouTube link",
+        "nameLabel": "Your name",
+        "send": "Request this song",
+        "queueTitle": "Playlist",
+        "queueEmpty": "No approved songs yet.",
+        "pendingTitle": "Waiting for approval",
+        "pendingHint": "Upvote songs you'd like to hear. The organisers approve them into the playlist.",
+        "pendingEmpty": "No requests waiting.",
+        "upvote": "Upvote",
+        "alreadyVoted": "You've already upvoted this song.",
+        "voteFailed": "Couldn't save your vote. Please try again."
     }
 }

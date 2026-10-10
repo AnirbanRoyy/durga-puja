@@ -2,7 +2,14 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
-import { claimDevice, deviceKey, releaseDevice, releaseKey } from "@/lib/device-lock";
+import {
+    claimDevice,
+    claimKey,
+    deviceKey,
+    drawingVoteKey,
+    releaseDevice,
+    releaseKey,
+} from "@/lib/device-lock";
 import {
     forgetRegistration,
     getMyRegistration,
@@ -10,11 +17,14 @@ import {
     rememberRegistration,
 } from "@/lib/my-registration";
 import { rateLimit } from "@/lib/rate-limit";
+import { getCurrentYear } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
+import { fetchYouTubeInfo } from "@/lib/youtube-oembed";
 import {
     feedbackSchema,
     fieldErrors,
     normalizeSongKey,
+    parseYouTubeId,
     phoneSchema,
     registrationSchema,
     songRequestSchema,
@@ -249,18 +259,102 @@ export async function requestSong(_prev: ActionState, formData: FormData): Promi
     return { ok: true, code: "requested" };
 }
 
-export type VoteResult = "ok" | "already_voted" | "closed" | "not_found" | "rate_limited";
+/** A visitor adds a YouTube song to the pandal stream list (or upvotes it if it is already there). */
+export async function requestStreamSong(
+    _prev: ActionState,
+    formData: FormData,
+): Promise<ActionState> {
+    if (isBot(formData)) return { ok: true, code: "streamAdded" };
 
-export async function castVote(drawingId: string): Promise<VoteResult> {
-    if (!/^[0-9a-f-]{36}$/i.test(drawingId)) return "not_found";
-    if (!(await rateLimit(`vote:${await getClientIp()}`, 60, 3600))) return "rate_limited";
+    const link = String(formData.get("link") ?? "");
+    const name = String(formData.get("name") ?? "").trim();
+    const videoId = parseYouTubeId(link);
+    if (!videoId || name.length < 2 || name.length > 40) {
+        return fail(formData, "invalid", {
+            ...(videoId ? {} : { link: "link" }),
+            ...(name.length >= 2 && name.length <= 40 ? {} : { name: "name" }),
+        });
+    }
+    if (!(await rateLimit(`stream:${await getVisitorId()}`, 6, 3600))) {
+        return fail(formData, "rateLimited");
+    }
+    if (!(await rateLimit(`stream-ip:${await getClientIp()}`, 30, 3600))) {
+        return fail(formData, "rateLimited");
+    }
 
-    const { data, error } = await db().rpc("cast_vote", {
-        p_drawing_id: drawingId,
+    const info = await fetchYouTubeInfo(videoId);
+    if (!info) return fail(formData, "streamUnavailable", { link: "link" });
+
+    const { data, error } = await db().rpc("request_stream_song", {
+        p_year: await getCurrentYear(),
+        p_youtube_id: videoId,
+        p_title: info.title,
+        p_channel: info.channel,
+        p_thumbnail_url: info.thumbnail,
+        p_requested_by: name,
+        p_voter_hash: await getVoterHash(),
+    });
+    if (error) throw error;
+    if (data === "rejected") return fail(formData, "streamRejected");
+    if (data === "played") return fail(formData, "streamPlayed");
+    if (data === "already_requested") return fail(formData, "streamAlready");
+    refresh();
+    return { ok: true, code: data === "added" ? "streamAdded" : "streamUpvoted" };
+}
+
+export type StreamVoteResult = "ok" | "already_voted" | "closed" | "not_found" | "rate_limited";
+
+export async function upvoteStreamSong(requestId: string): Promise<StreamVoteResult> {
+    if (!/^[0-9a-f-]{36}$/i.test(requestId)) return "not_found";
+    if (!(await rateLimit(`streamvote:${await getVisitorId()}`, 60, 3600))) return "rate_limited";
+    const { data, error } = await db().rpc("upvote_stream_request", {
+        p_request_id: requestId,
         p_voter_hash: await getVoterHash(),
     });
     if (error) throw error;
     if (data === "ok") refresh();
+    return data;
+}
+
+export type VoteResult = "ok" | "already_voted" | "closed" | "not_found" | "rate_limited";
+
+/**
+ * One vote per contest, checked twice: per network address (a single Redis bit,
+ * `user:drawing:<programme>:<ip>`) and per browser (the visitor cookie, enforced in `cast_vote`).
+ */
+export async function castVote(drawingId: string): Promise<VoteResult> {
+    if (!/^[0-9a-f-]{36}$/i.test(drawingId)) return "not_found";
+    const ip = await getClientIp();
+    if (!(await rateLimit(`vote:${ip}`, 60, 3600))) return "rate_limited";
+
+    const supabase = db();
+    const { data: drawing } = await supabase
+        .from("drawings")
+        .select("programme_id")
+        .eq("id", drawingId)
+        .maybeSingle();
+    if (!drawing) return "not_found";
+    const { data: programme } = await supabase
+        .from("programmes")
+        .select("slug")
+        .eq("id", drawing.programme_id)
+        .maybeSingle();
+    if (!programme) return "not_found";
+
+    const key = drawingVoteKey(ip, programme.slug);
+    if (!(await claimKey(key))) return "already_voted";
+
+    const { data, error } = await supabase.rpc("cast_vote", {
+        p_drawing_id: drawingId,
+        p_voter_hash: await getVoterHash(),
+    });
+    // Only a counted vote keeps the network's bit; a refused or failed one gives it back.
+    if (error || data !== "ok") {
+        if (key) await releaseKey(key);
+        if (error) throw error;
+        return data;
+    }
+    refresh();
     return data;
 }
 

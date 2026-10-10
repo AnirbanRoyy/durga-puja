@@ -12,6 +12,7 @@ import {
     MusicNote03Icon,
     PlayListIcon,
     Settings01Icon,
+    VolumeHighIcon,
     StarIcon,
 } from "@hugeicons/core-free-icons";
 import { logout } from "@/actions/admin-auth";
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils";
 const LINKS = [
     { href: "/admin", label: "Dashboard", icon: DashboardSquare01Icon },
     { href: "/admin/programmes", label: "Programmes", icon: StarIcon },
+    { href: "/admin/stream", label: "Pandal stream", icon: VolumeHighIcon },
     { href: "/admin/songs", label: "Songs", icon: MusicNote03Icon },
     { href: "/admin/song-requests", label: "Song requests", icon: PlayListIcon },
     { href: "/admin/feedback", label: "Feedback", icon: Message01Icon },

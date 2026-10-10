@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/layout/page-header";
 import { MusicLibrary } from "@/components/music/music-library";
+import { PandalStream } from "@/components/music/pandal-stream";
 import { listSongs } from "@/lib/queries";
 
 export async function generateMetadata() {
@@ -24,7 +25,8 @@ export default async function MusicPage() {
     return (
         <>
             <PageHeader eyebrow={t("eyebrow")} title={t("title")} description={t("description")} />
-            <div className="mx-auto max-w-6xl px-4 pt-10">
+            <div className="mx-auto max-w-6xl space-y-12 px-4 pt-10">
+                <PandalStream />
                 <MusicLibrary tracks={tracks} />
             </div>
         </>

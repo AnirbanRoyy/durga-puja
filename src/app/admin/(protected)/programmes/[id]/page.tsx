@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
     Award01Icon,
+    Brain02Icon,
     Chair01Icon,
     PaintBoardIcon,
     UserGroupIcon,
@@ -27,6 +28,12 @@ export default async function EditProgrammePage(props: PageProps<"/admin/program
             label: "Host console",
             icon: Chair01Icon,
             show: programme.type === "musical_chair",
+        },
+        {
+            href: "brain-games",
+            label: "Live quiz console",
+            icon: Brain02Icon,
+            show: programme.type === "quiz",
         },
         {
             href: "drawings",

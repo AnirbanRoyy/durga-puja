@@ -1,5 +1,6 @@
 "use client";
 
+import { FieldTranslateButton } from "@/components/admin/translate-button";
 import { useActionState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Tick02Icon } from "@hugeicons/core-free-icons";
@@ -55,6 +56,7 @@ export function ProgrammeForm({ programme }: { programme?: Programme }) {
                 </Row>
                 <Row name="title_bn" label="Title (বাংলা)">
                     <Input id="title_bn" name="title_bn" defaultValue={v("title_bn")} />
+                    <FieldTranslateButton from="title_en" to="title_bn" />
                 </Row>
                 <Row
                     name="type"
@@ -152,12 +154,14 @@ export function ProgrammeForm({ programme }: { programme?: Programme }) {
                     rows={3}
                     defaultValue={v("description_bn")}
                 />
+                <FieldTranslateButton from="description_en" to="description_bn" />
             </Row>
             <Row name="rules_en" label="Rules (English)">
                 <Textarea id="rules_en" name="rules_en" rows={4} defaultValue={v("rules_en")} />
             </Row>
             <Row name="rules_bn" label="Rules (বাংলা)">
                 <Textarea id="rules_bn" name="rules_bn" rows={4} defaultValue={v("rules_bn")} />
+                <FieldTranslateButton from="rules_en" to="rules_bn" />
             </Row>
             <Row
                 name="admin_notes"

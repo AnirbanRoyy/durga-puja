@@ -2,8 +2,8 @@ import "server-only";
 import { Redis } from "@upstash/redis";
 
 /**
- * One registration per network address per programme, tracked in Redis as a single bit:
- * key `user:<ip>:<programme>`, bit 0 = 1 once someone from that address has registered.
+ * "Has this network address already done X?" tracked in Redis as a single bit per key (bit 0 = 1).
+ * Registrations use `user:<ip>:<programme>`, drawing votes `user:drawing:<programme>:<ip>`.
  * Fails open (never blocks anyone) when Redis is not configured or is unreachable.
  */
 const TTL_SECONDS = 60 * 60 * 24 * 60; // outlives the festival, then cleans itself up
@@ -27,12 +27,16 @@ export function deviceKey(ip: string, programme: string): string | null {
     return redis() && ip !== "unknown" ? lockKey(ip, programme) : null;
 }
 
-/** Atomically sets the bit. Returns false if this address had already registered. */
-export async function claimDevice(ip: string, programme: string): Promise<boolean> {
+/** The drawing-vote key for this address and contest, or null when no check is active. */
+export function drawingVoteKey(ip: string, programme: string): string | null {
+    return redis() && ip !== "unknown" ? `user:drawing:${programme}:${ip}` : null;
+}
+
+/** Atomically sets the bit. Returns false if it was already set. */
+export async function claimKey(key: string | null): Promise<boolean> {
     const r = redis();
-    if (!r || ip === "unknown") return true;
+    if (!r || !key) return true;
     try {
-        const key = lockKey(ip, programme);
         const previous = await r.setbit(key, 0, 1);
         if (previous === 0) await r.expire(key, TTL_SECONDS);
         return previous === 0;
@@ -40,6 +44,11 @@ export async function claimDevice(ip: string, programme: string): Promise<boolea
         console.error("device-lock: claim failed", error);
         return true;
     }
+}
+
+/** Atomically sets the bit. Returns false if this address had already registered. */
+export async function claimDevice(ip: string, programme: string): Promise<boolean> {
+    return claimKey(deviceKey(ip, programme));
 }
 
 /** Clears the bit again, e.g. when the registration did not actually go through. */

@@ -1,6 +1,6 @@
 // Hand-maintained mirror of supabase/migrations. Keep in sync when the schema changes.
 
-export type ProgrammeType = "musical_chair" | "singing" | "dance" | "drawing" | "other";
+export type ProgrammeType = "musical_chair" | "singing" | "dance" | "drawing" | "quiz" | "other";
 export type ProgrammeStatus = "upcoming" | "ongoing" | "completed" | "cancelled";
 export type PerformanceStatus = "waiting" | "on_stage" | "done" | "absent";
 export type SongCategory =
@@ -163,6 +163,66 @@ export type Setting = {
     updated_at: string;
 };
 
+export type QuizRound = {
+    id: string;
+    programme_id: string;
+    round_no: number;
+    name_en: string;
+    name_bn: string | null;
+    points_correct: number | null;
+    points_wrong: number | null;
+    status: "upcoming" | "live" | "done";
+    created_at: string;
+};
+
+export type QuizQuestion = {
+    id: string;
+    round_id: string;
+    programme_id: string;
+    sort_no: number;
+    kind: "team" | "audience";
+    question_en: string;
+    question_bn: string | null;
+    state: "hidden" | "asked" | "revealed";
+    team_id: string | null;
+    outcome: "correct" | "wrong" | null;
+    points_awarded: number | null;
+    asked_at: string | null;
+    revealed_at: string | null;
+    revealed_answer_en: string | null;
+    revealed_answer_bn: string | null;
+    created_at: string;
+};
+
+export type QuizAnswer = {
+    question_id: string;
+    answer_en: string;
+    answer_bn: string | null;
+};
+
+export type StreamRequest = {
+    id: string;
+    year: number;
+    youtube_id: string;
+    title: string;
+    channel: string | null;
+    thumbnail_url: string | null;
+    requested_by: string;
+    status: "pending" | "approved" | "rejected" | "played";
+    upvotes: number;
+    created_at: string;
+    approved_at: string | null;
+    played_at: string | null;
+};
+
+export type StreamState = {
+    year: number;
+    is_streaming: boolean;
+    now_playing_id: string | null;
+    up_next_id: string | null;
+    updated_at: string;
+};
+
 export type RateLimit = {
     key: string;
     window_start: string;
@@ -195,6 +255,15 @@ export type Database = {
             feedback: Table<Feedback, "kind" | "message">;
             settings: Table<Setting, "key" | "value">;
             rate_limits: Table<RateLimit, "key">;
+            stream_requests: Table<StreamRequest, "year" | "youtube_id" | "title" | "requested_by">;
+            stream_votes: Table<
+                { request_id: string; voter_hash: string },
+                "request_id" | "voter_hash"
+            >;
+            stream_state: Table<StreamState, "year">;
+            quiz_rounds: Table<QuizRound, "programme_id" | "round_no" | "name_en">;
+            quiz_questions: Table<QuizQuestion, "round_id" | "programme_id" | "question_en">;
+            quiz_answers: Table<QuizAnswer, "question_id" | "answer_en">;
         };
         Views: Record<never, never>;
         Functions: {
@@ -211,6 +280,43 @@ export type Database = {
                     p_normalized_key: string;
                 };
                 Returns: SongRequest;
+            };
+            request_stream_song: {
+                Args: {
+                    p_year: number;
+                    p_youtube_id: string;
+                    p_title: string;
+                    p_channel: string | null;
+                    p_thumbnail_url: string | null;
+                    p_requested_by: string;
+                    p_voter_hash: string;
+                };
+                Returns: "added" | "upvoted" | "already_requested" | "rejected" | "played";
+            };
+            upvote_stream_request: {
+                Args: { p_request_id: string; p_voter_hash: string };
+                Returns: "ok" | "already_voted" | "closed" | "not_found";
+            };
+            approve_stream_request: { Args: { p_request_id: string }; Returns: undefined };
+            reject_stream_request: { Args: { p_request_id: string }; Returns: undefined };
+            advance_stream: { Args: { p_year: number }; Returns: undefined };
+            start_stream: { Args: { p_year: number }; Returns: undefined };
+            stop_stream: { Args: { p_year: number }; Returns: undefined };
+            set_stream_up_next: {
+                Args: { p_year: number; p_request_id: string };
+                Returns: undefined;
+            };
+            ask_quiz_question: {
+                Args: { p_question_id: string; p_team_id: string | null };
+                Returns: undefined;
+            };
+            mark_quiz_question: {
+                Args: { p_question_id: string; p_outcome: string; p_points: number | null };
+                Returns: undefined;
+            };
+            undo_quiz_question: {
+                Args: { p_question_id: string };
+                Returns: undefined;
             };
             start_edition: {
                 Args: {

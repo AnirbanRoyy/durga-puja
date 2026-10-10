@@ -10,7 +10,11 @@ type LiveTable =
     | "song_requests"
     | "musical_chair_rounds"
     | "drawings"
-    | "results";
+    | "results"
+    | "quiz_rounds"
+    | "quiz_questions"
+    | "stream_requests"
+    | "stream_state";
 
 /**
  * Re-renders the current server page whenever one of the given tables changes.
