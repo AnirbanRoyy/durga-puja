@@ -519,8 +519,21 @@ export type StreamBoard = {
     queue: StreamRequest[];
     /** Requests waiting for the admin, most upvoted first. */
     pending: StreamRequest[];
+    /** Songs already played this year, most recent first. */
     played: StreamRequest[];
 };
+
+/** Songs one network address can add or re-request per year (upvotes don't count). */
+export const STREAM_REQUEST_LIMIT = 3;
+
+export async function streamRequestsLeft(ipHash: string, year?: number): Promise<number> {
+    const { data, error } = await db().rpc("stream_requests_used", {
+        p_year: year ?? (await getCurrentYear()),
+        p_ip_hash: ipHash,
+    });
+    if (error) throw error;
+    return Math.max(0, STREAM_REQUEST_LIMIT - (data ?? 0));
+}
 
 export async function getStreamBoard(year?: number): Promise<StreamBoard> {
     const y = year ?? (await getCurrentYear());
@@ -554,6 +567,8 @@ export async function getStreamBoard(year?: number): Promise<StreamBoard> {
         upNext: current.up_next_id ? (byId.get(current.up_next_id) ?? null) : null,
         queue: requests.filter((r) => r.status === "approved" && r.id !== current.now_playing_id),
         pending: requests.filter((r) => r.status === "pending"),
-        played: requests.filter((r) => r.status === "played").reverse(),
+        played: requests
+            .filter((r) => r.status === "played")
+            .sort((a, b) => (b.played_at ?? "").localeCompare(a.played_at ?? "")),
     };
 }

@@ -37,6 +37,7 @@ function Row({ song, children }: { song: StreamRequest; children?: React.ReactNo
                 <p className="line-clamp-1 text-sm font-medium">{song.title}</p>
                 <p className="text-xs text-muted-foreground">
                     {song.requested_by} · {song.upvotes} upvote{song.upvotes === 1 ? "" : "s"}
+                    {song.play_count > 0 && ` · played ${song.play_count}× before`}
                 </p>
             </div>
             {children}

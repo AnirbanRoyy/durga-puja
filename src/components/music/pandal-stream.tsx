@@ -3,11 +3,13 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { VolumeHighIcon } from "@hugeicons/core-free-icons";
 import { StreamRequestForm } from "@/components/music/stream-request-form";
+import { StreamRerequestButton } from "@/components/music/stream-rerequest-button";
 import { StreamUpvoteButton } from "@/components/music/stream-upvote-button";
 import { LiveRefresh } from "@/components/realtime/live-refresh";
 import type { StreamRequest } from "@/lib/database.types";
-import { getStreamBoard } from "@/lib/queries";
+import { getStreamBoard, streamRequestsLeft } from "@/lib/queries";
 import { cn } from "@/lib/utils";
+import { getIpHash } from "@/lib/visitor";
 
 function Thumb({ song, className }: { song: StreamRequest; className?: string }) {
     return song.thumbnail_url ? (
@@ -28,12 +30,13 @@ function Thumb({ song, className }: { song: StreamRequest; className?: string })
  * requests waiting for approval. Separate from the personal music library below it.
  */
 export async function PandalStream() {
-    const [t, format, board] = await Promise.all([
+    const [t, format, board, left] = await Promise.all([
         getTranslations("stream"),
         getFormatter(),
         getStreamBoard(),
+        getIpHash().then((ipHash) => streamRequestsLeft(ipHash)),
     ]);
-    const { state, nowPlaying, upNext, queue, pending } = board;
+    const { state, nowPlaying, upNext, queue, pending, played } = board;
 
     return (
         <section className="rounded-3xl border bg-card p-5 shadow-sm sm:p-7">
@@ -88,7 +91,7 @@ export async function PandalStream() {
                 <div>
                     <h3 className="text-lg font-semibold">{t("requestTitle")}</h3>
                     <p className="mt-1 mb-4 text-sm text-muted-foreground">{t("requestHint")}</p>
-                    <StreamRequestForm />
+                    <StreamRequestForm left={left} />
                 </div>
 
                 <div className="space-y-6">
@@ -144,6 +147,34 @@ export async function PandalStream() {
                             </p>
                         )}
                     </div>
+
+                    {played.length > 0 && (
+                        <div>
+                            <h3 className="text-lg font-semibold">{t("playedTitle")}</h3>
+                            <p className="text-xs text-muted-foreground">{t("playedHint")}</p>
+                            <ul className="mt-3 space-y-2.5">
+                                {played.map((song) => (
+                                    <li key={song.id} className="flex items-center gap-3">
+                                        <Thumb song={song} className="w-16 opacity-80" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="line-clamp-1 text-sm font-medium">
+                                                {song.title}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {t("playedTimes", { count: song.play_count })}
+                                                {song.played_at &&
+                                                    ` · ${format.relativeTime(new Date(song.played_at))}`}
+                                            </p>
+                                        </div>
+                                        <StreamRerequestButton
+                                            youtubeId={song.youtube_id}
+                                            disabled={left === 0}
+                                        />
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
             </div>
         </section>

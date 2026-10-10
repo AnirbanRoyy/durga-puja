@@ -213,6 +213,7 @@ export type StreamRequest = {
     created_at: string;
     approved_at: string | null;
     played_at: string | null;
+    play_count: number;
 };
 
 export type StreamState = {
@@ -290,9 +291,18 @@ export type Database = {
                     p_thumbnail_url: string | null;
                     p_requested_by: string;
                     p_voter_hash: string;
+                    p_ip_hash: string;
+                    p_limit: number;
                 };
-                Returns: "added" | "upvoted" | "already_requested" | "rejected" | "played";
+                Returns:
+                    | "added"
+                    | "upvoted"
+                    | "rerequested"
+                    | "already_requested"
+                    | "rejected"
+                    | "limit_reached";
             };
+            stream_requests_used: { Args: { p_year: number; p_ip_hash: string }; Returns: number };
             upvote_stream_request: {
                 Args: { p_request_id: string; p_voter_hash: string };
                 Returns: "ok" | "already_voted" | "closed" | "not_found";

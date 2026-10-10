@@ -151,7 +151,7 @@
             "noMatch": "No registration found for that number from this network.",
             "streamUnavailable": "That video can't be played here. Try another link (it may be private, removed or not embeddable).",
             "streamRejected": "That song was not approved for the pandal playlist.",
-            "streamPlayed": "That song has already been played.",
+            "streamLimit": "This network has used its 3 song requests for this year. You can still upvote songs you like!",
             "streamAlready": "You've already requested or upvoted this song."
         },
         "success": {
@@ -163,7 +163,8 @@
             "withdrawn": "You have withdrawn. You can register again any time.",
             "recovered": "Found it! Your registration is shown here.",
             "streamAdded": "Thanks! Your song is on the list. Upvote it and ask friends to do the same.",
-            "streamUpvoted": "That song was already requested, so we counted your upvote!"
+            "streamUpvoted": "That song was already requested, so we counted your upvote!",
+            "streamRerequested": "Requested again! It will play once the organisers approve it."
         },
         "recoverTitle": "Already registered from here?",
         "recoverHint": "Enter the phone number you registered with to view, edit or withdraw your entry.",
@@ -406,6 +407,11 @@
         "pendingEmpty": "No requests waiting.",
         "upvote": "Upvote",
         "alreadyVoted": "You've already upvoted this song.",
-        "voteFailed": "Couldn't save your vote. Please try again."
+        "voteFailed": "Couldn't save your vote. Please try again.",
+        "requestsLeft": "{count, plural, =0 {This network has no requests left this year, but you can still upvote.} one {You can request # more song this year.} other {You can request # more songs this year.}}",
+        "playedTitle": "Played earlier",
+        "playedHint": "Want to hear one again? Request it again (it counts as one of your requests).",
+        "playedTimes": "{count, plural, one {Played once} other {Played # times}}",
+        "rerequest": "Request again"
     }
 }

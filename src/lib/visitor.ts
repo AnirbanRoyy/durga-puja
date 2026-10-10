@@ -41,3 +41,8 @@ export async function getClientIp(): Promise<string> {
     const h = await headers();
     return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
 }
+
+/** Non-reversible id for the visitor's network address, for limits stored in the database. */
+export async function getIpHash(): Promise<string> {
+    return hashVisitor(`ip:${await getClientIp()}`);
+}

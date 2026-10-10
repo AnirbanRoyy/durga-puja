@@ -17,7 +17,7 @@ import {
     rememberRegistration,
 } from "@/lib/my-registration";
 import { rateLimit } from "@/lib/rate-limit";
-import { getCurrentYear } from "@/lib/queries";
+import { getCurrentYear, STREAM_REQUEST_LIMIT } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
 import { fetchYouTubeInfo } from "@/lib/youtube-oembed";
 import {
@@ -30,7 +30,7 @@ import {
     songRequestSchema,
     type ActionState,
 } from "@/lib/validators";
-import { getClientIp, getVisitorId, getVoterHash } from "@/lib/visitor";
+import { getClientIp, getIpHash, getVisitorId, getVoterHash } from "@/lib/visitor";
 
 function formObject(formData: FormData): Record<string, string> {
     const out: Record<string, string> = {};
@@ -293,13 +293,20 @@ export async function requestStreamSong(
         p_thumbnail_url: info.thumbnail,
         p_requested_by: name,
         p_voter_hash: await getVoterHash(),
+        p_ip_hash: await getIpHash(),
+        p_limit: STREAM_REQUEST_LIMIT,
     });
     if (error) throw error;
     if (data === "rejected") return fail(formData, "streamRejected");
-    if (data === "played") return fail(formData, "streamPlayed");
+    if (data === "limit_reached") return fail(formData, "streamLimit");
     if (data === "already_requested") return fail(formData, "streamAlready");
     refresh();
-    return { ok: true, code: data === "added" ? "streamAdded" : "streamUpvoted" };
+    const codes = {
+        added: "streamAdded",
+        rerequested: "streamRerequested",
+        upvoted: "streamUpvoted",
+    };
+    return { ok: true, code: codes[data] };
 }
 
 export type StreamVoteResult = "ok" | "already_voted" | "closed" | "not_found" | "rate_limited";
