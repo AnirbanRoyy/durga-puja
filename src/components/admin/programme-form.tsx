@@ -15,6 +15,7 @@ import { NativeSelect } from "@/components/admin/native-select";
 import type { Programme } from "@/lib/database.types";
 import { isoToIstLocal } from "@/lib/datetime";
 import { PROGRAMME_STATUSES, PROGRAMME_TYPES } from "@/lib/programme-meta";
+import { useActionToast } from "@/components/admin/use-action-toast";
 import { initialActionState } from "@/lib/validators";
 
 const TEAM_FORMATS = ["individual", "team", "pair"] as const;
@@ -44,6 +45,7 @@ function Row({
 
 export function ProgrammeForm({ programme }: { programme?: Programme }) {
     const [state, action, pending] = useActionState(saveProgramme, initialActionState);
+    useActionToast(state);
     const v = (key: keyof Programme, fallback = ""): string =>
         state.values?.[key] ?? (programme?.[key] != null ? String(programme[key]) : fallback);
     const e = state.errors ?? {};
@@ -236,14 +238,6 @@ export function ProgrammeForm({ programme }: { programme?: Programme }) {
                 ))}
             </div>
 
-            {state.code && (
-                <p
-                    role="status"
-                    className={state.ok ? "text-sm text-success" : "text-sm text-destructive"}
-                >
-                    {state.code}
-                </p>
-            )}
             <div>
                 <Button type="submit" disabled={pending} size="lg" className="h-10">
                     {pending ? (

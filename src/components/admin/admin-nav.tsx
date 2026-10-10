@@ -11,6 +11,7 @@ import {
     Message01Icon,
     MusicNote03Icon,
     PlayListIcon,
+    UserGroupIcon,
     Settings01Icon,
     VolumeHighIcon,
     StarIcon,
@@ -23,6 +24,7 @@ import { cn } from "@/lib/utils";
 const LINKS = [
     { href: "/admin", label: "Dashboard", icon: DashboardSquare01Icon },
     { href: "/admin/programmes", label: "Programmes", icon: StarIcon },
+    { href: "/admin/registrations", label: "Registrations", icon: UserGroupIcon },
     { href: "/admin/stream", label: "Pandal stream", icon: VolumeHighIcon },
     { href: "/admin/songs", label: "Songs", icon: MusicNote03Icon },
     { href: "/admin/song-requests", label: "Song requests", icon: PlayListIcon },

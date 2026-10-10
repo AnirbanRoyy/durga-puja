@@ -16,11 +16,11 @@ import { Lineup } from "@/components/programmes/lineup";
 import { MusicalChairPublic } from "@/components/programmes/musical-chair-public";
 import { MyRegistration } from "@/components/programmes/my-registration";
 import { TeamList } from "@/components/programmes/team-list";
-import { RegistrationForm, type TeamSetup } from "@/components/programmes/registration-form";
+import { RegistrationForm } from "@/components/programmes/registration-form";
 import { StatusBadge } from "@/components/programmes/status-badge";
 import { LiveRefresh } from "@/components/realtime/live-refresh";
 import { pick } from "@/lib/localize";
-import { acceptsRegistrations, isLineupType, teamLimits, TYPE_ICON } from "@/lib/programme-meta";
+import { acceptsRegistrations, isLineupType, teamSetupOf, TYPE_ICON } from "@/lib/programme-meta";
 import { getProgrammeBySlug, hasVoted, listDrawings, listRegistrations } from "@/lib/queries";
 import { getMyRegistration } from "@/lib/my-registration";
 import { peekVoterHash } from "@/lib/visitor";
@@ -47,10 +47,7 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
     const description = pick(locale, programme.description_en, programme.description_bn);
     const rules = pick(locale, programme.rules_en, programme.rules_bn);
     const open = acceptsRegistrations(programme);
-    const team: TeamSetup | undefined =
-        programme.team_format === "individual"
-            ? undefined
-            : { format: programme.team_format, ...teamLimits(programme) };
+    const team = teamSetupOf(programme);
     const mine = programme.status === "completed" ? null : await getMyRegistration(programme.id);
 
     return (

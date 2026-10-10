@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Delete02Icon, Link01Icon } from "@hugeicons/core-free-icons";
 import { deleteSongRequest, setSongRequestStatus } from "@/actions/admin/content";
 import { MusicalChairUploader } from "@/components/admin/songs-manager";
+import { useAdminRun } from "@/components/admin/use-admin-run";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { SongRequest } from "@/lib/database.types";
@@ -15,7 +16,7 @@ const FILTERS = ["pending", "added", "rejected", "all"] as const;
 export function SongRequestsManager({ requests }: { requests: SongRequest[] }) {
     const [filter, setFilter] = useState<(typeof FILTERS)[number]>("pending");
     const [openId, setOpenId] = useState<string | null>(null);
-    const [pending, startTransition] = useTransition();
+    const { pending, run } = useAdminRun();
     const visible = requests.filter((r) => filter === "all" || r.status === filter);
 
     return (
@@ -80,8 +81,9 @@ export function SongRequestsManager({ requests }: { requests: SongRequest[] }) {
                                     variant="outline"
                                     disabled={pending}
                                     onClick={() =>
-                                        startTransition(() =>
-                                            setSongRequestStatus(r.id, "rejected"),
+                                        run(
+                                            () => setSongRequestStatus(r.id, "rejected"),
+                                            "Request rejected",
                                         )
                                     }
                                 >
@@ -94,7 +96,10 @@ export function SongRequestsManager({ requests }: { requests: SongRequest[] }) {
                                     variant="outline"
                                     disabled={pending}
                                     onClick={() =>
-                                        startTransition(() => setSongRequestStatus(r.id, "pending"))
+                                        run(
+                                            () => setSongRequestStatus(r.id, "pending"),
+                                            "Request restored",
+                                        )
                                     }
                                 >
                                     Restore
@@ -106,7 +111,7 @@ export function SongRequestsManager({ requests }: { requests: SongRequest[] }) {
                                 disabled={pending}
                                 onClick={() => {
                                     if (confirm("Delete this request?"))
-                                        startTransition(() => deleteSongRequest(r.id));
+                                        run(() => deleteSongRequest(r.id), "Request deleted");
                                 }}
                             >
                                 <HugeiconsIcon icon={Delete02Icon} className="text-destructive" />

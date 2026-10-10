@@ -4,7 +4,6 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-    Delete02Icon,
     Download01Icon,
     LockIcon,
     Mic01Icon,
@@ -14,12 +13,16 @@ import {
 } from "@hugeicons/core-free-icons";
 import {
     callNext,
-    deleteRegistration,
     moveToEnd,
     setOrderLocked,
     setPerformanceStatus,
     shuffleLineup,
 } from "@/actions/admin/programmes";
+import {
+    DeleteRegistrationButton,
+    EditRegistrationButton,
+    type RegistrationProgramme,
+} from "@/components/admin/registration-actions";
 import { Button } from "@/components/ui/button";
 import type { PerformanceStatus } from "@/lib/database.types";
 import type { RegistrationWithPhone } from "@/lib/queries";
@@ -35,12 +38,14 @@ function csvCell(value: string | number | null): string {
 export function RegistrationsManager({
     programmeId,
     programmeTitle,
+    programme,
     lineup,
     locked,
     registrations,
 }: {
     programmeId: string;
     programmeTitle: string;
+    programme: RegistrationProgramme;
     lineup: boolean;
     locked: boolean;
     registrations: RegistrationWithPhone[];
@@ -157,7 +162,12 @@ export function RegistrationsManager({
                         <Button
                             size="lg"
                             disabled={pending || (!nextUp && !onStage)}
-                            onClick={() => run(() => callNext(programmeId))}
+                            onClick={() =>
+                                run(
+                                    () => callNext(programmeId),
+                                    onStage ? "Next performer called" : "First performer called",
+                                )
+                            }
                             className="ml-auto h-12 rounded-full bg-gold px-6 text-maroon hover:bg-gold/90"
                         >
                             <HugeiconsIcon icon={NextIcon} data-icon="inline-start" />
@@ -235,11 +245,13 @@ export function RegistrationsManager({
                                             value={r.performance_status}
                                             disabled={pending}
                                             onChange={(e) =>
-                                                run(() =>
-                                                    setPerformanceStatus(
-                                                        r.id,
-                                                        e.target.value as PerformanceStatus,
-                                                    ),
+                                                run(
+                                                    () =>
+                                                        setPerformanceStatus(
+                                                            r.id,
+                                                            e.target.value as PerformanceStatus,
+                                                        ),
+                                                    "Status updated",
                                                 )
                                             }
                                             className="h-7 rounded-md border bg-transparent px-1.5 text-xs"
@@ -266,21 +278,14 @@ export function RegistrationsManager({
                                                 <HugeiconsIcon icon={Mic01Icon} />
                                             </Button>
                                         )}
-                                        <Button
-                                            size="icon-sm"
-                                            variant="ghost"
-                                            title="Remove"
-                                            disabled={pending}
-                                            onClick={() => {
-                                                if (confirm(`Remove ${r.name}?`))
-                                                    run(() => deleteRegistration(r.id), "Removed");
-                                            }}
-                                        >
-                                            <HugeiconsIcon
-                                                icon={Delete02Icon}
-                                                className="text-destructive"
-                                            />
-                                        </Button>
+                                        <EditRegistrationButton
+                                            registration={r}
+                                            programme={programme}
+                                        />
+                                        <DeleteRegistrationButton
+                                            registration={r}
+                                            programmeTitle={programme.title}
+                                        />
                                     </div>
                                 </td>
                             </tr>

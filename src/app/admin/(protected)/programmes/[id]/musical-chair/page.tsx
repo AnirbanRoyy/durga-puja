@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { AdminTitle } from "@/components/admin/admin-bits";
-import { BackLink } from "@/components/admin/back-link";
 import { MusicalChairConsole } from "@/components/admin/musical-chair-console";
 import { getProgrammeById, listRegistrations, listRounds, listSongs } from "@/lib/queries";
 
@@ -21,7 +20,6 @@ export default async function MusicalChairAdminPage(
 
     return (
         <>
-            <BackLink href={`/admin/programmes/${id}`} label={programme.title_en} />
             <AdminTitle
                 title="Musical chair console"
                 description="Connect your laptop to the speakers and press Space to start a round."

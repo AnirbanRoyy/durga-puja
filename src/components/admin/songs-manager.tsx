@@ -12,6 +12,7 @@ import {
 } from "@/actions/admin/content";
 import { NativeSelect } from "@/components/admin/native-select";
 import { UploadButton } from "@/components/admin/upload-button";
+import { useActionToast } from "@/components/admin/use-action-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +23,7 @@ const CATEGORIES = ["mahalaya", "agomoni", "dhunuchi", "bhajan", "modern", "boll
 
 export function AddYouTubeSongForm() {
     const [state, action, pending] = useActionState(addYouTubeSong, initialActionState);
+    useActionToast(state);
     const v = state.ok ? {} : (state.values ?? {});
     return (
         <form action={action} className="grid gap-3">
@@ -45,11 +47,6 @@ export function AddYouTubeSongForm() {
                     Add song
                 </Button>
             </div>
-            {state.code && (
-                <p className={state.ok ? "text-sm text-success" : "text-sm text-destructive"}>
-                    {state.code}
-                </p>
-            )}
         </form>
     );
 }
@@ -116,10 +113,11 @@ export function SongList({
     allowFeature?: boolean;
 }) {
     const [pending, startTransition] = useTransition();
-    const run = (fn: () => Promise<unknown>) =>
+    const run = (fn: () => Promise<unknown>, success: string) =>
         startTransition(async () => {
             try {
                 await fn();
+                toast.success(success);
             } catch (e) {
                 toast.error(e instanceof Error ? e.message : "Failed");
             }
@@ -158,7 +156,12 @@ export function SongList({
                             variant="ghost"
                             title={s.featured ? "Featured" : "Feature this song"}
                             disabled={pending}
-                            onClick={() => run(() => updateSong(s.id, { featured: !s.featured }))}
+                            onClick={() =>
+                                run(
+                                    () => updateSong(s.id, { featured: !s.featured }),
+                                    s.featured ? "Removed from the top" : "Featured at the top",
+                                )
+                            }
                         >
                             <HugeiconsIcon
                                 icon={StarIcon}
@@ -170,7 +173,12 @@ export function SongList({
                         <Switch
                             checked={s.active}
                             disabled={pending}
-                            onCheckedChange={(active) => run(() => updateSong(s.id, { active }))}
+                            onCheckedChange={(active) =>
+                                run(
+                                    () => updateSong(s.id, { active }),
+                                    active ? "Song shown on the site" : "Song hidden from the site",
+                                )
+                            }
                         />
                         Active
                     </label>
@@ -179,7 +187,8 @@ export function SongList({
                         variant="ghost"
                         disabled={pending}
                         onClick={() => {
-                            if (confirm(`Delete “${s.title}”?`)) run(() => deleteSong(s.id));
+                            if (confirm(`Delete “${s.title}”?`))
+                                run(() => deleteSong(s.id), "Song deleted");
                         }}
                     >
                         <HugeiconsIcon icon={Delete02Icon} className="text-destructive" />

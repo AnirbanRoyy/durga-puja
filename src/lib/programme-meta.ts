@@ -59,6 +59,13 @@ export function teamLimits(p: Pick<Programme, "team_format" | "team_min_size" | 
     return { min, max };
 }
 
+/** How a team or pair programme signs people up; undefined for individual programmes. */
+export type TeamSetup = { format: "team" | "pair"; min: number; max: number };
+
+export function teamSetupOf(p: Programme): TeamSetup | undefined {
+    return p.team_format === "individual" ? undefined : { format: p.team_format, ...teamLimits(p) };
+}
+
 export function acceptsRegistrations(p: Programme): boolean {
     return p.registration_open && p.status !== "completed" && p.status !== "cancelled";
 }

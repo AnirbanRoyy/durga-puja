@@ -8,10 +8,12 @@ import { login } from "@/actions/admin-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useActionToast } from "@/components/admin/use-action-toast";
 import { initialActionState } from "@/lib/validators";
 
 export function LoginForm({ next }: { next: string }) {
     const [state, action, pending] = useActionState(login, initialActionState);
+    useActionToast(state);
     return (
         <form action={action} className="mt-6 grid gap-4">
             <input type="hidden" name="next" value={next} />
@@ -26,11 +28,6 @@ export function LoginForm({ next }: { next: string }) {
                     autoFocus
                 />
             </div>
-            {state.code && (
-                <p role="alert" className="text-sm text-destructive">
-                    {state.code}
-                </p>
-            )}
             <Button type="submit" size="lg" disabled={pending} className="h-10">
                 {pending ? (
                     <DholSpinner data-icon="inline-start" />

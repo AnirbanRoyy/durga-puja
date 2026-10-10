@@ -328,7 +328,10 @@ function LivePanel({
                                     }
                                     onClick={() => {
                                         setManualPoints("");
-                                        run(() => askRandomTeamQuestion(round.id));
+                                        run(
+                                            () => askRandomTeamQuestion(round.id),
+                                            "Question is on screen",
+                                        );
                                     }}
                                 >
                                     Pick team &amp; ask
@@ -385,7 +388,10 @@ function LivePanel({
                                                 disabled={pending || q.state === "asked"}
                                                 onClick={() => {
                                                     setManualPoints("");
-                                                    run(() => askQuestion(q.id, null));
+                                                    run(
+                                                        () => askQuestion(q.id, null),
+                                                        "Question is on screen",
+                                                    );
                                                 }}
                                             >
                                                 {q.state === "asked" ? "On screen" : "Ask"}
@@ -662,7 +668,7 @@ function QuestionRow({
                     disabled={pending}
                     onClick={() => {
                         if (window.confirm("Delete this question?"))
-                            run(() => deleteQuestion(question.id));
+                            run(() => deleteQuestion(question.id), "Question deleted");
                     }}
                 >
                     Delete

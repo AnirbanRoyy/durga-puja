@@ -21,6 +21,7 @@ import type {
     EventSettings,
     WhatsappSettings,
 } from "@/lib/queries";
+import { useActionToast } from "@/components/admin/use-action-toast";
 import { initialActionState } from "@/lib/validators";
 
 function Labeled({
@@ -41,13 +42,9 @@ function Labeled({
     );
 }
 
-function Message({ ok, code }: { ok: boolean; code?: string }) {
-    if (!code) return null;
-    return <p className={ok ? "text-sm text-success" : "text-sm text-destructive"}>{code}</p>;
-}
-
 export function EventForm({ event }: { event: EventSettings }) {
     const [state, action, pending] = useActionState(saveEventSettings, initialActionState);
+    useActionToast(state);
     return (
         <form action={action} className="grid gap-4 sm:grid-cols-2">
             <Labeled label="Festival name (English)">
@@ -91,7 +88,6 @@ export function EventForm({ event }: { event: EventSettings }) {
                 <Button type="submit" disabled={pending}>
                     Save event
                 </Button>
-                <Message ok={state.ok} code={state.code} />
             </div>
         </form>
     );
@@ -99,6 +95,7 @@ export function EventForm({ event }: { event: EventSettings }) {
 
 export function DonationForm({ donation }: { donation: DonationSettings }) {
     const [state, action, pending] = useActionState(saveDonationSettings, initialActionState);
+    useActionToast(state);
     const [qr, setQr] = useState(donation.qr_image_url ?? "");
     return (
         <form action={action} className="grid gap-4 sm:grid-cols-2">
@@ -161,7 +158,6 @@ export function DonationForm({ donation }: { donation: DonationSettings }) {
                 <Button type="submit" disabled={pending}>
                     Save donation settings
                 </Button>
-                <Message ok={state.ok} code={state.code} />
             </div>
         </form>
     );
@@ -169,6 +165,7 @@ export function DonationForm({ donation }: { donation: DonationSettings }) {
 
 export function AmbientForm({ ambient }: { ambient: AmbientSettings }) {
     const [state, action, pending] = useActionState(saveAmbientSettings, initialActionState);
+    useActionToast(state);
     const [url, setUrl] = useState(ambient.audio_url ?? "");
     return (
         <form action={action} className="grid gap-4">
@@ -198,7 +195,6 @@ export function AmbientForm({ ambient }: { ambient: AmbientSettings }) {
                 <Button type="submit" disabled={pending}>
                     Save background music
                 </Button>
-                <Message ok={state.ok} code={state.code} />
             </div>
         </form>
     );
@@ -206,6 +202,7 @@ export function AmbientForm({ ambient }: { ambient: AmbientSettings }) {
 
 export function WhatsappForm({ whatsapp }: { whatsapp: WhatsappSettings }) {
     const [state, action, pending] = useActionState(saveWhatsappSettings, initialActionState);
+    useActionToast(state);
     const [qr, setQr] = useState(whatsapp.qr_image_url ?? "");
     return (
         <form action={action} className="grid gap-4">
@@ -260,7 +257,6 @@ export function WhatsappForm({ whatsapp }: { whatsapp: WhatsappSettings }) {
                 <Button type="submit" disabled={pending}>
                     Save WhatsApp community
                 </Button>
-                <Message ok={state.ok} code={state.code} />
             </div>
         </form>
     );

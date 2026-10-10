@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Tick02Icon } from "@hugeicons/core-free-icons";
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { FormAlert, Honeypot, TextField } from "@/components/forms/form-bits";
 import type { ProgrammeType, TeamMember } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
-import { initialActionState } from "@/lib/validators";
+import type { TeamSetup } from "@/lib/programme-meta";
+import { initialActionState, type ActionState } from "@/lib/validators";
 
 export type ExistingRegistration = {
     name: string;
@@ -21,8 +22,7 @@ export type ExistingRegistration = {
     members?: TeamMember[];
 };
 
-/** How a team or pair programme signs people up; absent for ordinary individual programmes. */
-export type TeamSetup = { format: "team" | "pair"; min: number; max: number };
+export type { TeamSetup };
 
 type Values = Record<string, string | undefined>;
 type FormState = { errors?: Record<string, string> };
@@ -196,6 +196,9 @@ export function RegistrationForm({
     team,
     existing,
     onDone,
+    onSaved,
+    action: customAction,
+    registrationId,
 }: {
     programmeId: string;
     programmeType: ProgrammeType;
@@ -203,10 +206,15 @@ export function RegistrationForm({
     /** When set, the form edits this registration instead of creating one. */
     existing?: ExistingRegistration;
     onDone?: () => void;
+    /** Called once an edit has been saved (the admin dialog closes itself here). */
+    onSaved?: () => void;
+    /** Replaces the participant's own save action (the admin edits any registration). */
+    action?: (prev: ActionState, formData: FormData) => Promise<ActionState>;
+    registrationId?: string;
 }) {
     const t = useTranslations("forms");
     const [state, action, pending] = useActionState(
-        existing ? updateMyRegistration : registerForProgramme,
+        customAction ?? (existing ? updateMyRegistration : registerForProgramme),
         initialActionState,
     );
     const forKids = programmeType === "drawing" || programmeType === "musical_chair";
@@ -220,6 +228,11 @@ export function RegistrationForm({
         notes: existing?.notes ?? undefined,
     };
     const saved = existing && state.ok && state.code === "updated";
+    useEffect(() => {
+        if (saved) onSaved?.();
+        // onSaved is expected to be stable enough; run only when a save happens.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [saved, state]);
     // Individual sign-up is two columns on wide screens; team and pair forms are a single column.
     const wide = team ? undefined : "sm:col-span-2";
 
@@ -227,6 +240,7 @@ export function RegistrationForm({
         <form action={action} className={cn("relative grid gap-4", !team && "sm:grid-cols-2")}>
             <Honeypot />
             <input type="hidden" name="programmeId" value={programmeId} />
+            {registrationId && <input type="hidden" name="registrationId" value={registrationId} />}
             {team?.format === "team" && (
                 <TeamFields team={team} v={v} state={state} existing={existing} />
             )}

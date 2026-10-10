@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { AdminTitle } from "@/components/admin/admin-bits";
-import { BackLink } from "@/components/admin/back-link";
 import { BrainGamesConsole } from "@/components/admin/brain-games-console";
 import { getProgrammeById, getQuizAdmin, quizLeaderboard } from "@/lib/queries";
 
@@ -17,7 +16,6 @@ export default async function BrainGamesAdminPage(
 
     return (
         <>
-            <BackLink href={`/admin/programmes/${id}`} label={programme.title_en} />
             <AdminTitle
                 title="Brain games"
                 description="Set up rounds and questions, then ask them live. The answer reaches everyone's screen when you press Correct, Wrong or Reveal."

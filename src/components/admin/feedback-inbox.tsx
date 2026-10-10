@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { deleteFeedback, setFeedbackStatus } from "@/actions/admin/content";
+import { useAdminRun } from "@/components/admin/use-admin-run";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Feedback, FeedbackStatus } from "@/lib/database.types";
@@ -24,7 +25,7 @@ const NEXT_LABEL: Record<FeedbackStatus, string> = {
 
 export function FeedbackInbox({ items }: { items: Feedback[] }) {
     const [filter, setFilter] = useState<(typeof FILTERS)[number]>("new");
-    const [pending, startTransition] = useTransition();
+    const { pending, run } = useAdminRun();
     const visible = items.filter((f) => filter === "all" || f.status === filter);
 
     return (
@@ -72,7 +73,10 @@ export function FeedbackInbox({ items }: { items: Feedback[] }) {
                                 variant="outline"
                                 disabled={pending}
                                 onClick={() =>
-                                    startTransition(() => setFeedbackStatus(f.id, NEXT[f.status]))
+                                    run(
+                                        () => setFeedbackStatus(f.id, NEXT[f.status]),
+                                        "Feedback updated",
+                                    )
                                 }
                             >
                                 {NEXT_LABEL[f.status]}
@@ -83,7 +87,7 @@ export function FeedbackInbox({ items }: { items: Feedback[] }) {
                                 disabled={pending}
                                 onClick={() => {
                                     if (confirm("Delete this feedback?"))
-                                        startTransition(() => deleteFeedback(f.id));
+                                        run(() => deleteFeedback(f.id), "Feedback deleted");
                                 }}
                             >
                                 <HugeiconsIcon icon={Delete02Icon} className="text-destructive" />

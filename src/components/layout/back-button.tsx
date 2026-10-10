@@ -18,10 +18,22 @@ function parentPath(pathname: string): string {
  * When the page just before this one already is the parent, it uses the browser's back so the
  * parent reappears exactly as it was left (scroll position, filters).
  */
-export function BackButton({ className }: { className?: string }) {
+export function BackButton({
+    className,
+    rootPath,
+    label,
+}: {
+    className?: string;
+    /** The top of a section (e.g. "/admin"): nothing is above it, so no button is shown there. */
+    rootPath?: string;
+    /** Overrides the translated "Back" label (used by the English-only admin area). */
+    label?: string;
+}) {
     const t = useTranslations("nav");
     const router = useRouter();
     const pathname = usePathname();
+
+    if (rootPath && pathname === rootPath) return null;
 
     function goBack() {
         const parent = parentPath(pathname);
@@ -33,7 +45,7 @@ export function BackButton({ className }: { className?: string }) {
         <button
             type="button"
             onClick={goBack}
-            aria-label={t("back")}
+            aria-label={label ?? t("back")}
             className={cn(
                 "-ml-2.5 grid size-11 shrink-0 place-items-center rounded-full text-foreground transition-colors outline-none hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ring active:bg-foreground/10",
                 className,

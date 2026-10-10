@@ -225,6 +225,42 @@ export async function listRegistrationsWithPhones(
     });
 }
 
+/** Admin only: every registration of a year, across all of its programmes, with contact details. */
+export async function listAllRegistrationsForAdmin(
+    year: number,
+): Promise<{ programmes: Programme[]; registrations: RegistrationWithPhone[] }> {
+    const programmes = await listProgrammes(year);
+    const ids = programmes.map((p) => p.id);
+    if (!ids.length) return { programmes, registrations: [] };
+    const [registrations, contacts] = await Promise.all([
+        db()
+            .from("registrations")
+            .select("*")
+            .in("programme_id", ids)
+            .order("created_at", { ascending: false })
+            .then((r) => unwrap(r, "registrations")),
+        db()
+            .from("registration_contacts")
+            .select("registration_id, phone, age, guardian_name, notes")
+            .in("programme_id", ids)
+            .then((r) => unwrap(r, "contacts")),
+    ]);
+    const details = new Map(contacts.map((c) => [c.registration_id, c]));
+    return {
+        programmes,
+        registrations: registrations.map((r) => {
+            const c = details.get(r.id);
+            return {
+                ...r,
+                phone: c?.phone ?? null,
+                age: c?.age ?? null,
+                guardian_name: c?.guardian_name ?? null,
+                notes: c?.notes ?? null,
+            };
+        }),
+    };
+}
+
 export const countRegistrationsByProgramme = cache(async (): Promise<Map<string, number>> => {
     const rows = unwrap(await db().from("registrations").select("programme_id"), "registrations");
     const counts = new Map<string, number>();

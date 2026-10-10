@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
+import { toast } from "sonner";
 import { translateForAdmin } from "@/actions/admin/translate";
 import { Button } from "@/components/ui/button";
 
@@ -44,7 +45,6 @@ export function TranslateButton({
  * writes the suggestion into the Bengali field by id, and tells the organiser if it can't.
  */
 export function FieldTranslateButton({ from, to }: { from: string; to: string }) {
-    const [message, setMessage] = useState<string | null>(null);
     return (
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <TranslateButton
@@ -52,7 +52,7 @@ export function FieldTranslateButton({ from, to }: { from: string; to: string })
                     (document.getElementById(from) as HTMLInputElement | null)?.value ?? ""
                 }
                 onResult={(bengali) => {
-                    setMessage(null);
+                    toast.success("Bengali suggested. Please check it before saving.");
                     const el = document.getElementById(to) as
                         HTMLInputElement | HTMLTextAreaElement | null;
                     if (!el) return;
@@ -64,10 +64,10 @@ export function FieldTranslateButton({ from, to }: { from: string; to: string })
                     );
                     el.dispatchEvent(new Event("input", { bubbles: true }));
                 }}
-                onError={setMessage}
+                onError={(message) => toast.error(message)}
             />
             <span className="text-xs text-muted-foreground">
-                {message ?? "Left blank, it is translated automatically when you save."}
+                Left blank, it is translated automatically when you save.
             </span>
         </div>
     );

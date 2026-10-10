@@ -1,7 +1,9 @@
 "use client";
 
 import { useActionState, useTransition } from "react";
+import { toast } from "sonner";
 import { makeEditionCurrent, startEdition } from "@/actions/admin/content";
+import { useActionToast } from "@/components/admin/use-action-toast";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -29,6 +31,7 @@ export function StartEditionForm({
     defaults: { year: number; name_en: string; name_bn: string; venue: string };
 }) {
     const [state, action, pending] = useActionState(startEdition, initialActionState);
+    useActionToast(state);
     return (
         <form
             action={action}
@@ -72,11 +75,6 @@ export function StartEditionForm({
                 <Button type="submit" disabled={pending}>
                     Start new year
                 </Button>
-                {state.code && (
-                    <p className={state.ok ? "text-sm text-success" : "text-sm text-destructive"}>
-                        {state.code}
-                    </p>
-                )}
             </div>
         </form>
     );
@@ -91,7 +89,14 @@ export function MakeCurrentButton({ year }: { year: number }) {
             disabled={pending}
             onClick={() => {
                 if (!window.confirm(`Make ${year} the year shown on the public site?`)) return;
-                startTransition(() => makeEditionCurrent(year));
+                startTransition(async () => {
+                    try {
+                        await makeEditionCurrent(year);
+                        toast.success(`${year} is now the year shown on the public site`);
+                    } catch (e) {
+                        toast.error(e instanceof Error ? e.message : "Could not change the year");
+                    }
+                });
             }}
         >
             Make current

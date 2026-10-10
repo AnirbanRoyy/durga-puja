@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BackButton } from "@/components/layout/back-button";
 import { cn } from "@/lib/utils";
 
 export function AdminTitle({
@@ -12,8 +13,11 @@ export function AdminTitle({
 }) {
     return (
         <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
-            <div>
-                <h1 className="text-3xl font-semibold">{title}</h1>
+            <div className="min-w-0">
+                <div className="flex items-center gap-1">
+                    <BackButton rootPath="/admin" label="Back" />
+                    <h1 className="text-3xl font-semibold">{title}</h1>
+                </div>
                 {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
             </div>
             {actions && <div className="flex flex-wrap gap-2">{actions}</div>}

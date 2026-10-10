@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { AdminTitle } from "@/components/admin/admin-bits";
-import { BackLink } from "@/components/admin/back-link";
 import { ResultsEditor } from "@/components/admin/results-editor";
 import { getProgrammeById, listRegistrations, listResults } from "@/lib/queries";
 
@@ -14,7 +13,6 @@ export default async function ResultsAdminPage(props: PageProps<"/admin/programm
 
     return (
         <>
-            <BackLink href={`/admin/programmes/${id}`} label={programme.title_en} />
             <AdminTitle
                 title="Results"
                 description="Enter the winners. The public results page shows these plus automatic insights."
