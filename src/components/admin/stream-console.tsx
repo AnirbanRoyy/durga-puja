@@ -10,12 +10,25 @@ import {
     approveStreamRequest,
     rejectQuotaReset,
     rejectStreamRequest,
+    removeStreamSong,
     setStreamUpNext,
     startStream,
     stopStream,
     type StreamActionResult,
 } from "@/actions/admin/stream";
 import { AdminCard } from "@/components/admin/admin-bits";
+import { StreamLibrary, type LibrarySong } from "@/components/admin/stream-library";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { LiveRefresh } from "@/components/realtime/live-refresh";
 import { Button } from "@/components/ui/button";
 import type { StreamRequest } from "@/lib/database.types";
@@ -55,6 +68,7 @@ export function StreamConsole({
     queue,
     pending,
     quotaRequests,
+    library,
 }: Readonly<{
     isStreaming: boolean;
     nowPlaying: StreamRequest | null;
@@ -62,8 +76,12 @@ export function StreamConsole({
     queue: StreamRequest[];
     pending: StreamRequest[];
     quotaRequests: QuotaRequestForAdmin[];
+    library: LibrarySong[];
 }>) {
     const router = useRouter();
+    const listedIds = new Set(
+        [...queue, ...(nowPlaying ? [nowPlaying] : [])].map((s) => s.youtube_id),
+    );
 
     // Visitors' "more requests" asks are private, so they don't arrive by realtime: check now and then.
     useEffect(() => {
@@ -294,6 +312,44 @@ export function StreamConsole({
                                         Play next
                                     </Button>
                                 )}
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            disabled={busy}
+                                            className="text-destructive"
+                                        >
+                                            Remove
+                                            <span className="sr-only"> {song.title}</span>
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>
+                                                Remove “{song.title}” from the playlist?
+                                            </AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                It won’t be played. A song that already played stays
+                                                in “Played earlier”.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Keep it</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                variant="destructive"
+                                                onClick={() =>
+                                                    run(
+                                                        () => removeStreamSong(song.id),
+                                                        "Removed from playlist",
+                                                    )
+                                                }
+                                            >
+                                                Remove
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </Row>
                         ))}
                         {!queue.length && (
@@ -304,6 +360,12 @@ export function StreamConsole({
                     </ul>
                 </AdminCard>
             </div>
+
+            <StreamLibrary
+                songs={library}
+                inPlaylist={listedIds}
+                playingId={nowPlaying?.youtube_id ?? null}
+            />
 
             {quotaRequests.length > 0 && (
                 <AdminCard title={`Visitors asking for more requests (${quotaRequests.length})`}>
