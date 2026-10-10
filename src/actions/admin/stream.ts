@@ -32,6 +32,14 @@ export async function rejectStreamRequest(id: string) {
     return run(() => db().rpc("reject_stream_request", { p_request_id: id }));
 }
 
+export async function approveQuotaReset(id: string) {
+    return run(() => db().rpc("approve_stream_quota_reset", { p_request_id: id }));
+}
+
+export async function rejectQuotaReset(id: string) {
+    return run(() => db().rpc("reject_stream_quota_reset", { p_request_id: id }));
+}
+
 export async function startStream() {
     return run((year) => db().rpc("start_stream", { p_year: year }));
 }

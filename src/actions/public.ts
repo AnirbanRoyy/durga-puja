@@ -309,6 +309,32 @@ export async function requestStreamSong(
     return { ok: true, code: codes[data] };
 }
 
+/** A visitor who has used all their song requests asks the organisers for a fresh allowance. */
+export async function requestQuotaReset(
+    _prev: ActionState,
+    formData: FormData,
+): Promise<ActionState> {
+    if (isBot(formData)) return { ok: true, code: "quotaAsked" };
+
+    const name = String(formData.get("quotaName") ?? "").trim();
+    if (name.length < 2 || name.length > 40)
+        return fail(formData, "invalid", { quotaName: "name" });
+    if (!(await rateLimit(`stream-quota:${await getClientIp()}`, 5, 3600))) {
+        return fail(formData, "rateLimited");
+    }
+
+    const { data, error } = await db().rpc("request_stream_quota_reset", {
+        p_year: await getCurrentYear(),
+        p_ip_hash: await getIpHash(),
+        p_name: name,
+        p_limit: STREAM_REQUEST_LIMIT,
+    });
+    if (error) throw error;
+    if (data === "declined") return fail(formData, "quotaDeclined");
+    refresh();
+    return { ok: true, code: data === "created" ? "quotaAsked" : "quotaPending" };
+}
+
 export type StreamVoteResult = "ok" | "already_voted" | "closed" | "not_found" | "rate_limited";
 
 export async function upvoteStreamSong(requestId: string): Promise<StreamVoteResult> {

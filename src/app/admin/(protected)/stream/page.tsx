@@ -1,11 +1,14 @@
 import { AdminTitle } from "@/components/admin/admin-bits";
 import { StreamConsole } from "@/components/admin/stream-console";
-import { getStreamBoard } from "@/lib/queries";
+import { getStreamBoard, listPendingQuotaRequests } from "@/lib/queries";
 
 export const metadata = { title: "Pandal stream" };
 
 export default async function StreamAdminPage() {
-    const board = await getStreamBoard();
+    const [board, quotaRequests] = await Promise.all([
+        getStreamBoard(),
+        listPendingQuotaRequests(),
+    ]);
     return (
         <>
             <AdminTitle
@@ -18,6 +21,7 @@ export default async function StreamAdminPage() {
                 upNext={board.upNext}
                 queue={board.queue}
                 pending={board.pending}
+                quotaRequests={quotaRequests}
             />
         </>
     );

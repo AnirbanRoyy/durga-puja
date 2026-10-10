@@ -152,6 +152,7 @@
             "streamUnavailable": "That video can't be played here. Try another link (it may be private, removed or not embeddable).",
             "streamRejected": "That song was not approved for the pandal playlist.",
             "streamLimit": "This network has used its 3 song requests for this year. You can still upvote songs you like!",
+            "quotaDeclined": "The organisers couldn't give extra requests this time.",
             "streamAlready": "You've already requested or upvoted this song."
         },
         "success": {
@@ -412,6 +413,11 @@
         "playedTitle": "Played earlier",
         "playedHint": "Want to hear one again? Request it again (it counts as one of your requests).",
         "playedTimes": "{count, plural, one {Played once} other {Played # times}}",
-        "rerequest": "Request again"
+        "rerequest": "Request again",
+        "quotaTitle": "Need more requests?",
+        "quotaHint": "Tell the organisers who you are and they can give you a fresh set of 3 requests.",
+        "quotaSend": "Ask the organisers",
+        "quotaWaiting": "Your request is with the organisers. Once they approve it, you'll get 3 more song requests. Refresh this page to check.",
+        "quotaDeclined": "The organisers couldn't give extra requests this time. You can still upvote songs you like!"
     }
 }

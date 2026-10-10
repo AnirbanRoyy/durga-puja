@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
     advanceStream,
+    approveQuotaReset,
     approveStreamRequest,
+    rejectQuotaReset,
     rejectStreamRequest,
     setStreamUpNext,
     startStream,
@@ -17,6 +19,7 @@ import { AdminCard } from "@/components/admin/admin-bits";
 import { LiveRefresh } from "@/components/realtime/live-refresh";
 import { Button } from "@/components/ui/button";
 import type { StreamRequest } from "@/lib/database.types";
+import type { QuotaRequestForAdmin } from "@/lib/queries";
 import { loadYouTubeApi, type YTPlayer } from "@/lib/youtube-api";
 
 type WakeLockSentinelLike = { release: () => Promise<void> };
@@ -51,14 +54,24 @@ export function StreamConsole({
     upNext,
     queue,
     pending,
-}: {
+    quotaRequests,
+}: Readonly<{
     isStreaming: boolean;
     nowPlaying: StreamRequest | null;
     upNext: StreamRequest | null;
     queue: StreamRequest[];
     pending: StreamRequest[];
-}) {
+    quotaRequests: QuotaRequestForAdmin[];
+}>) {
     const router = useRouter();
+
+    // Visitors' "more requests" asks are private, so they don't arrive by realtime: check now and then.
+    useEffect(() => {
+        const timer = setInterval(() => {
+            if (document.visibilityState === "visible") router.refresh();
+        }, 20_000);
+        return () => clearInterval(timer);
+    }, [router]);
     const [busy, start] = useTransition();
     const hostRef = useRef<HTMLDivElement | null>(null);
     const playerRef = useRef<YTPlayer | null>(null);
@@ -291,6 +304,48 @@ export function StreamConsole({
                     </ul>
                 </AdminCard>
             </div>
+
+            {quotaRequests.length > 0 && (
+                <AdminCard title={`Visitors asking for more requests (${quotaRequests.length})`}>
+                    <p className="mb-2 text-xs text-muted-foreground">
+                        Each visitor can request 3 songs. Approving gives their network a fresh set
+                        of 3; rejecting leaves them at their limit (they can still upvote).
+                    </p>
+                    <ul className="divide-y">
+                        {quotaRequests.map((ask) => (
+                            <li key={ask.id} className="flex items-center gap-3 py-2.5">
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium">{ask.name}</p>
+                                    <p className="line-clamp-2 text-xs text-muted-foreground">
+                                        Requested: {ask.songs.join(" · ") || "—"}
+                                    </p>
+                                </div>
+                                <div className="flex gap-1.5">
+                                    <Button
+                                        size="sm"
+                                        disabled={busy}
+                                        onClick={() =>
+                                            run(() => approveQuotaReset(ask.id), "Reset approved")
+                                        }
+                                    >
+                                        Approve
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled={busy}
+                                        onClick={() =>
+                                            run(() => rejectQuotaReset(ask.id), "Rejected")
+                                        }
+                                    >
+                                        Reject
+                                    </Button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </AdminCard>
+            )}
 
             <AdminCard title={`Requests to review (${pending.length})`}>
                 <ul className="divide-y">

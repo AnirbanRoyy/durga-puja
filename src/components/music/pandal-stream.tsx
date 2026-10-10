@@ -2,12 +2,13 @@ import Image from "next/image";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { VolumeHighIcon } from "@hugeicons/core-free-icons";
+import { StreamQuotaForm } from "@/components/music/stream-quota-form";
 import { StreamRequestForm } from "@/components/music/stream-request-form";
 import { StreamRerequestButton } from "@/components/music/stream-rerequest-button";
 import { StreamUpvoteButton } from "@/components/music/stream-upvote-button";
 import { LiveRefresh } from "@/components/realtime/live-refresh";
 import type { StreamRequest } from "@/lib/database.types";
-import { getStreamBoard, streamRequestsLeft } from "@/lib/queries";
+import { getQuotaRequestStatus, getStreamBoard, streamRequestsLeft } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { getIpHash } from "@/lib/visitor";
 
@@ -30,11 +31,13 @@ function Thumb({ song, className }: { song: StreamRequest; className?: string })
  * requests waiting for approval. Separate from the personal music library below it.
  */
 export async function PandalStream() {
-    const [t, format, board, left] = await Promise.all([
+    const ipHash = await getIpHash();
+    const [t, format, board, left, quotaStatus] = await Promise.all([
         getTranslations("stream"),
         getFormatter(),
         getStreamBoard(),
-        getIpHash().then((ipHash) => streamRequestsLeft(ipHash)),
+        streamRequestsLeft(ipHash),
+        getQuotaRequestStatus(ipHash),
     ]);
     const { state, nowPlaying, upNext, queue, pending, played } = board;
 
@@ -93,6 +96,13 @@ export async function PandalStream() {
                     <h3 className="text-lg font-semibold">{t("requestTitle")}</h3>
                     <p className="mt-1 mb-4 text-sm text-muted-foreground">{t("requestHint")}</p>
                     <StreamRequestForm left={left} />
+                    {left === 0 && (
+                        <div className="mt-4">
+                            <StreamQuotaForm
+                                status={quotaStatus === "approved" ? null : quotaStatus}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div className="space-y-6">

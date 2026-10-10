@@ -15,6 +15,7 @@ import type {
     Song,
     SongPool,
     SongRequest,
+    StreamQuotaRequest,
     StreamRequest,
     StreamState,
 } from "@/lib/database.types";
@@ -525,6 +526,64 @@ export type StreamBoard = {
 
 /** Songs one network address can add or re-request per year (upvotes don't count). */
 export const STREAM_REQUEST_LIMIT = 3;
+
+/** The visitor's latest ask for more requests this year, or null. */
+export async function getQuotaRequestStatus(
+    ipHash: string,
+): Promise<StreamQuotaRequest["status"] | null> {
+    const { data, error } = await db()
+        .from("stream_quota_requests")
+        .select("status")
+        .eq("year", await getCurrentYear())
+        .eq("ip_hash", ipHash)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+    if (error) throw error;
+    return data?.status ?? null;
+}
+
+export type QuotaRequestForAdmin = {
+    id: string;
+    name: string;
+    created_at: string;
+    /** Titles of the songs this network has requested, so the organiser can judge the ask. */
+    songs: string[];
+};
+
+export async function listPendingQuotaRequests(): Promise<QuotaRequestForAdmin[]> {
+    const year = await getCurrentYear();
+    const { data: asks, error } = await db()
+        .from("stream_quota_requests")
+        .select("*")
+        .eq("year", year)
+        .eq("status", "pending")
+        .order("created_at", { ascending: true });
+    if (error) throw error;
+    if (!asks.length) return [];
+
+    const { data: log, error: logError } = await db()
+        .from("stream_request_log")
+        .select("ip_hash, request_id")
+        .eq("year", year)
+        .in("ip_hash", [...new Set(asks.map((a) => a.ip_hash))]);
+    if (logError) throw logError;
+    const ids = [...new Set(log.flatMap((l) => (l.request_id ? [l.request_id] : [])))];
+    const { data: songs, error: songsError } = ids.length
+        ? await db().from("stream_requests").select("id, title").in("id", ids)
+        : { data: [], error: null };
+    if (songsError) throw songsError;
+    const title = new Map(songs.map((s) => [s.id, s.title]));
+
+    return asks.map((a) => ({
+        id: a.id,
+        name: a.name,
+        created_at: a.created_at,
+        songs: log
+            .filter((l) => l.ip_hash === a.ip_hash && l.request_id)
+            .map((l) => title.get(l.request_id!) ?? "(removed song)"),
+    }));
+}
 
 export async function streamRequestsLeft(ipHash: string, year?: number): Promise<number> {
     const { data, error } = await db().rpc("stream_requests_used", {

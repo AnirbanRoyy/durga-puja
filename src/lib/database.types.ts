@@ -224,6 +224,16 @@ export type StreamState = {
     updated_at: string;
 };
 
+export type StreamQuotaRequest = {
+    id: string;
+    year: number;
+    ip_hash: string;
+    name: string;
+    status: "pending" | "approved" | "rejected";
+    created_at: string;
+    resolved_at: string | null;
+};
+
 export type RateLimit = {
     key: string;
     window_start: string;
@@ -262,6 +272,11 @@ export type Database = {
                 "request_id" | "voter_hash"
             >;
             stream_state: Table<StreamState, "year">;
+            stream_quota_requests: Table<StreamQuotaRequest, "year" | "ip_hash" | "name">;
+            stream_request_log: Table<
+                { id: string; year: number; ip_hash: string; request_id: string | null },
+                "year" | "ip_hash"
+            >;
             quiz_rounds: Table<QuizRound, "programme_id" | "round_no" | "name_en">;
             quiz_questions: Table<QuizQuestion, "round_id" | "programme_id" | "question_en">;
             quiz_answers: Table<QuizAnswer, "question_id" | "answer_en">;
@@ -302,6 +317,12 @@ export type Database = {
                     | "rejected"
                     | "limit_reached";
             };
+            request_stream_quota_reset: {
+                Args: { p_year: number; p_ip_hash: string; p_name: string; p_limit: number };
+                Returns: "created" | "pending" | "declined" | "not_needed";
+            };
+            approve_stream_quota_reset: { Args: { p_request_id: string }; Returns: undefined };
+            reject_stream_quota_reset: { Args: { p_request_id: string }; Returns: undefined };
             stream_requests_used: { Args: { p_year: number; p_ip_hash: string }; Returns: number };
             upvote_stream_request: {
                 Args: { p_request_id: string; p_voter_hash: string };
