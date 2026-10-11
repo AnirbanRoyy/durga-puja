@@ -11,6 +11,7 @@ Two jobs, in this order: tell the user what happened, then make `.claude/context
 ## 1. Summarize the session
 
 Write a short summary for the user, in plain text:
+
 - **Done:** what was built, fixed or decided, one line each. Name the spec (`.claude/specs/NNNN-*.md`) when there is one.
 - **Not done or uncommitted:** check `git status --short` and `git log --oneline -5` instead of relying on memory. Say plainly what is not committed, not deployed, or not tested.
 - **Needs the user:** anything waiting on them (env vars, a deploy, a decision).
@@ -20,6 +21,7 @@ Keep it under about 15 lines.
 ## 2. Update `.claude/context.md`
 
 Follow the rules in `CLAUDE.md` ("Keeping context current"):
+
 - Add each new or changed feature as one line under the right section. Remove lines for things that no longer exist.
 - Add any new "rule that bites" learned this session (a gotcha that would cost the next session time), and drop ones that stopped being true.
 - Bump `Last updated` and `Specs done`. Check each spec's `Status:` line in `.claude/specs/` so the count is right.

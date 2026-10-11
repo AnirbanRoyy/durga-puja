@@ -12,6 +12,14 @@ import { db } from "@/lib/supabase/server";
 import { bengaliOrTranslated } from "@/lib/translate";
 import { parseWhatsappInvite, parseYouTubeId, type ActionState } from "@/lib/validators";
 
+const CLOUDINARY_PREFIX = "https://res.cloudinary.com/";
+
+/** A text field of a form; anything that isn't text (a file) counts as empty. */
+function text(formData: FormData, key: string): string {
+    const value = formData.get(key);
+    return typeof value === "string" ? value : "";
+}
+
 const CATEGORIES = [
     "mahalaya",
     "agomoni",
@@ -49,6 +57,7 @@ export async function addYouTubeSong(_prev: ActionState, formData: FormData): Pr
     if (!youtubeId)
         return { ok: false, code: "That doesn't look like a YouTube link.", values: raw };
 
+    const pool = formData.get("pool") === "musical_chair" ? "musical_chair" : "music_page";
     const { error } = await db()
         .from("songs")
         .insert({
@@ -57,8 +66,8 @@ export async function addYouTubeSong(_prev: ActionState, formData: FormData): Pr
             category: parsed.data.category,
             source: "youtube",
             youtube_id: youtubeId,
-            pool: "music_page",
-            featured: formData.get("featured") === "on",
+            pool,
+            featured: pool === "music_page" && formData.get("featured") === "on",
         });
     if (error) throw error;
     refresh();
@@ -77,7 +86,7 @@ export type UploadedAudio = {
 export async function addMusicalChairSong(input: UploadedAudio) {
     await requireAdmin();
     const title = input.title.trim().slice(0, 160);
-    if (!title || !/^https:\/\/res\.cloudinary\.com\//.test(input.audioUrl)) {
+    if (!title || !input.audioUrl.startsWith(CLOUDINARY_PREFIX)) {
         throw new Error("Invalid upload");
     }
     const supabase = db();
@@ -102,6 +111,99 @@ export async function addMusicalChairSong(input: UploadedAudio) {
             .update({ status: "added", song_id: song.id })
             .eq("id", input.requestId);
     }
+    refresh();
+}
+
+/** Puts YouTube songs from the music library into the musical chair pool (skips ones already there). */
+export async function addSongsToMusicalChairPool(
+    songIds: string[],
+): Promise<{ ok: true; added: number } | { ok: false; message: string }> {
+    await requireAdmin();
+    if (!songIds.length) return { ok: false, message: "Pick at least one song." };
+    const supabase = db();
+    const { data: library, error } = await supabase
+        .from("songs")
+        .select("title, artist, category, youtube_id")
+        .in("id", songIds)
+        .eq("source", "youtube")
+        .eq("active", true);
+    if (error) return { ok: false, message: error.message };
+    const { data: pool, error: poolError } = await supabase
+        .from("songs")
+        .select("youtube_id")
+        .eq("pool", "musical_chair")
+        .not("youtube_id", "is", null);
+    if (poolError) return { ok: false, message: poolError.message };
+    const have = new Set(pool.map((s) => s.youtube_id));
+    const fresh = library.filter((s) => s.youtube_id && !have.has(s.youtube_id));
+    if (fresh.length) {
+        const { error: insertError } = await supabase.from("songs").insert(
+            fresh.map((s) => ({
+                title: s.title,
+                artist: s.artist,
+                category: s.category,
+                source: "youtube" as const,
+                youtube_id: s.youtube_id,
+                pool: "musical_chair" as const,
+            })),
+        );
+        if (insertError) return { ok: false, message: insertError.message };
+    }
+    refresh();
+    return { ok: true, added: fresh.length };
+}
+
+/** Adds a visitor's requested YouTube song to the musical chair pool. */
+export async function addMusicalChairRequestToPool(requestId: string) {
+    await requireAdmin();
+    const supabase = db();
+    const { data: request, error } = await supabase
+        .from("musical_chair_requests")
+        .select("*")
+        .eq("id", requestId)
+        .maybeSingle();
+    if (error) throw error;
+    if (!request) throw new Error("Request not found");
+
+    const { data: existing } = await supabase
+        .from("songs")
+        .select("id")
+        .eq("pool", "musical_chair")
+        .eq("youtube_id", request.youtube_id)
+        .limit(1)
+        .maybeSingle();
+    let songId = existing?.id ?? null;
+    if (!songId) {
+        const { data: song, error: insertError } = await supabase
+            .from("songs")
+            .insert({
+                title: request.title.slice(0, 160),
+                artist: request.channel,
+                category: "other",
+                source: "youtube",
+                youtube_id: request.youtube_id,
+                pool: "musical_chair",
+            })
+            .select("id")
+            .single();
+        if (insertError) throw insertError;
+        songId = song.id;
+    }
+    const { error: updateError } = await supabase
+        .from("musical_chair_requests")
+        .update({ status: "added", song_id: songId })
+        .eq("id", requestId);
+    if (updateError) throw updateError;
+    refresh();
+}
+
+export async function rejectMusicalChairRequest(requestId: string) {
+    await requireAdmin();
+    const { error } = await db()
+        .from("musical_chair_requests")
+        .update({ status: "rejected" })
+        .eq("id", requestId);
+    if (error) throw error;
     refresh();
 }
 
@@ -168,8 +270,7 @@ export type UploadedImage = {
 
 export async function addDrawing(programmeId: string, image: UploadedImage) {
     await requireAdmin();
-    if (!/^https:\/\/res\.cloudinary\.com\//.test(image.imageUrl))
-        throw new Error("Invalid upload");
+    if (!image.imageUrl.startsWith(CLOUDINARY_PREFIX)) throw new Error("Invalid upload");
     const { error } = await db()
         .from("drawings")
         .insert({
@@ -373,7 +474,7 @@ export async function saveEventSettings(
     formData: FormData,
 ): Promise<ActionState> {
     await requireAdmin();
-    const get = (k: string) => String(formData.get(k) ?? "").trim();
+    const get = (k: string) => text(formData, k).trim();
     const mahalaya = istLocalToIso(get("mahalaya"));
     const shashthi = istLocalToIso(get("shashthi"));
     const dashami = istLocalToIso(get("dashami"));
@@ -405,7 +506,7 @@ export async function saveEventSettings(
 /** Starts a new year: it becomes current, last year's sign-ups and voting close. */
 export async function startEdition(_prev: ActionState, formData: FormData): Promise<ActionState> {
     await requireAdmin();
-    const get = (k: string) => String(formData.get(k) ?? "").trim();
+    const get = (k: string) => text(formData, k).trim();
     const year = Number(get("year"));
     const mahalaya = istLocalToIso(get("mahalaya"));
     const shashthi = istLocalToIso(get("shashthi"));
@@ -455,13 +556,13 @@ export async function saveDonationSettings(
     formData: FormData,
 ): Promise<ActionState> {
     await requireAdmin();
-    const get = (k: string) => String(formData.get(k) ?? "").trim() || null;
+    const get = (k: string) => text(formData, k).trim() || null;
     const upi = get("upi_id");
-    if (upi && !/^[\w.-]{2,256}@[a-zA-Z][\w]{2,64}$/.test(upi)) {
+    if (upi && !/^[\w.-]{2,256}@[a-zA-Z]\w{2,64}$/.test(upi)) {
         return { ok: false, code: "That UPI ID doesn't look right (expected name@bank)." };
     }
     const qr = get("qr_image_url");
-    if (qr && !/^https:\/\/res\.cloudinary\.com\//.test(qr)) {
+    if (qr && !qr.startsWith(CLOUDINARY_PREFIX)) {
         return { ok: false, code: "QR image must be uploaded through the button." };
     }
     await saveSetting("donation", {
@@ -480,8 +581,8 @@ export async function saveAmbientSettings(
     formData: FormData,
 ): Promise<ActionState> {
     await requireAdmin();
-    const url = String(formData.get("audio_url") ?? "").trim() || null;
-    if (url && !/^https:\/\/res\.cloudinary\.com\//.test(url)) {
+    const url = text(formData, "audio_url").trim() || null;
+    if (url && !url.startsWith(CLOUDINARY_PREFIX)) {
         return { ok: false, code: "Audio must be uploaded through the button." };
     }
     await saveSetting("ambient", { audio_url: url });
@@ -494,7 +595,7 @@ export async function saveWhatsappSettings(
     formData: FormData,
 ): Promise<ActionState> {
     await requireAdmin();
-    const rawInvite = String(formData.get("invite_url") ?? "").trim();
+    const rawInvite = text(formData, "invite_url").trim();
     const invite = rawInvite ? parseWhatsappInvite(rawInvite) : null;
     if (rawInvite && !invite) {
         return {
@@ -502,8 +603,8 @@ export async function saveWhatsappSettings(
             code: "That doesn't look like a WhatsApp invite link (expected https://chat.whatsapp.com/…).",
         };
     }
-    const qr = String(formData.get("qr_image_url") ?? "").trim() || null;
-    if (qr && !/^https:\/\/res\.cloudinary\.com\//.test(qr)) {
+    const qr = text(formData, "qr_image_url").trim() || null;
+    if (qr && !qr.startsWith(CLOUDINARY_PREFIX)) {
         return { ok: false, code: "QR image must be uploaded through the button." };
     }
     await saveSetting("whatsapp", { invite_url: invite, qr_image_url: qr });

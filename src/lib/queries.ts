@@ -5,6 +5,7 @@ import type {
     Drawing,
     Edition,
     Feedback,
+    MusicalChairRequest,
     MusicalChairRound,
     QuizAnswer,
     QuizQuestion,
@@ -96,7 +97,7 @@ const fetchSettingValue = unstable_cache(
 );
 
 async function getSetting<T extends object>(key: string, fallback: T): Promise<T> {
-    return { ...fallback, ...(((await fetchSettingValue(key)) as Partial<T> | null) ?? {}) };
+    return { ...fallback, ...((await fetchSettingValue(key)) as Partial<T> | null) };
 }
 
 /** The years rarely change but nearly every page reads them, so they are cached for everyone. */
@@ -303,6 +304,34 @@ export const listRounds = cache(async (programmeId: string): Promise<MusicalChai
         "rounds",
     );
 });
+
+/** Visitor song requests for a musical chair game, most upvoted first (rejected ones hidden). */
+export const listMusicalChairRequests = cache(
+    async (programmeId: string): Promise<MusicalChairRequest[]> => {
+        return unwrap(
+            await db()
+                .from("musical_chair_requests")
+                .select("*")
+                .eq("programme_id", programmeId)
+                .neq("status", "rejected")
+                .order("upvotes", { ascending: false })
+                .order("created_at", { ascending: true }),
+            "musical chair requests",
+        );
+    },
+);
+
+export async function musicalChairRequestsLeft(
+    programmeId: string,
+    ipHash: string,
+): Promise<number> {
+    const { data, error } = await db().rpc("musical_chair_requests_used", {
+        p_programme_id: programmeId,
+        p_ip_hash: ipHash,
+    });
+    if (error) throw error;
+    return Math.max(0, STREAM_REQUEST_LIMIT - (data ?? 0));
+}
 
 export const listDrawings = cache(async (programmeId: string): Promise<Drawing[]> => {
     return unwrap(

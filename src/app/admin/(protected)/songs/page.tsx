@@ -29,8 +29,12 @@ export default async function SongsAdminPage() {
                     <SongList songs={musicPage} allowFeature />
                 </div>
                 <div className="space-y-4">
-                    <h2 className="text-xl font-semibold">Musical chair (MP3)</h2>
+                    <h2 className="text-xl font-semibold">Musical chair</h2>
                     <AdminCard>
+                        <AddYouTubeSongForm pool="musical_chair" />
+                    </AdminCard>
+                    <AdminCard>
+                        <p className="mb-3 text-sm font-medium">Or upload an MP3</p>
                         <MusicalChairUploader />
                     </AdminCard>
                     <SongList songs={musicalChair} />

@@ -1,29 +1,54 @@
-import { getFormatter, getTranslations } from "next-intl/server";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { MusicNote03Icon } from "@hugeicons/core-free-icons";
+import Image from "next/image";
+import { getTranslations } from "next-intl/server";
+import { requestMusicalChairSong, upvoteMusicalChairSong } from "@/actions/public";
+import { MusicalChairLeaderboard } from "@/components/programmes/musical-chair-leaderboard";
 import { LiveMusicalChairScreen } from "@/components/programmes/live-musical-chair-screen";
-import { SongRequestForm } from "@/components/programmes/song-request-form";
+import { StreamRequestForm } from "@/components/music/stream-request-form";
+import { StreamUpvoteButton } from "@/components/music/stream-upvote-button";
 import { LiveRefresh } from "@/components/realtime/live-refresh";
-import { listRounds, listSongRequests } from "@/lib/queries";
+import {
+    listMusicalChairRequests,
+    listRegistrations,
+    listRounds,
+    musicalChairRequestsLeft,
+} from "@/lib/queries";
+import { musicalChairStandings } from "@/lib/musical-chair-standings";
 import { cn } from "@/lib/utils";
+import { getIpHash } from "@/lib/visitor";
 
-export async function MusicalChairPublic({ programmeId }: { programmeId: string }) {
-    const [t, format, requests, rounds] = await Promise.all([
+export async function MusicalChairPublic({
+    programmeId,
+    finished = false,
+}: Readonly<{
+    programmeId: string;
+    finished?: boolean;
+}>) {
+    const [t, requests, rounds, registrations, left] = await Promise.all([
         getTranslations("musicalChair"),
-        getFormatter(),
-        listSongRequests(),
+        listMusicalChairRequests(programmeId),
         listRounds(programmeId),
+        listRegistrations(programmeId),
+        getIpHash().then((ip) => musicalChairRequestsLeft(programmeId, ip)),
     ]);
+    const standings = musicalChairStandings(
+        registrations.map((r) => r.name),
+        rounds,
+    );
 
     return (
         <div className="space-y-10">
-            <LiveRefresh tables={["song_requests"]} />
+            <LiveRefresh
+                tables={["musical_chair_requests"]}
+                filter={`programme_id=eq.${programmeId}`}
+            />
             <LiveRefresh
                 tables={["musical_chair_rounds"]}
                 filter={`programme_id=eq.${programmeId}`}
             />
 
             <LiveMusicalChairScreen programmeId={programmeId} />
+
+            <MusicalChairLeaderboard standings={standings} finished={finished} />
 
             {rounds.length > 0 && (
                 <section>
@@ -51,57 +76,65 @@ export async function MusicalChairPublic({ programmeId }: { programmeId: string 
                 </section>
             )}
 
-            <section className="grid gap-6 md:grid-cols-2">
-                <div>
+            <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="min-w-0">
                     <h2 className="text-2xl font-semibold">{t("requestTitle")}</h2>
                     <p className="mt-1 mb-4 text-sm text-muted-foreground">{t("requestHint")}</p>
-                    <SongRequestForm />
+                    <StreamRequestForm
+                        left={left}
+                        action={requestMusicalChairSong}
+                        hidden={{ programmeId }}
+                    />
                 </div>
-                <div>
+                <div className="min-w-0">
                     <h3 className="text-lg font-semibold">{t("requestedSongs")}</h3>
                     {requests.length === 0 ? (
                         <p className="mt-2 text-sm text-muted-foreground">{t("noRequests")}</p>
                     ) : (
-                        <ul className="mt-3 space-y-2">
+                        <ul className="mt-3 space-y-2.5">
                             {requests.slice(0, 30).map((r) => (
-                                <li
-                                    key={r.id}
-                                    className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2.5"
-                                >
-                                    <HugeiconsIcon
-                                        icon={MusicNote03Icon}
-                                        className={cn(
-                                            "size-4 shrink-0",
-                                            r.status === "added" ? "text-success" : "text-marigold",
-                                        )}
-                                    />
+                                <li key={r.id} className="flex items-center gap-3">
+                                    {r.thumbnail_url ? (
+                                        <Image
+                                            src={r.thumbnail_url}
+                                            alt=""
+                                            width={160}
+                                            height={90}
+                                            className="aspect-video w-16 shrink-0 rounded-lg object-cover"
+                                        />
+                                    ) : (
+                                        <div className="aspect-video w-16 shrink-0 rounded-lg bg-muted" />
+                                    )}
                                     <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-medium">{r.title}</p>
+                                        <p className="line-clamp-1 text-sm font-medium">
+                                            {r.title}
+                                        </p>
                                         <p className="truncate text-xs text-muted-foreground">
-                                            {[
-                                                r.artist,
-                                                r.requested_by && t("by", { name: r.requested_by }),
-                                            ]
-                                                .filter(Boolean)
-                                                .join(" · ") ||
-                                                format.relativeTime(new Date(r.created_at))}
+                                            {t("by", { name: r.requested_by })}
+                                            {" · "}
+                                            <span
+                                                className={cn(
+                                                    r.status === "added" &&
+                                                        "font-semibold text-success",
+                                                )}
+                                            >
+                                                {t(
+                                                    `requestStatus.${r.status === "added" ? "added" : "pending"}`,
+                                                )}
+                                            </span>
                                         </p>
                                     </div>
-                                    {r.request_count > 1 && (
-                                        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
-                                            ×{r.request_count}
+                                    {r.status === "pending" ? (
+                                        <StreamUpvoteButton
+                                            id={r.id}
+                                            count={r.upvotes}
+                                            vote={upvoteMusicalChairSong}
+                                        />
+                                    ) : (
+                                        <span className="inline-flex h-9 min-w-14 shrink-0 items-center justify-center rounded-full border px-3 text-sm font-semibold tabular-nums">
+                                            {r.upvotes}
                                         </span>
                                     )}
-                                    <span
-                                        className={cn(
-                                            "text-xs font-semibold",
-                                            r.status === "added"
-                                                ? "text-success"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        {t(`requestStatus.${r.status}`)}
-                                    </span>
                                 </li>
                             ))}
                         </ul>
