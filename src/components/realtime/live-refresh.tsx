@@ -9,6 +9,7 @@ type LiveTable =
     | "registrations"
     | "song_requests"
     | "musical_chair_rounds"
+    | "musical_chair_requests"
     | "drawings"
     | "results"
     | "quiz_rounds"
@@ -32,7 +33,7 @@ export function LiveRefresh({ tables, filter }: { tables: LiveTable[]; filter?: 
             timer = setTimeout(() => router.refresh(), 300);
         };
 
-        const channel = supabase.channel(`live:${key}:${filter ?? "all"}:${Math.random()}`);
+        const channel = supabase.channel(`live:${key}:${filter ?? "all"}:${crypto.randomUUID()}`);
         for (const table of key.split(",")) {
             channel.on(
                 "postgres_changes",
@@ -44,7 +45,7 @@ export function LiveRefresh({ tables, filter }: { tables: LiveTable[]; filter?: 
 
         return () => {
             clearTimeout(timer);
-            supabase.removeChannel(channel);
+            void supabase.removeChannel(channel);
         };
     }, [key, filter, router]);
 

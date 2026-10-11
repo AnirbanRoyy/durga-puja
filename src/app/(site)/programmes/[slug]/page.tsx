@@ -31,7 +31,17 @@ export async function generateMetadata(props: PageProps<"/programmes/[slug]">) {
     return { title: programme ? pick(locale, programme.title_en, programme.title_bn) : undefined };
 }
 
-export default async function ProgrammePage(props: PageProps<"/programmes/[slug]">) {
+function registeredText(
+    t: Awaited<ReturnType<typeof getTranslations>>,
+    team: boolean,
+    count: number,
+    max: number | null,
+): string {
+    if (!team) return t("registeredCount", { count });
+    return max ? t("registeredTeamsOf", { count, max }) : t("registeredTeams", { count });
+}
+
+export default async function ProgrammePage(props: Readonly<PageProps<"/programmes/[slug]">>) {
     const { slug } = await props.params;
     const programme = await getProgrammeBySlug(slug);
     if (!programme) notFound();
@@ -49,6 +59,25 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
     const open = acceptsRegistrations(programme);
     const team = teamSetupOf(programme);
     const mine = programme.status === "completed" ? null : await getMyRegistration(programme.id);
+
+    const registeredLabel = registeredText(
+        t,
+        Boolean(team),
+        registrations.length,
+        programme.max_participants,
+    );
+    const newEntry = open ? (
+        <>
+            <p className="mt-1 mb-5 text-sm text-muted-foreground">{t("registerHint")}</p>
+            <RegistrationForm
+                programmeId={programme.id}
+                programmeType={programme.type}
+                team={team}
+            />
+        </>
+    ) : (
+        <p className="mt-2 text-sm text-muted-foreground">{t("registrationClosed")}</p>
+    );
 
     return (
         <>
@@ -84,14 +113,7 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
                     )}
                     <span className="inline-flex items-center gap-1.5">
                         <HugeiconsIcon icon={UserGroupIcon} className="size-4" />
-                        {team
-                            ? programme.max_participants
-                                ? t("registeredTeamsOf", {
-                                      count: registrations.length,
-                                      max: programme.max_participants,
-                                  })
-                                : t("registeredTeams", { count: registrations.length })
-                            : t("registeredCount", { count: registrations.length })}
+                        {registeredLabel}
                     </span>
                 </div>
             </PageHeader>
@@ -130,7 +152,10 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
                         )}
                         {programme.type === "quiz" && <BrainGamesLive programmeId={programme.id} />}
                         {programme.type === "musical_chair" && (
-                            <MusicalChairPublic programmeId={programme.id} />
+                            <MusicalChairPublic
+                                programmeId={programme.id}
+                                finished={programme.status === "completed"}
+                            />
                         )}
                         {team && <TeamList registrations={registrations} />}
                         {isLineupType(programme.type) && (
@@ -165,21 +190,8 @@ export default async function ProgrammePage(props: PageProps<"/programmes/[slug]
                                         }}
                                     />
                                 </div>
-                            ) : open ? (
-                                <>
-                                    <p className="mt-1 mb-5 text-sm text-muted-foreground">
-                                        {t("registerHint")}
-                                    </p>
-                                    <RegistrationForm
-                                        programmeId={programme.id}
-                                        programmeType={programme.type}
-                                        team={team}
-                                    />
-                                </>
                             ) : (
-                                <p className="mt-2 text-sm text-muted-foreground">
-                                    {t("registrationClosed")}
-                                </p>
+                                newEntry
                             )}
                         </div>
                     </aside>
@@ -193,11 +205,11 @@ async function DrawingSection({
     programmeId,
     votingOpen,
     hideCounts,
-}: {
+}: Readonly<{
     programmeId: string;
     votingOpen: boolean;
     hideCounts: boolean;
-}) {
+}>) {
     const [drawings, votedFor] = await Promise.all([
         listDrawings(programmeId),
         peekVoterHash().then((hash) => (hash ? hasVoted(programmeId, hash) : null)),

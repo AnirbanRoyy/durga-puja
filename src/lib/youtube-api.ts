@@ -6,6 +6,9 @@ export type YTPlayer = {
     pauseVideo: () => void;
     stopVideo: () => void;
     setVolume: (volume: number) => void;
+    seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+    /** Length in seconds; 0 until the video's metadata has loaded. */
+    getDuration: () => number;
     destroy: () => void;
 };
 
@@ -13,7 +16,7 @@ export type YTNamespace = {
     Player: new (
         el: HTMLElement,
         opts: {
-            videoId: string;
+            videoId?: string;
             width?: string | number;
             height?: string | number;
             playerVars?: Record<string, number | string>;
@@ -39,18 +42,16 @@ let apiPromise: Promise<YTNamespace> | null = null;
 
 export function loadYouTubeApi(): Promise<YTNamespace> {
     if (window.YT?.Player) return Promise.resolve(window.YT);
-    if (!apiPromise) {
-        apiPromise = new Promise((resolve) => {
-            const previous = window.onYouTubeIframeAPIReady;
-            window.onYouTubeIframeAPIReady = () => {
-                previous?.();
-                resolve(window.YT!);
-            };
-            const script = document.createElement("script");
-            script.src = "https://www.youtube.com/iframe_api";
-            script.async = true;
-            document.head.appendChild(script);
-        });
-    }
+    apiPromise ??= new Promise((resolve) => {
+        const previous = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = () => {
+            previous?.();
+            resolve(window.YT!);
+        };
+        const script = document.createElement("script");
+        script.src = "https://www.youtube.com/iframe_api";
+        script.async = true;
+        document.head.appendChild(script);
+    });
     return apiPromise;
 }

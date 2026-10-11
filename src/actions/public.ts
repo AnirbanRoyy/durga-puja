@@ -40,6 +40,25 @@ function formObject(formData: FormData): Record<string, string> {
     return out;
 }
 
+/** A text field of a form; anything that isn't text (a file) counts as empty. */
+function field(formData: FormData, key: string): string {
+    const value = formData.get(key);
+    return typeof value === "string" ? value : "";
+}
+
+/** Field errors for the link and name of a song request, or null when both are fine. */
+function songRequestErrors(videoId: string | null, name: string): Record<string, string> | null {
+    const nameOk = name.length >= 2 && name.length <= 40;
+    if (videoId && nameOk) return null;
+    return { ...(videoId ? {} : { link: "link" }), ...(nameOk ? {} : { name: "name" }) };
+}
+
+/** One visitor (and one network) may only send so many song requests an hour. */
+async function songRequestsTooFast(prefix: string, perVisitor: number, perNetwork: number) {
+    if (!(await rateLimit(`${prefix}:${await getVisitorId()}`, perVisitor, 3600))) return true;
+    return !(await rateLimit(`${prefix}-ip:${await getClientIp()}`, perNetwork, 3600));
+}
+
 function fail(formData: FormData, code: string, errors?: Record<string, string>): ActionState {
     return { ok: false, code, errors, values: formObject(formData) };
 }
@@ -191,8 +210,8 @@ export async function recoverRegistration(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    const programmeId = String(formData.get("programmeId") ?? "");
-    const phone = phoneSchema.safeParse(String(formData.get("phone") ?? ""));
+    const programmeId = field(formData, "programmeId");
+    const phone = phoneSchema.safeParse(field(formData, "phone"));
     if (!z.uuid().safeParse(programmeId).success || !phone.success) {
         return fail(formData, "invalid", { phone: "phone" });
     }
@@ -264,21 +283,11 @@ export async function requestStreamSong(
 ): Promise<ActionState> {
     if (isBot(formData)) return { ok: true, code: "streamAdded" };
 
-    const link = String(formData.get("link") ?? "");
-    const name = String(formData.get("name") ?? "").trim();
-    const videoId = parseYouTubeId(link);
-    if (!videoId || name.length < 2 || name.length > 40) {
-        return fail(formData, "invalid", {
-            ...(videoId ? {} : { link: "link" }),
-            ...(name.length >= 2 && name.length <= 40 ? {} : { name: "name" }),
-        });
-    }
-    if (!(await rateLimit(`stream:${await getVisitorId()}`, 6, 3600))) {
-        return fail(formData, "rateLimited");
-    }
-    if (!(await rateLimit(`stream-ip:${await getClientIp()}`, 30, 3600))) {
-        return fail(formData, "rateLimited");
-    }
+    const name = field(formData, "name").trim();
+    const videoId = parseYouTubeId(field(formData, "link"));
+    const errors = songRequestErrors(videoId, name);
+    if (errors || !videoId) return fail(formData, "invalid", errors ?? undefined);
+    if (await songRequestsTooFast("stream", 6, 30)) return fail(formData, "rateLimited");
 
     const info = await fetchYouTubeInfo(videoId);
     if (!info) return fail(formData, "streamUnavailable", { link: "link" });
@@ -307,6 +316,67 @@ export async function requestStreamSong(
     return { ok: true, code: codes[data] };
 }
 
+/** A visitor requests a YouTube song for a musical chair game (or upvotes it if it is already listed). */
+export async function requestMusicalChairSong(
+    _prev: ActionState,
+    formData: FormData,
+): Promise<ActionState> {
+    if (isBot(formData)) return { ok: true, code: "streamAdded" };
+
+    const programmeId = field(formData, "programmeId");
+    const name = field(formData, "name").trim();
+    const videoId = parseYouTubeId(field(formData, "link"));
+    if (!z.uuid().safeParse(programmeId).success) return fail(formData, "invalid");
+    const errors = songRequestErrors(videoId, name);
+    if (errors || !videoId) return fail(formData, "invalid", errors ?? undefined);
+    if (await songRequestsTooFast("mcsong", 6, 30)) return fail(formData, "rateLimited");
+
+    const supabase = db();
+    const { data: programme } = await supabase
+        .from("programmes")
+        .select("type, status")
+        .eq("id", programmeId)
+        .maybeSingle();
+    if (programme?.type !== "musical_chair") return fail(formData, "invalid");
+    if (programme.status === "completed" || programme.status === "cancelled") {
+        return fail(formData, "registrationClosed");
+    }
+
+    const info = await fetchYouTubeInfo(videoId);
+    if (!info) return fail(formData, "streamUnavailable", { link: "link" });
+
+    const { data, error } = await supabase.rpc("request_musical_chair_song", {
+        p_programme_id: programmeId,
+        p_youtube_id: videoId,
+        p_title: info.title,
+        p_channel: info.channel,
+        p_thumbnail_url: info.thumbnail,
+        p_requested_by: name,
+        p_voter_hash: await getVoterHash(),
+        p_ip_hash: await getIpHash(),
+        p_limit: STREAM_REQUEST_LIMIT,
+    });
+    if (error) throw error;
+    if (data === "rejected") return fail(formData, "streamRejected");
+    if (data === "limit_reached") return fail(formData, "streamLimit");
+    if (data === "already_requested") return fail(formData, "streamAlready");
+    if (data === "in_pool") return fail(formData, "mcInPool");
+    refresh();
+    return { ok: true, code: data === "added" ? "streamAdded" : "streamUpvoted" };
+}
+
+export async function upvoteMusicalChairSong(requestId: string): Promise<StreamVoteResult> {
+    if (!/^[0-9a-f-]{36}$/i.test(requestId)) return "not_found";
+    if (!(await rateLimit(`mcvote:${await getVisitorId()}`, 60, 3600))) return "rate_limited";
+    const { data, error } = await db().rpc("upvote_musical_chair_request", {
+        p_request_id: requestId,
+        p_voter_hash: await getVoterHash(),
+    });
+    if (error) throw error;
+    if (data === "ok") refresh();
+    return data;
+}
+
 /** A visitor who has used all their song requests asks the organisers for a fresh allowance. */
 export async function requestQuotaReset(
     _prev: ActionState,
@@ -314,7 +384,7 @@ export async function requestQuotaReset(
 ): Promise<ActionState> {
     if (isBot(formData)) return { ok: true, code: "quotaAsked" };
 
-    const name = String(formData.get("quotaName") ?? "").trim();
+    const name = field(formData, "quotaName").trim();
     if (name.length < 2 || name.length > 40)
         return fail(formData, "invalid", { quotaName: "name" });
     if (!(await rateLimit(`stream-quota:${await getClientIp()}`, 5, 3600))) {

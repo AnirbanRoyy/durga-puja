@@ -17,11 +17,19 @@ export function StreamLibrary({
     songs,
     inPlaylist,
     playingId,
+    addSongs = addLibrarySongsToStream,
+    target = "playlist",
 }: Readonly<{
     songs: LibrarySong[];
-    /** YouTube ids already approved in the playlist (including the one playing). */
+    /** YouTube ids already in the target list (including the one playing). */
     inPlaylist: Set<string>;
     playingId: string | null;
+    /** Defaults to the pandal stream playlist; the musical chair console passes its own. */
+    addSongs?: (
+        songIds: string[],
+    ) => Promise<{ ok: true; added?: number } | { ok: false; message: string }>;
+    /** What the songs are added to, for the labels ("playlist", "pool"). */
+    target?: string;
 }>) {
     const router = useRouter();
     const [pending, start] = useTransition();
@@ -59,13 +67,13 @@ export function StreamLibrary({
 
     const add = () =>
         start(async () => {
-            const result = await addLibrarySongsToStream([...picked]);
+            const result = await addSongs([...picked]);
             if (!result.ok) {
                 toast.error(result.message);
                 return;
             }
             setPicked(new Set());
-            if (!result.added) toast.info("Those songs are already in the playlist.");
+            if (!result.added) toast.info(`Those songs are already in the ${target}.`);
             else toast.success(`Added ${result.added} song${result.added === 1 ? "" : "s"}`);
             router.refresh();
         });
@@ -138,7 +146,7 @@ export function StreamLibrary({
                                         </span>
                                         {listed && (
                                             <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs">
-                                                {playing ? "Playing" : "In playlist"}
+                                                {playing ? "Playing" : `In ${target}`}
                                             </span>
                                         )}
                                     </label>
@@ -152,7 +160,7 @@ export function StreamLibrary({
                         )}
                     </ul>
                     <Button disabled={pending || selectedCount === 0} onClick={add}>
-                        {selectedCount ? `Add ${selectedCount} to playlist` : "Pick songs to add"}
+                        {selectedCount ? `Add ${selectedCount} to ${target}` : "Pick songs to add"}
                     </Button>
                 </div>
             )}

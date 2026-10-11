@@ -245,6 +245,20 @@ export type StreamQuotaRequest = {
     resolved_at: string | null;
 };
 
+export type MusicalChairRequest = {
+    id: string;
+    programme_id: string;
+    youtube_id: string;
+    title: string;
+    channel: string | null;
+    thumbnail_url: string | null;
+    requested_by: string;
+    status: "pending" | "added" | "rejected";
+    upvotes: number;
+    song_id: string | null;
+    created_at: string;
+};
+
 export type RateLimit = {
     key: string;
     window_start: string;
@@ -288,6 +302,18 @@ export type Database = {
                 { id: string; year: number; ip_hash: string; request_id: string | null },
                 "year" | "ip_hash"
             >;
+            musical_chair_requests: Table<
+                MusicalChairRequest,
+                "programme_id" | "youtube_id" | "title" | "requested_by"
+            >;
+            musical_chair_votes: Table<
+                { request_id: string; voter_hash: string },
+                "request_id" | "voter_hash"
+            >;
+            musical_chair_request_log: Table<
+                { id: string; programme_id: string; ip_hash: string; request_id: string | null },
+                "programme_id" | "ip_hash"
+            >;
             quiz_rounds: Table<QuizRound, "programme_id" | "round_no" | "name_en">;
             quiz_questions: Table<QuizQuestion, "round_id" | "programme_id" | "question_en">;
             quiz_answers: Table<QuizAnswer, "question_id" | "answer_en">;
@@ -327,6 +353,34 @@ export type Database = {
                     | "already_requested"
                     | "rejected"
                     | "limit_reached";
+            };
+            request_musical_chair_song: {
+                Args: {
+                    p_programme_id: string;
+                    p_youtube_id: string;
+                    p_title: string;
+                    p_channel: string | null;
+                    p_thumbnail_url: string | null;
+                    p_requested_by: string;
+                    p_voter_hash: string;
+                    p_ip_hash: string;
+                    p_limit: number;
+                };
+                Returns:
+                    | "added"
+                    | "upvoted"
+                    | "in_pool"
+                    | "already_requested"
+                    | "rejected"
+                    | "limit_reached";
+            };
+            upvote_musical_chair_request: {
+                Args: { p_request_id: string; p_voter_hash: string };
+                Returns: "ok" | "already_voted" | "closed" | "not_found";
+            };
+            musical_chair_requests_used: {
+                Args: { p_programme_id: string; p_ip_hash: string };
+                Returns: number;
             };
             request_stream_quota_reset: {
                 Args: { p_year: number; p_ip_hash: string; p_name: string; p_limit: number };

@@ -8,7 +8,7 @@ import { DholSpinner } from "@/components/loaders/dhol-loader";
 import { requestStreamSong } from "@/actions/public";
 import { Button } from "@/components/ui/button";
 import { FormAlert, Honeypot, TextField } from "@/components/forms/form-bits";
-import { initialActionState } from "@/lib/validators";
+import { initialActionState, type ActionState } from "@/lib/validators";
 
 /** Fired by a "Request again" button with the song's YouTube link. */
 export const STREAM_REREQUEST_EVENT = "stream:rerequest";
@@ -31,9 +31,19 @@ function saveName(name: FormDataEntryValue | null) {
 }
 
 /** Ask for a YouTube song to be played on the pandal speaker. */
-export function StreamRequestForm({ left }: { left: number }) {
+export function StreamRequestForm({
+    left,
+    action: submitAction = requestStreamSong,
+    hidden,
+}: Readonly<{
+    left: number;
+    /** Defaults to the pandal stream; the musical chair page passes its own. */
+    action?: (prev: ActionState, formData: FormData) => Promise<ActionState>;
+    /** Extra hidden fields sent with the form (e.g. the programme id). */
+    hidden?: Record<string, string>;
+}>) {
     const t = useTranslations("stream");
-    const [state, action, pending] = useActionState(requestStreamSong, initialActionState);
+    const [state, action, pending] = useActionState(submitAction, initialActionState);
     const v = state.values ?? {};
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -62,6 +72,9 @@ export function StreamRequestForm({ left }: { left: number }) {
             className="relative grid gap-4"
         >
             <Honeypot />
+            {Object.entries(hidden ?? {}).map(([name, value]) => (
+                <input key={name} type="hidden" name={name} value={value} />
+            ))}
             <TextField
                 name="link"
                 label={t("linkLabel")}

@@ -95,7 +95,11 @@
         "registeredTeamsOf": "{count} of {max} teams registered",
         "teams": "Registered teams",
         "teamsEmpty": "No teams yet. Be the first to register!",
-        "role": { "leader": "Leader", "brother": "Brother", "sister": "Sister" },
+        "role": {
+            "leader": "Leader",
+            "brother": "Brother",
+            "sister": "Sister"
+        },
         "registerNow": "Register now",
         "viewDetails": "View details",
         "allProgrammes": "All programmes",
@@ -171,7 +175,8 @@
             "streamRejected": "That song was not approved for the pandal playlist.",
             "streamLimit": "This network has used its 3 song requests for this year. You can still upvote songs you like!",
             "quotaDeclined": "The organisers couldn't give extra requests this time.",
-            "streamAlready": "You've already requested or upvoted this song."
+            "streamAlready": "You've already requested or upvoted this song.",
+            "mcInPool": "That song is already in the game, so it will be played. Thanks!"
         },
         "success": {
             "generic": "Done!",
@@ -239,7 +244,7 @@
         "round": "Round {n}",
         "out": "{name} is out",
         "requestTitle": "Request a song",
-        "requestHint": "Pick the songs we dance to. The organisers add the most-requested ones to the game.",
+        "requestHint": "Paste a YouTube link to a song you want in the game and tell us your name. Upvote the ones you like; the organisers add the most-requested ones.",
         "requestedSongs": "Requested so far",
         "noRequests": "No requests yet — be the first!",
         "by": "by {name}",
@@ -253,6 +258,15 @@
             "stop": "STOP! Grab a chair!",
             "idle": "Waiting for the next round",
             "idleHint": "This screen updates live while the game is on."
+        },
+        "leaderboard": {
+            "title": "Leaderboard",
+            "finished": "The game is over. These are the final places.",
+            "stillIn": "Still in ({count})",
+            "out": "Out ({count})",
+            "nobodyLeft": "Nobody left.",
+            "nobodyOut": "Nobody is out yet.",
+            "round": "Round {n}"
         }
     },
     "music": {

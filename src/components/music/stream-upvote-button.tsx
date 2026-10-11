@@ -5,11 +5,20 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowUp01Icon } from "@hugeicons/core-free-icons";
-import { upvoteStreamSong } from "@/actions/public";
+import { upvoteStreamSong, type StreamVoteResult } from "@/actions/public";
 import { cn } from "@/lib/utils";
 
 /** An upvote pill. Each browser can upvote a song once; the count updates instantly. */
-export function StreamUpvoteButton({ id, count }: { id: string; count: number }) {
+export function StreamUpvoteButton({
+    id,
+    count,
+    vote: castVote = upvoteStreamSong,
+}: Readonly<{
+    id: string;
+    count: number;
+    /** Defaults to the pandal stream; the musical chair page passes its own. */
+    vote?: (id: string) => Promise<StreamVoteResult>;
+}>) {
     const t = useTranslations("stream");
     const [voted, setVoted] = useState(false);
     const [optimistic, addVote] = useOptimistic(count, (current: number) => current + 1);
@@ -19,7 +28,7 @@ export function StreamUpvoteButton({ id, count }: { id: string; count: number })
         if (voted || pending) return;
         start(async () => {
             addVote(1);
-            const result = await upvoteStreamSong(id);
+            const result = await castVote(id);
             if (result === "ok") setVoted(true);
             else if (result === "already_voted") {
                 setVoted(true);

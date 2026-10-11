@@ -21,12 +21,17 @@ import { initialActionState } from "@/lib/validators";
 
 const CATEGORIES = ["mahalaya", "agomoni", "dhunuchi", "bhajan", "modern", "bollywood", "other"];
 
-export function AddYouTubeSongForm() {
+export function AddYouTubeSongForm({
+    pool = "music_page",
+}: Readonly<{
+    pool?: "music_page" | "musical_chair";
+}>) {
     const [state, action, pending] = useActionState(addYouTubeSong, initialActionState);
     useActionToast(state);
     const v = state.ok ? {} : (state.values ?? {});
     return (
         <form action={action} className="grid grid-cols-1 gap-3">
+            <input type="hidden" name="pool" value={pool} />
             <Input name="url" placeholder="Paste a YouTube link" defaultValue={v.url} required />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Input name="title" placeholder="Title" defaultValue={v.title} required />
@@ -39,9 +44,11 @@ export function AddYouTubeSongForm() {
                     defaultValue={v.category ?? "agomoni"}
                     className="w-40"
                 />
-                <label className="flex items-center gap-2 text-sm">
-                    <Switch name="featured" /> Feature at top
-                </label>
+                {pool === "music_page" && (
+                    <label className="flex items-center gap-2 text-sm">
+                        <Switch name="featured" /> Feature at top
+                    </label>
+                )}
                 <Button type="submit" disabled={pending} className="ml-auto">
                     <HugeiconsIcon icon={PlusSignIcon} data-icon="inline-start" />
                     Add song
@@ -51,13 +58,19 @@ export function AddYouTubeSongForm() {
     );
 }
 
+/** The small grey detail under a song title: the category, or the length of an MP3. */
+function songDetail(song: Song): string | null {
+    if (song.source === "youtube") return song.category;
+    return song.duration_sec ? `${Math.round(song.duration_sec)}s` : null;
+}
+
 export function MusicalChairUploader({
     requestId,
     defaultTitle,
-}: {
+}: Readonly<{
     requestId?: string;
     defaultTitle?: string;
-}) {
+}>) {
     const [title, setTitle] = useState(defaultTitle ?? "");
     const [artist, setArtist] = useState("");
     return (
@@ -108,10 +121,10 @@ export function MusicalChairUploader({
 export function SongList({
     songs,
     allowFeature = false,
-}: {
+}: Readonly<{
     songs: Song[];
     allowFeature?: boolean;
-}) {
+}>) {
     const [pending, startTransition] = useTransition();
     const run = (fn: () => Promise<unknown>, success: string) =>
         startTransition(async () => {
@@ -138,16 +151,7 @@ export function SongList({
                     <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{s.title}</p>
                         <p className="truncate text-xs text-muted-foreground">
-                            {[
-                                s.artist,
-                                s.source === "youtube"
-                                    ? s.category
-                                    : s.duration_sec
-                                      ? `${Math.round(s.duration_sec)}s`
-                                      : null,
-                            ]
-                                .filter(Boolean)
-                                .join(" · ")}
+                            {[s.artist, songDetail(s)].filter(Boolean).join(" · ")}
                         </p>
                     </div>
                     {allowFeature && (
