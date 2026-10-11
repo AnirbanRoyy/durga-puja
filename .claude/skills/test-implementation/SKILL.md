@@ -1,6 +1,7 @@
 ---
 name: test-implementation
 description: 'Use when the user wants tests written and run for a feature or change in this app, for example "test the stream library feature", "write tests for spec 0002", "stress-test the team registration", "try to break the quota reset" or "verify this works with bun test". Writes independent tests with bun test from the requirements (not from the implementation), runs them, and reports a summary and per-test results. Use it whenever the user asks to test, verify, harden or find bugs in something that was built, even if they don''t say "bun test".'
+disable-model-invocation: true
 ---
 
 # Test an implementation independently
