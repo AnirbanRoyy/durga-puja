@@ -16,7 +16,7 @@ function Field({
     ...props
 }: { name: string; label: string } & React.ComponentProps<typeof Input>) {
     return (
-        <div className="grid gap-1.5">
+        <div className="grid grid-cols-1 gap-1.5">
             <Label htmlFor={name}>{label}</Label>
             <Input id={name} name={name} {...props} />
         </div>
@@ -42,7 +42,7 @@ export function StartEditionForm({
                 );
                 if (!ok) e.preventDefault();
             }}
-            className="grid gap-4 sm:grid-cols-2"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
         >
             <p className="text-sm text-muted-foreground sm:col-span-2">
                 Do this once the new Puja dates are known. Nothing from {currentYear} is deleted:

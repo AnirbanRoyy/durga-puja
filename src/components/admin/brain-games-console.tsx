@@ -136,11 +136,11 @@ function LivePanel({
     }
 
     return (
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-            <div className="grid gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
+            <div className="grid grid-cols-1 gap-6">
                 <AdminCard title="On screen now">
                     {live ? (
-                        <div className="grid gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             <p className="text-xs font-semibold tracking-widest text-primary uppercase">
                                 {liveRound?.name_en} ·{" "}
                                 {live.kind === "team"
@@ -167,9 +167,9 @@ function LivePanel({
                                 </Button>
                             </div>
                             {live.kind === "team" ? (
-                                <div className="grid gap-3">
+                                <div className="grid grid-cols-1 gap-3">
                                     {(needsPoints("correct") || needsPoints("wrong")) && (
-                                        <div className="grid max-w-xs gap-1.5">
+                                        <div className="grid max-w-xs grid-cols-1 gap-1.5">
                                             <Label htmlFor="manual-points">
                                                 Points for this question
                                             </Label>
@@ -274,7 +274,7 @@ function LivePanel({
 
                 <AdminCard title="Questions">
                     <div className="mb-4 flex flex-wrap items-end gap-3">
-                        <div className="grid gap-1.5">
+                        <div className="grid grid-cols-1 gap-1.5">
                             <Label htmlFor="live-round">Round</Label>
                             <select
                                 id="live-round"
@@ -303,7 +303,7 @@ function LivePanel({
                         )}
                     </div>
                     {round && (
-                        <div className="mb-4 grid gap-2 rounded-xl border bg-secondary/40 p-3">
+                        <div className="mb-4 grid grid-cols-1 gap-2 rounded-xl border bg-secondary/40 p-3">
                             <p className="text-sm font-medium">Team questions</p>
                             <p className="text-xs text-muted-foreground">
                                 Every team gets one question per round, in random order. Teams that
@@ -352,7 +352,7 @@ function LivePanel({
                     )}
                     <ul className="divide-y">
                         {inRound.map((q) => (
-                            <li key={q.id} className="grid gap-2 py-3">
+                            <li key={q.id} className="grid grid-cols-1 gap-2 py-3">
                                 <div className="flex flex-wrap items-start gap-2">
                                     <span
                                         className={cn(
@@ -467,7 +467,7 @@ function SetupPanel({
     questions: QuizAdminQuestion[];
 }) {
     return (
-        <div className="grid max-w-3xl gap-6">
+        <div className="grid max-w-3xl grid-cols-1 gap-6">
             {rounds.map((round) => (
                 <RoundCard
                     key={round.id}
@@ -493,7 +493,7 @@ function RoundForm({ programmeId, round }: { programmeId: string; round?: QuizRo
 
     return (
         <form
-            className="grid gap-4 sm:grid-cols-2"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
             onSubmit={(e) => {
                 e.preventDefault();
                 run(
@@ -516,7 +516,7 @@ function RoundForm({ programmeId, round }: { programmeId: string; round?: QuizRo
                 }
             }}
         >
-            <div className="grid gap-1.5">
+            <div className="grid grid-cols-1 gap-1.5">
                 <Label htmlFor={`rn-${key}`}>Round name (English)</Label>
                 <Input
                     id={`rn-${key}`}
@@ -525,7 +525,7 @@ function RoundForm({ programmeId, round }: { programmeId: string; round?: QuizRo
                     required
                 />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid grid-cols-1 gap-1.5">
                 <Label htmlFor={`rnb-${key}`}>Round name (বাংলা)</Label>
                 <Input
                     id={`rnb-${key}`}
@@ -534,7 +534,7 @@ function RoundForm({ programmeId, round }: { programmeId: string; round?: QuizRo
                 />
                 <FieldTranslateButton from={`rn-${key}`} to={`rnb-${key}`} />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid grid-cols-1 gap-1.5">
                 <Label htmlFor={`pc-${key}`}>Points for a correct answer</Label>
                 <Input
                     id={`pc-${key}`}
@@ -545,7 +545,7 @@ function RoundForm({ programmeId, round }: { programmeId: string; round?: QuizRo
                     onChange={(e) => setCorrect(e.target.value)}
                 />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid grid-cols-1 gap-1.5">
                 <Label htmlFor={`pw-${key}`}>Points for a wrong answer</Label>
                 <Input
                     id={`pw-${key}`}
@@ -640,7 +640,7 @@ function QuestionRow({
     const { run, pending } = useRun();
     const [editing, setEditing] = useState(false);
     return (
-        <li className="grid gap-2 py-3">
+        <li className="grid grid-cols-1 gap-2 py-3">
             <div className="flex flex-wrap items-start gap-2">
                 <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">
                     {question.kind}
@@ -709,7 +709,7 @@ function QuestionForm({
 
     return (
         <form
-            className="grid gap-3"
+            className="grid grid-cols-1 gap-3"
             onSubmit={(e) => {
                 e.preventDefault();
                 run(
@@ -735,7 +735,7 @@ function QuestionForm({
                 onDone?.();
             }}
         >
-            <div className="grid gap-1.5 sm:max-w-xs">
+            <div className="grid grid-cols-1 gap-1.5 sm:max-w-xs">
                 <Label htmlFor={`qk-${key}`}>Asked to</Label>
                 <select
                     id={`qk-${key}`}
@@ -747,8 +747,8 @@ function QuestionForm({
                     <option value="audience">The audience</option>
                 </select>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-                <div className="grid gap-1.5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-1.5">
                     <Label htmlFor={`qe-${key}`}>Question (English)</Label>
                     <Textarea
                         id={`qe-${key}`}
@@ -758,7 +758,7 @@ function QuestionForm({
                         required
                     />
                 </div>
-                <div className="grid gap-1.5">
+                <div className="grid grid-cols-1 gap-1.5">
                     <Label htmlFor={`qb-${key}`}>Question (বাংলা)</Label>
                     <Textarea
                         id={`qb-${key}`}
@@ -768,7 +768,7 @@ function QuestionForm({
                     />
                     <FieldTranslateButton from={`qe-${key}`} to={`qb-${key}`} />
                 </div>
-                <div className="grid gap-1.5">
+                <div className="grid grid-cols-1 gap-1.5">
                     <Label htmlFor={`ae-${key}`}>Answer (English)</Label>
                     <Input
                         id={`ae-${key}`}
@@ -777,7 +777,7 @@ function QuestionForm({
                         required
                     />
                 </div>
-                <div className="grid gap-1.5">
+                <div className="grid grid-cols-1 gap-1.5">
                     <Label htmlFor={`ab-${key}`}>Answer (বাংলা)</Label>
                     <Input id={`ab-${key}`} value={aBn} onChange={(e) => setABn(e.target.value)} />
                     <FieldTranslateButton from={`ae-${key}`} to={`ab-${key}`} />

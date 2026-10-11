@@ -20,7 +20,7 @@ export default async function SongsAdminPage() {
                 title="Songs"
                 description="Two separate libraries: what visitors listen to, and what plays in musical chair."
             />
-            <div className="grid gap-8 xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
                 <div className="space-y-4">
                     <h2 className="text-xl font-semibold">Music page (YouTube)</h2>
                     <AdminCard>

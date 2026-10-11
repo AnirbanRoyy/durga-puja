@@ -17,7 +17,7 @@ export default async function YearsPage() {
                 title="Years"
                 description={`The public site shows ${current.year}. Earlier years stay viewable in the archive.`}
             />
-            <div className="grid max-w-3xl gap-8">
+            <div className="grid max-w-3xl grid-cols-1 gap-8">
                 <AdminCard title="All years">
                     <ul className="divide-y">
                         {editions.map((edition) => (

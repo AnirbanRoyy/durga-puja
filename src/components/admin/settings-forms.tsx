@@ -34,7 +34,7 @@ function Labeled({
     hint?: string;
 }) {
     return (
-        <div className="grid gap-1.5">
+        <div className="grid grid-cols-1 gap-1.5">
             <Label>{label}</Label>
             {children}
             {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
@@ -46,7 +46,7 @@ export function EventForm({ event }: { event: EventSettings }) {
     const [state, action, pending] = useActionState(saveEventSettings, initialActionState);
     useActionToast(state);
     return (
-        <form action={action} className="grid gap-4 sm:grid-cols-2">
+        <form action={action} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Labeled label="Festival name (English)">
                 <Input id="event_name_en" name="name_en" defaultValue={event.name_en} required />
             </Labeled>
@@ -98,7 +98,7 @@ export function DonationForm({ donation }: { donation: DonationSettings }) {
     useActionToast(state);
     const [qr, setQr] = useState(donation.qr_image_url ?? "");
     return (
-        <form action={action} className="grid gap-4 sm:grid-cols-2">
+        <form action={action} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <input type="hidden" name="qr_image_url" value={qr} />
             <div className="flex items-center gap-4 sm:col-span-2">
                 <div className="grid size-28 shrink-0 place-items-center overflow-hidden rounded-xl border bg-white">
@@ -168,7 +168,7 @@ export function AmbientForm({ ambient }: { ambient: AmbientSettings }) {
     useActionToast(state);
     const [url, setUrl] = useState(ambient.audio_url ?? "");
     return (
-        <form action={action} className="grid gap-4">
+        <form action={action} className="grid grid-cols-1 gap-4">
             <input type="hidden" name="audio_url" value={url} />
             <p className="text-sm text-muted-foreground">
                 A looping track (e.g. dhak beats) that every visitor can switch on from the drum
@@ -205,7 +205,7 @@ export function WhatsappForm({ whatsapp }: { whatsapp: WhatsappSettings }) {
     useActionToast(state);
     const [qr, setQr] = useState(whatsapp.qr_image_url ?? "");
     return (
-        <form action={action} className="grid gap-4">
+        <form action={action} className="grid grid-cols-1 gap-4">
             <input type="hidden" name="qr_image_url" value={qr} />
             <Labeled
                 label="Community invite link"
@@ -218,7 +218,7 @@ export function WhatsappForm({ whatsapp }: { whatsapp: WhatsappSettings }) {
                     placeholder="https://chat.whatsapp.com/…"
                 />
             </Labeled>
-            <div className="grid gap-2">
+            <div className="grid grid-cols-1 gap-2">
                 <Label>QR code image (optional)</Label>
                 <p className="text-xs text-muted-foreground">
                     Leave this empty and the site generates a QR code from the invite link

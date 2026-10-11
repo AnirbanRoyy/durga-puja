@@ -39,7 +39,7 @@ type WakeLockSentinelLike = { release: () => Promise<void> };
 
 function Row({ song, children }: { song: StreamRequest; children?: React.ReactNode }) {
     return (
-        <li className="flex items-center gap-3 py-2.5">
+        <li className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
             {song.thumbnail_url && (
                 <Image
                     src={song.thumbnail_url}
@@ -49,14 +49,14 @@ function Row({ song, children }: { song: StreamRequest; children?: React.ReactNo
                     className="aspect-video w-20 shrink-0 rounded-md object-cover"
                 />
             )}
-            <div className="min-w-0 flex-1">
-                <p className="line-clamp-1 text-sm font-medium">{song.title}</p>
+            <div className="min-w-40 flex-1">
+                <p className="line-clamp-2 text-sm font-medium">{song.title}</p>
                 <p className="text-xs text-muted-foreground">
                     {song.requested_by} · {song.upvotes} upvote{song.upvotes === 1 ? "" : "s"}
                     {song.play_count > 0 && ` · played ${song.play_count}× before`}
                 </p>
             </div>
-            {children}
+            {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
         </li>
     );
 }
@@ -191,10 +191,10 @@ export function StreamConsole({
     }, [isStreaming]);
 
     return (
-        <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr]">
             <LiveRefresh tables={["stream_requests", "stream_state"]} />
 
-            <div className="grid gap-6">
+            <div className="grid grid-cols-1 gap-6">
                 <AdminCard title="Playback">
                     <div className="flex flex-wrap items-center gap-3">
                         {isStreaming ? (
@@ -252,7 +252,7 @@ export function StreamConsole({
                     </div>
 
                     {isStreaming ? (
-                        <div className="mt-5 grid gap-3">
+                        <div className="mt-5 grid grid-cols-1 gap-3">
                             <div className="aspect-video w-full max-w-md overflow-hidden rounded-xl bg-black">
                                 <div ref={hostRef} className="size-full" />
                             </div>

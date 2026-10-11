@@ -15,9 +15,9 @@ export function LoginForm({ next }: { next: string }) {
     const [state, action, pending] = useActionState(login, initialActionState);
     useActionToast(state);
     return (
-        <form action={action} className="mt-6 grid gap-4">
+        <form action={action} className="mt-6 grid grid-cols-1 gap-4">
             <input type="hidden" name="next" value={next} />
-            <div className="grid gap-2">
+            <div className="grid grid-cols-1 gap-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
                     id="password"
