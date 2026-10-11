@@ -227,7 +227,7 @@ export function RegistrationForm({
         guardianName: existing?.guardianName ?? undefined,
         notes: existing?.notes ?? undefined,
     };
-    const saved = existing && state.ok && state.code === "updated";
+    const saved = state.ok && (state.code === "updated" || state.code === "created");
     useEffect(() => {
         if (saved) onSaved?.();
         // onSaved is expected to be stable enough; run only when a save happens.

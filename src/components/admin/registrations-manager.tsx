@@ -19,6 +19,7 @@ import {
     shuffleLineup,
 } from "@/actions/admin/programmes";
 import {
+    AddRegistrationButton,
     DeleteRegistrationButton,
     EditRegistrationButton,
     type RegistrationProgramme,
@@ -137,6 +138,7 @@ export function RegistrationsManager({
                         </Button>
                     </>
                 )}
+                <AddRegistrationButton programme={programme} />
                 <Button variant="outline" onClick={exportCsv} disabled={registrations.length === 0}>
                     <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" />
                     Export CSV

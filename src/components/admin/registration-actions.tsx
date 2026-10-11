@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Delete02Icon, PencilEdit02Icon } from "@hugeicons/core-free-icons";
+import { Delete02Icon, PencilEdit02Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { deleteRegistration } from "@/actions/admin/programmes";
-import { adminUpdateRegistration } from "@/actions/admin/registrations";
+import { adminCreateRegistration, adminUpdateRegistration } from "@/actions/admin/registrations";
 import { useAdminRun } from "@/components/admin/use-admin-run";
 import { RegistrationForm } from "@/components/programmes/registration-form";
 import {
@@ -79,6 +79,39 @@ export function EditRegistrationButton({
                     }}
                     onSaved={() => {
                         toast.success("Registration updated");
+                        setOpen(false);
+                        router.refresh();
+                    }}
+                />
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/** "Add registration" button: the organiser signs someone up on their behalf, same form. */
+export function AddRegistrationButton({ programme }: { programme: RegistrationProgramme }) {
+    const [open, setOpen] = useState(false);
+    const router = useRouter();
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                    <HugeiconsIcon icon={PlusSignIcon} data-icon="inline-start" />
+                    Add registration
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Add registration</DialogTitle>
+                    <DialogDescription>{programme.title}</DialogDescription>
+                </DialogHeader>
+                <RegistrationForm
+                    programmeId={programme.id}
+                    programmeType={programme.type}
+                    team={programme.team}
+                    action={adminCreateRegistration}
+                    onSaved={() => {
+                        toast.success("Registration added");
                         setOpen(false);
                         router.refresh();
                     }}

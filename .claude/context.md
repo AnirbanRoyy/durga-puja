@@ -31,6 +31,7 @@ Home, about, timeline, programmes (+ `[slug]` with registration), results, archi
 
 Dashboard, programmes (form, registrations, brain-games console, musical-chair console), **Registrations** (all programmes, filter/search, edit/delete any, team-aware), songs, song requests, **Stream** console, feedback, settings, years (editions). Back button on every page below the dashboard (`AdminTitle`).
 
+- **Admin add registration**: "Add registration" button on a programme's Registrations page (`adminCreateRegistration`, same form; ignores closed/full/device lock, no edit cookie).
 - **Musical chair console** (`musical-chair-console.tsx`): song pool = `songs` rows with `pool = musical_chair`, YouTube or MP3 (`round-player.ts` plays both; broken videos are skipped). Add from the library in bulk (`StreamLibrary` with `addSongs`/`target` props), add or reject visitor requests, "Who's out" and winner are dropdowns of registered players still in, Reset uses an AlertDialog.
 - **Stream console**: approve/reject requests, play next, skip, volume, wake-lock, quota-reset requests, **add library songs in bulk** (`stream-library.tsx`, RPC `add_stream_songs`), **remove song from playlist** (RPC `remove_stream_song`).
 
