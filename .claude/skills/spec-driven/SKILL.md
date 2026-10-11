@@ -62,5 +62,5 @@ After the plan is approved:
 1. Append the approved plan to the spec under `## Plan` and set `Status: planned`. Add `**Migration:**` to the header if the plan includes one.
 2. Ask with AskUserQuestion how to run the implementation: **Auto** (edits go ahead without asking each time) or **Manual** (the user approves each edit). Tell the user to switch the model back to Sonnet 5.5 with `/model` and, if they chose, the permission mode with Shift+Tab. You cannot change either yourself.
 3. Implement the plan. Verify against the spec's acceptance criteria.
-4. When it works, set `Status: implemented`. If the build differed from the plan, update the spec to match what shipped.
+4. When it works, set `Status: implemented` and update `.claude/context.md` (see CLAUDE.md): add the feature in one line, bump "Specs done", and add or remove items under "Suggested improvements". If the build differed from the plan, update the spec to match what shipped.
 5. Mention the spec file name in the final report. Do not commit unless asked.
