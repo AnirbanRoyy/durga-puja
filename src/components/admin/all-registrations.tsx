@@ -46,7 +46,7 @@ export function AllRegistrations({
     return (
         <div className="space-y-4">
             <div className="flex flex-wrap items-end gap-3">
-                <div className="grid gap-1.5">
+                <div className="grid grid-cols-1 gap-1.5">
                     <label htmlFor="reg-year" className="text-xs text-muted-foreground">
                         Year
                     </label>
@@ -58,7 +58,7 @@ export function AllRegistrations({
                         className="w-28"
                     />
                 </div>
-                <div className="grid gap-1.5">
+                <div className="grid grid-cols-1 gap-1.5">
                     <label htmlFor="reg-programme" className="text-xs text-muted-foreground">
                         Programme
                     </label>
@@ -76,7 +76,7 @@ export function AllRegistrations({
                         ))}
                     </select>
                 </div>
-                <div className="grid min-w-48 flex-1 gap-1.5">
+                <div className="grid min-w-48 flex-1 grid-cols-1 gap-1.5">
                     <label htmlFor="reg-search" className="text-xs text-muted-foreground">
                         Search name or phone
                     </label>

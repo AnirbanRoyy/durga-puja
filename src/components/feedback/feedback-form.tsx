@@ -24,12 +24,12 @@ export function FeedbackForm() {
             <Honeypot />
             <fieldset>
                 <legend className="mb-2 text-sm font-medium">{t("kind")}</legend>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-wrap gap-2">
                     {KINDS.map((kind) => (
                         <label
                             key={kind}
                             className={cn(
-                                "cursor-pointer rounded-xl border bg-background px-3 py-2.5 text-center text-sm font-medium transition-colors",
+                                "min-w-0 flex-1 cursor-pointer rounded-xl border bg-background px-3 py-2.5 text-center text-sm font-medium transition-colors",
                                 "has-checked:border-primary has-checked:bg-primary/10 has-checked:text-primary",
                                 "has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
                             )}

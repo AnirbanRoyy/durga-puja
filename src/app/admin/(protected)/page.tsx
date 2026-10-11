@@ -37,7 +37,7 @@ export default async function AdminDashboard() {
                 <Stat label="New feedback" value={newFeedback.length} />
             </div>
 
-            <div className="mt-8 grid gap-6 lg:grid-cols-2">
+            <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <AdminCard title="Programmes">
                     <ul className="divide-y">
                         {programmes.map((p) => (

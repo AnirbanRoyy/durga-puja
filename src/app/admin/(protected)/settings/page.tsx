@@ -24,7 +24,7 @@ export default async function SettingsPage() {
     return (
         <>
             <AdminTitle title="Settings" />
-            <div className="grid max-w-3xl gap-8">
+            <div className="grid max-w-3xl grid-cols-1 gap-8">
                 <AdminCard title={`Event (${event.year})`}>
                     <EventForm event={event} />
                 </AdminCard>

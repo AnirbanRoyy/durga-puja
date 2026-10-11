@@ -21,7 +21,7 @@ export function SongRequestsManager({ requests }: { requests: SongRequest[] }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
                 {FILTERS.map((f) => (
                     <button
                         key={f}

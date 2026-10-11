@@ -26,9 +26,9 @@ export function AddYouTubeSongForm() {
     useActionToast(state);
     const v = state.ok ? {} : (state.values ?? {});
     return (
-        <form action={action} className="grid gap-3">
+        <form action={action} className="grid grid-cols-1 gap-3">
             <Input name="url" placeholder="Paste a YouTube link" defaultValue={v.url} required />
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Input name="title" placeholder="Title" defaultValue={v.title} required />
                 <Input name="artist" placeholder="Artist (optional)" defaultValue={v.artist} />
             </div>
@@ -61,8 +61,8 @@ export function MusicalChairUploader({
     const [title, setTitle] = useState(defaultTitle ?? "");
     const [artist, setArtist] = useState("");
     return (
-        <div className="grid gap-3">
-            <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
