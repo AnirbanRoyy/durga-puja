@@ -1,8 +1,26 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Alpana } from "@/components/decor/alpana";
 import { OrnamentDivider } from "@/components/decor/ornament-divider";
 import { NAV_LINKS } from "@/components/layout/nav-links";
+
+function PortfolioLink({ children }: Readonly<{ children?: ReactNode }>) {
+    return (
+        <a
+            href="https://anirban-roy.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-gold underline-offset-4 hover:underline"
+        >
+            {children}
+        </a>
+    );
+}
+
+function renderPortfolioLink(chunks: ReactNode) {
+    return <PortfolioLink>{chunks}</PortfolioLink>;
+}
 
 export async function SiteFooter() {
     const t = await getTranslations("footer");
@@ -31,7 +49,9 @@ export async function SiteFooter() {
             </div>
             <div className="relative border-t border-kash/15">
                 <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-5 text-sm text-kash/70">
-                    <p className="text-center">{t("madeWith")}</p>
+                    <p className="text-center">
+                        {t.rich("madeWith", { name: renderPortfolioLink })}
+                    </p>
                     <Link href="/admin" className="text-xs text-kash/40 hover:text-kash/70">
                         {t("organisers")}
                     </Link>
