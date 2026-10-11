@@ -7,7 +7,7 @@ export const metadata = { title: "Organiser login", robots: { index: false, foll
 export default async function AdminLoginPage(props: PageProps<"/admin/login">) {
     const { next } = await props.searchParams;
     return (
-        <main className="bg-puja-radial relative grid min-h-screen place-items-center overflow-hidden px-4">
+        <main className="bg-puja-radial relative grid min-h-screen grid-cols-1 place-items-center overflow-hidden px-4">
             <Alpana className="absolute size-[44rem] animate-spin-slow text-marigold/20" />
             <div className="relative w-full max-w-sm rounded-3xl border bg-card/95 p-8 shadow-2xl backdrop-blur">
                 <BrandMark size={48} />

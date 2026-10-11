@@ -51,10 +51,10 @@ export function ProgrammeForm({ programme }: { programme?: Programme }) {
     const e = state.errors ?? {};
 
     return (
-        <form action={action} className="grid max-w-3xl gap-5">
+        <form action={action} className="grid max-w-3xl grid-cols-1 gap-5">
             {programme && <input type="hidden" name="id" value={programme.id} />}
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <Row name="title_en" label="Title (English)" error={e.title_en}>
                     <Input id="title_en" name="title_en" defaultValue={v("title_en")} required />
                 </Row>
@@ -223,7 +223,7 @@ export function ProgrammeForm({ programme }: { programme?: Programme }) {
             </Row>
             <input type="hidden" name="cover_image_url" value={v("cover_image_url")} />
 
-            <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-3">
                 {(
                     [
                         ["registration_open", "Registration open"],
