@@ -15,28 +15,33 @@ Stop at each checkpoint below and wait for the user. Never run two stages in one
 2. **Write it from the user's words.** If something decides the outcome and can't be settled from the request or the code, ask with AskUserQuestion; otherwise pick the sensible default and note it under Assumptions. Look at the code only enough to write accurate requirements. Do not design the solution here.
 3. **Use this shape:**
 
-   ```markdown
-   # NNNN: Title
+    ```markdown
+    # NNNN: Title
 
-   - **Status:** draft
-   - **Date:** YYYY-MM-DD
-   - **Branch:** current git branch
+    - **Status:** draft
+    - **Date:** YYYY-MM-DD
+    - **Branch:** current git branch
 
-   ## Context
-   Why this is needed, in a few sentences.
+    ## Context
 
-   ## Requirements
-   What must be true when it's done. One bullet per behaviour, from the user's side of the screen.
+    Why this is needed, in a few sentences.
 
-   ## Out of scope
-   What this deliberately does not do.
+    ## Requirements
 
-   ## Assumptions
-   Defaults chosen where the request was silent.
+    What must be true when it's done. One bullet per behaviour, from the user's side of the screen.
 
-   ## Acceptance criteria
-   Checks that prove it works (what to click, what should happen).
-   ```
+    ## Out of scope
+
+    What this deliberately does not do.
+
+    ## Assumptions
+
+    Defaults chosen where the request was silent.
+
+    ## Acceptance criteria
+
+    Checks that prove it works (what to click, what should happen).
+    ```
 
 4. **Checkpoint:** tell the user the file name and ask them to review it. They approve it or ask for changes. Apply changes to the same file. Do not plan or code yet.
 

@@ -1,6 +1,6 @@
 ---
 name: test-implementation
-description: "Use when the user wants tests written and run for a feature or change in this app, for example \"test the stream library feature\", \"write tests for spec 0002\", \"stress-test the team registration\", \"try to break the quota reset\" or \"verify this works with bun test\". Writes independent tests with bun test from the requirements (not from the implementation), runs them, and reports a summary and per-test results. Use it whenever the user asks to test, verify, harden or find bugs in something that was built, even if they don't say \"bun test\"."
+description: 'Use when the user wants tests written and run for a feature or change in this app, for example "test the stream library feature", "write tests for spec 0002", "stress-test the team registration", "try to break the quota reset" or "verify this works with bun test". Writes independent tests with bun test from the requirements (not from the implementation), runs them, and reports a summary and per-test results. Use it whenever the user asks to test, verify, harden or find bugs in something that was built, even if they don''t say "bun test".'
 ---
 
 # Test an implementation independently
@@ -10,6 +10,7 @@ The point of these tests is to find what the implementation gets wrong. Tests wr
 ## Input
 
 The user names a feature or change. Resolve it to a **requirements source**, in this order:
+
 1. A spec in `.claude/specs/` (match by number or title; use its Requirements and Acceptance criteria).
 2. The user's own description in the conversation.
 3. If neither exists, ask the user to state the expected behaviour in a few lines. Do not infer requirements from the code.
@@ -23,6 +24,7 @@ Read what a caller could see: exported function names and signatures, types in `
 ## Step 2: Design the cases
 
 For each requirement, write cases that try to break it, not just confirm it:
+
 - **Normal use:** the behaviour as described.
 - **Boundaries:** off-by-one at every limit (max teams, 3 requests per network, min/max members), empty, one, exactly at the limit, one past it.
 - **Bad input:** blank, whitespace only, very long, wrong type, duplicate, Bengali and other Unicode, emoji, characters like quotes and `%`.
@@ -44,6 +46,7 @@ Prefer many small, sharply named tests over a few large ones. A test name should
 ## Step 4: Run and judge
 
 Run `bun test tests/<feature-name>` (add `--timeout 30000` for database tests). When a test fails, work out why before touching anything:
+
 1. **Re-read the requirement.** Is the test asserting something the requirement doesn't say? If yes, the test is wrong: fix the test and note it.
 2. **Otherwise it's a finding.** Now you may read the implementation to understand the cause and write it up.
 
