@@ -392,7 +392,9 @@ export function MusicalChairConsole({
     const winnerValue = winner || (finalists.length === 1 ? finalists[0] : "");
     const poolYouTube = new Set(songs.filter((s) => s.kind === "youtube").map((s) => s.ref));
     const hasYouTube = songs.some((s) => s.kind === "youtube");
-    const pendingRequests = requests.filter((r) => r.status === "pending").length;
+    const pendingRequests = requests.filter(
+        (r) => r.status === "pending" || !poolYouTube.has(r.youtube_id),
+    ).length;
 
     return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
@@ -405,7 +407,7 @@ export function MusicalChairConsole({
                     className={cn(
                         "grid min-h-72 place-items-center rounded-3xl border p-8 text-center transition-colors",
                         playing &&
-                            "border-transparent bg-gradient-to-br from-marigold to-gold text-maroon",
+                            "border-transparent bg-linear-to-br from-marigold to-gold text-maroon",
                         phase === "stopped" &&
                             "border-transparent bg-sindoor text-primary-foreground",
                         phase === "idle" && "bg-card",
@@ -658,7 +660,8 @@ export function MusicalChairConsole({
                                             {r.requested_by} · {r.upvotes} vote
                                             {r.upvotes === 1 ? "" : "s"}
                                         </p>
-                                        {r.status === "pending" ? (
+                                        {r.status === "pending" ||
+                                        !poolYouTube.has(r.youtube_id) ? (
                                             <div className="mt-1.5 flex flex-wrap gap-2">
                                                 <Button
                                                     size="xs"

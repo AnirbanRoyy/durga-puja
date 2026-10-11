@@ -18,6 +18,12 @@ function PortfolioLink({ children }: Readonly<{ children?: ReactNode }>) {
     );
 }
 
+function renderHeart(chunks: ReactNode) {
+    return (
+        <span className="inline-block animate-heartbeat motion-reduce:animate-none">{chunks}</span>
+    );
+}
+
 function renderPortfolioLink(chunks: ReactNode) {
     return <PortfolioLink>{chunks}</PortfolioLink>;
 }
@@ -50,7 +56,7 @@ export async function SiteFooter() {
             <div className="relative border-t border-kash/15">
                 <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-5 text-sm text-kash/70">
                     <p className="text-center">
-                        {t.rich("madeWith", { name: renderPortfolioLink })}
+                        {t.rich("madeWith", { heart: renderHeart, name: renderPortfolioLink })}
                     </p>
                     <Link href="/admin" className="text-xs text-kash/40 hover:text-kash/70">
                         {t("organisers")}
