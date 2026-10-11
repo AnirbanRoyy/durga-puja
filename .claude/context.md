@@ -2,7 +2,7 @@
 
 Short map of what exists, so you don't have to re-read the code. Keep it terse. Update it after every implementation (see CLAUDE.md).
 
-Last updated: 2026-10-11 · Specs done: 0001
+Last updated: 2026-10-11 · Specs done: 0001 (specs 0002+ not started)
 
 ## Stack
 
@@ -15,6 +15,7 @@ Next.js 16 App Router (not the Next you know: read `node_modules/next/dist/docs/
 - Programme list cache: `unstable_cache`, bump `CACHE_VERSION` in `src/lib/cache.ts` when the Programme shape changes (now "v2").
 - Admin area is English-only (nested `NextIntlClientProvider locale="en"`). Admin feedback = sonner toasts via `useActionToast` / `useAdminRun`.
 - Redis lock `user:<ip>:<programme>` is fail-open. Stream quota (3 per network) is in Postgres, not Redis. Local test traffic is IP `::1`.
+- Phone layouts: every `grid` needs a base `grid-cols-1` (or `minmax(0,1fr)`) before `sm:`/`lg:` columns, or one wide child stretches the page sideways. Check at 360px.
 - Test with prod build on port 3140, not the dev server on 3000. Test data prefix `ZZ`, always clean up.
 
 ## Public site (`src/app/(site)`)
@@ -33,9 +34,8 @@ Dashboard, programmes (form, registrations, brain-games console, musical-chair c
 - **Stream console**: approve/reject requests, play next, skip, volume, wake-lock, quota-reset requests, **add library songs in bulk** (`stream-library.tsx`, RPC `add_stream_songs`), **remove song from playlist** (RPC `remove_stream_song`).
 
 ## Tooling
-
-- Skills (manual only: type /name): `spec-driven` (big changes: spec -> plan -> implement), `test-implementation` (independent bun tests).
-- Specs in `.claude/specs/NNNN-*.md`. Stop hook formats (prettier) and lints after code changes.
+- Skills (manual only: type /name): `spec-driven` (big changes: spec -> plan -> implement), `test-implementation` (independent bun tests), `wrap-up` (summarize session + refresh this file).
+- Specs in `.claude/specs/NNNN-*.md`. Stop hook (`.claude/hooks/format-and-lint.sh`) runs prettier on the whole repo and lint after code changes; lint failures go back to Claude. Hooks can't run /compact.
 - No automated test suite yet.
 
 ## Suggested improvements (for the user to decide)
@@ -46,6 +46,7 @@ Claude maintains this list: add items when you notice them, remove them when don
 - Antakshari and Brother-Sister have no team limit; set `max_participants` when decided.
 - Add a global CSV export on the admin Registrations page.
 - Add a bun test suite for validators and the stream/registration RPCs (use `test-implementation`).
+- `rate_limits` rows are never deleted (no pg_cron); add a cleanup job if the table grows. The per-IP registration lock in Redis expires after 60 days.
 - Stream plays YouTube only; Cloudinary MP3s can't be streamed.
 - Set Upstash Redis env vars (and optional `TRANSLATE_CONTACT_EMAIL`) in Vercel; enable Speed Insights and Analytics.
 - Rehearse the pandal stream on a real phone and speaker before the event.
