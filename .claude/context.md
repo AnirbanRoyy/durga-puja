@@ -20,7 +20,7 @@ Next.js 16 App Router (not the Next you know: read `node_modules/next/dist/docs/
 
 ## Public site (`src/app/(site)`)
 
-Home, about, timeline, programmes (+ `[slug]` with registration), results, archive, community, donate, feedback, music.
+Home, about, timeline, programmes (+ `[slug]` with registration), results, archive, community, donate, feedback, music. Footer "Made with ❤️ by Anirban" links to the portfolio (anirban-roy.vercel.app).
 
 - **Registration**: individual, team (2-4 members + leader, team name) and pair (brother/sister). Chosen by `programmes.team_format`. Self-edit/withdraw by cookie or phone. Parsing in `src/lib/registration-input.ts`, schemas in `validators.ts`.
 - **Music** (`/music`): YouTube library + song requests + **Pandal stream** (visitors request/upvote songs, 3 requests per network, played history with re-request, ask organisers to reset the quota).
