@@ -1,6 +1,7 @@
 ---
 name: spec-driven
 description: "Use when the user asks for a big change, a new feature or an enhancement to this app (anything that needs more than a one-line fix). Runs the spec-driven flow: write a numbered spec in .claude/specs/, get it approved, plan in plan mode on Opus 5.5, get the plan approved, then implement on Sonnet 5.5 in the mode the user picks."
+disable-model-invocation: true
 ---
 
 # Spec-driven development
