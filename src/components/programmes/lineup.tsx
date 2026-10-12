@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Mic01Icon, ShuffleIcon } from "@hugeicons/core-free-icons";
+import { CollapsibleSection } from "@/components/layout/collapsible-section";
 import type { Registration } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
 
@@ -22,16 +23,16 @@ export function Lineup({
     );
 
     return (
-        <section>
-            <div className="flex flex-wrap items-end justify-between gap-2">
-                <h2 className="text-2xl font-semibold">{t("title")}</h2>
-                {ordered.length > 0 && (
+        <CollapsibleSection
+            title={t("title")}
+            aside={
+                ordered.length > 0 && (
                     <span className="text-sm text-muted-foreground">
                         {locked ? t("locked") : t("provisional")}
                     </span>
-                )}
-            </div>
-
+                )
+            }
+        >
             {ordered.length === 0 ? (
                 <div className="mt-4 flex items-center gap-4 rounded-2xl border border-dashed p-6">
                     <HugeiconsIcon icon={ShuffleIcon} className="size-8 shrink-0 text-marigold" />
@@ -63,7 +64,7 @@ export function Lineup({
                             )}
                         </div>
                     )}
-                    <ol className="mt-4 grid gap-2 sm:grid-cols-2">
+                    <ol className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                         {ordered.map((r) => (
                             <li
                                 key={r.id}
@@ -98,6 +99,6 @@ export function Lineup({
                     </ol>
                 </>
             )}
-        </section>
+        </CollapsibleSection>
     );
 }
