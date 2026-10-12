@@ -45,6 +45,7 @@ export async function adminUpdateRegistration(
             phone: input.phone,
             name_key: input.name.toLowerCase().replace(/\s+/g, " "),
             age: input.age,
+            gender: input.gender,
             guardian_name: input.guardianName,
             notes: input.notes,
         })
@@ -112,6 +113,7 @@ export async function adminCreateRegistration(
         phone: input.phone,
         name_key: input.name.toLowerCase().replace(/\s+/g, " "),
         age: input.age,
+        gender: input.gender,
         guardian_name: input.guardianName,
         notes: input.notes,
     });

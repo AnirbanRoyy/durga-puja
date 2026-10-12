@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import type { Programme, TeamMember } from "@/lib/database.types";
+import { isAdult, type Gender } from "@/lib/musical-chair-categories";
 import { teamLimits } from "@/lib/programme-meta";
 import { db } from "@/lib/supabase/server";
 import {
@@ -15,6 +16,7 @@ export type RegistrationProgramme = Pick<
     Programme,
     | "id"
     | "slug"
+    | "type"
     | "registration_open"
     | "status"
     | "max_participants"
@@ -29,6 +31,7 @@ export type RegistrationInput = {
     name: string;
     phone: string;
     age: number | null;
+    gender: Gender | null;
     guardianName: string | null;
     notes: string | null;
     members: TeamMember[];
@@ -39,7 +42,7 @@ export type ParsedRegistration =
     | { ok: false; programme: RegistrationProgramme | null; errors: FieldErrors };
 
 const PROGRAMME_COLUMNS =
-    "id, slug, registration_open, status, max_participants, order_locked, team_format, team_min_size, team_max_size";
+    "id, slug, type, registration_open, status, max_participants, order_locked, team_format, team_min_size, team_max_size";
 
 /** The members typed into the form: blank rows are dropped, and the leader's row is re-found. */
 function readTeamForm(values: Record<string, string>) {
@@ -89,6 +92,7 @@ export async function parseRegistration(
                 name: team.teamName,
                 phone: team.phone,
                 age: null,
+                gender: null,
                 guardianName: null,
                 notes: team.notes,
                 members: team.members.map((name, i) => ({
@@ -110,6 +114,7 @@ export async function parseRegistration(
                 name: `${pair.brotherName} & ${pair.sisterName}`,
                 phone: pair.phone,
                 age: null,
+                gender: null,
                 guardianName: null,
                 notes: pair.notes,
                 members: [
@@ -122,5 +127,15 @@ export async function parseRegistration(
 
     const parsed = registrationSchema.safeParse(values);
     if (!parsed.success) return { ok: false, programme, errors: fieldErrors(parsed.error) };
-    return { ok: true, programme, input: { ...parsed.data, members: [] } };
+    const input = parsed.data;
+    // Musical chair groups players into kids, men and women, so it needs the age (and gender for adults).
+    if (programme.type !== "musical_chair") {
+        return { ok: true, programme, input: { ...input, gender: null, members: [] } };
+    }
+    if (input.age == null) return { ok: false, programme, errors: { age: "age" } };
+    if (isAdult(input.age) && !input.gender) {
+        return { ok: false, programme, errors: { gender: "gender" } };
+    }
+    const gender = isAdult(input.age) ? input.gender : null;
+    return { ok: true, programme, input: { ...input, gender, members: [] } };
 }

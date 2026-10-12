@@ -73,6 +73,7 @@ export function EditRegistrationButton({
                         name: registration.name,
                         phone: registration.phone ?? "",
                         age: registration.age,
+                        gender: registration.gender,
                         guardianName: registration.guardian_name,
                         notes: registration.notes,
                         members: registration.members,

@@ -50,6 +50,7 @@ export function MyRegistration({
         [team?.format === "team" ? t("members") : "", team?.format === "team" ? memberList : null],
         [t("phone"), mine.phone],
         [t("age"), mine.age],
+        [t("gender"), mine.gender ? t(mine.gender) : null],
         [t("guardianName"), mine.guardianName],
         [t("notes"), mine.notes],
     ];

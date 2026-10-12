@@ -7,11 +7,12 @@ import { StreamRequestForm } from "@/components/music/stream-request-form";
 import { StreamUpvoteButton } from "@/components/music/stream-upvote-button";
 import { LiveRefresh } from "@/components/realtime/live-refresh";
 import {
+    listMusicalChairPlayers,
     listMusicalChairRequests,
-    listRegistrations,
     listRounds,
     musicalChairRequestsLeft,
 } from "@/lib/queries";
+import { MC_CATEGORIES } from "@/lib/musical-chair-categories";
 import { musicalChairStandings } from "@/lib/musical-chair-standings";
 import { cn } from "@/lib/utils";
 import { getIpHash } from "@/lib/visitor";
@@ -23,17 +24,27 @@ export async function MusicalChairPublic({
     programmeId: string;
     finished?: boolean;
 }>) {
-    const [t, requests, rounds, registrations, left] = await Promise.all([
+    const [t, requests, rounds, players, left] = await Promise.all([
         getTranslations("musicalChair"),
         listMusicalChairRequests(programmeId),
         listRounds(programmeId),
-        listRegistrations(programmeId),
+        listMusicalChairPlayers(programmeId),
         getIpHash().then((ip) => musicalChairRequestsLeft(programmeId, ip)),
     ]);
-    const standings = musicalChairStandings(
-        registrations.map((r) => r.name),
-        rounds,
-    );
+    // One leaderboard per category, the one played last on top.
+    const lastPlayed = rounds
+        .filter((r) => r.category)
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+        .at(-1)?.category;
+    const boards = [...MC_CATEGORIES]
+        .sort((a, b) => Number(b === lastPlayed) - Number(a === lastPlayed))
+        .map((category) => ({
+            category,
+            standings: musicalChairStandings(
+                players.filter((p) => p.category === category).map((p) => p.name),
+                rounds.filter((r) => r.category === category),
+            ),
+        }));
 
     return (
         <div className="space-y-10">
@@ -48,7 +59,14 @@ export async function MusicalChairPublic({
 
             <LiveMusicalChairScreen programmeId={programmeId} />
 
-            <MusicalChairLeaderboard standings={standings} finished={finished} />
+            {boards.map((b) => (
+                <MusicalChairLeaderboard
+                    key={b.category}
+                    title={t(`categories.${b.category}`)}
+                    standings={b.standings}
+                    finished={finished}
+                />
+            ))}
 
             {rounds.length > 0 && (
                 <section>
@@ -60,6 +78,7 @@ export async function MusicalChairPublic({
                                 className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 text-sm"
                             >
                                 <span className="font-heading font-semibold text-primary">
+                                    {r.category && `${t(`categories.${r.category}`)} · `}
                                     {t("round", { n: r.round_no })}
                                 </span>
                                 <span className="flex-1 truncate text-muted-foreground">

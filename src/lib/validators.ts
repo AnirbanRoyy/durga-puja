@@ -24,6 +24,10 @@ export const registrationSchema = z.object({
         .optional()
         .transform((v) => (v ? Number(v) : null))
         .pipe(z.number().int().min(1, "age").max(120, "age").nullable()),
+    gender: z
+        .enum(["", "male", "female"])
+        .optional()
+        .transform((v) => v || null),
     guardianName: optionalText(80),
     notes: optionalText(300),
 });

@@ -4,8 +4,8 @@ import { MusicalChairConsole } from "@/components/admin/musical-chair-console";
 import type { PoolSong } from "@/components/admin/round-player";
 import {
     getProgrammeById,
+    listMusicalChairPlayers,
     listMusicalChairRequests,
-    listRegistrations,
     listRounds,
     listSongs,
 } from "@/lib/queries";
@@ -19,12 +19,12 @@ export default async function MusicalChairAdminPage(
     const programme = await getProgrammeById(id);
     if (programme?.type !== "musical_chair") notFound();
 
-    const [songs, library, requests, rounds, registrations] = await Promise.all([
+    const [songs, library, requests, rounds, players] = await Promise.all([
         listSongs("musical_chair"),
         listSongs("music_page"),
         listMusicalChairRequests(id),
         listRounds(id),
-        listRegistrations(id),
+        listMusicalChairPlayers(id),
     ]);
 
     return (
@@ -67,7 +67,7 @@ export default async function MusicalChairAdminPage(
                 )}
                 requests={requests}
                 rounds={rounds}
-                playerNames={registrations.map((r) => r.name)}
+                players={players}
             />
         </>
     );

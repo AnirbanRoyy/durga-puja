@@ -176,7 +176,8 @@
             "streamLimit": "This network has used its 3 song requests for this year. You can still upvote songs you like!",
             "quotaDeclined": "The organisers couldn't give extra requests this time.",
             "streamAlready": "You've already requested or upvoted this song.",
-            "mcInPool": "That song is already in the game, so it will be played. Thanks!"
+            "mcInPool": "That song is already in the game, so it will be played. Thanks!",
+            "gender": "Choose your gender (needed for players aged 18 and over)."
         },
         "success": {
             "generic": "Done!",
@@ -201,7 +202,11 @@
         "withdrawConfirm": "Withdraw from this programme?",
         "withdrawYes": "Yes, withdraw",
         "keep": "Keep it",
-        "rememberHint": "You can edit or withdraw until the programme starts."
+        "rememberHint": "You can edit or withdraw until the programme starts.",
+        "gender": "Gender",
+        "male": "Male",
+        "female": "Female",
+        "genderHint": "Needed if you are 18 or older (separate games for men and women)."
     },
     "lineup": {
         "title": "Performance order",
@@ -267,6 +272,11 @@
             "nobodyLeft": "Nobody left.",
             "nobodyOut": "Nobody is out yet.",
             "round": "Round {n}"
+        },
+        "categories": {
+            "kids": "Kids",
+            "men": "Men",
+            "women": "Women"
         }
     },
     "music": {
