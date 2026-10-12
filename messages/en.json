@@ -252,6 +252,7 @@
         "requestHint": "Paste a YouTube link to a song you want in the game and tell us your name. Upvote the ones you like; the organisers add the most-requested ones.",
         "requestedSongs": "Requested so far",
         "noRequests": "No requests yet — be the first!",
+        "votingClosed": "This song is already in the game, voting is closed.",
         "by": "by {name}",
         "requestStatus": {
             "pending": "Pending",
@@ -266,6 +267,8 @@
         },
         "leaderboard": {
             "title": "Leaderboard",
+            "live": "Live",
+            "chooseCategory": "Choose a category",
             "finished": "The game is over. These are the final places.",
             "stillIn": "Still in ({count})",
             "out": "Out ({count})",
@@ -450,6 +453,7 @@
         "pendingEmpty": "No requests waiting.",
         "upvote": "Upvote",
         "alreadyVoted": "You've already upvoted this song.",
+        "votingClosed": "Voting is closed for this song.",
         "voteFailed": "Couldn't save your vote. Please try again.",
         "requestsLeft": "{count, plural, =0 {This network has no requests left this year, but you can still upvote.} one {You can request # more song this year.} other {You can request # more songs this year.}}",
         "playedTitle": "Played earlier",

@@ -1,14 +1,14 @@
 import { getTranslations } from "next-intl/server";
+import { CollapsibleSection } from "@/components/layout/collapsible-section";
 import type { Registration } from "@/lib/database.types";
 
 /** The teams (or brother–sister pairs) signed up so far, with their members. */
 export async function TeamList({ registrations }: { registrations: Registration[] }) {
     const t = await getTranslations("programmes");
     return (
-        <section>
-            <h2 className="text-2xl font-semibold">{t("teams")}</h2>
+        <CollapsibleSection title={t("teams")}>
             {registrations.length ? (
-                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {registrations.map((team) => (
                         <li key={team.id} className="rounded-2xl border bg-card p-4">
                             <p className="font-semibold break-words">{team.name}</p>
@@ -30,6 +30,6 @@ export async function TeamList({ registrations }: { registrations: Registration[
             ) : (
                 <p className="mt-3 text-sm text-muted-foreground">{t("teamsEmpty")}</p>
             )}
-        </section>
+        </CollapsibleSection>
     );
 }

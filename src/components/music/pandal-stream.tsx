@@ -8,9 +8,14 @@ import { StreamRerequestButton } from "@/components/music/stream-rerequest-butto
 import { StreamUpvoteButton } from "@/components/music/stream-upvote-button";
 import { LiveRefresh } from "@/components/realtime/live-refresh";
 import type { StreamRequest } from "@/lib/database.types";
-import { getQuotaRequestStatus, getStreamBoard, streamRequestsLeft } from "@/lib/queries";
+import {
+    getQuotaRequestStatus,
+    getStreamBoard,
+    streamRequestsLeft,
+    votedStreamRequests,
+} from "@/lib/queries";
 import { cn } from "@/lib/utils";
-import { getIpHash } from "@/lib/visitor";
+import { getIpHash, peekVoterHash } from "@/lib/visitor";
 
 function Thumb({ song, className }: { song: StreamRequest; className?: string }) {
     return song.thumbnail_url ? (
@@ -40,6 +45,10 @@ export async function PandalStream() {
         getQuotaRequestStatus(ipHash),
     ]);
     const { state, nowPlaying, upNext, queue, pending, played } = board;
+    const voted = await votedStreamRequests(
+        await peekVoterHash(),
+        [...queue, ...pending].map((s) => s.id),
+    );
 
     return (
         <section className="rounded-3xl border bg-card p-5 shadow-sm sm:p-7">
@@ -122,7 +131,11 @@ export async function PandalStream() {
                                                 {upNext?.id === song.id && ` · ${t("upNext")}`}
                                             </p>
                                         </div>
-                                        <StreamUpvoteButton id={song.id} count={song.upvotes} />
+                                        <StreamUpvoteButton
+                                            id={song.id}
+                                            count={song.upvotes}
+                                            voted={voted.has(song.id)}
+                                        />
                                     </li>
                                 ))}
                             </ul>
@@ -148,7 +161,11 @@ export async function PandalStream() {
                                                 {format.relativeTime(new Date(song.created_at))}
                                             </p>
                                         </div>
-                                        <StreamUpvoteButton id={song.id} count={song.upvotes} />
+                                        <StreamUpvoteButton
+                                            id={song.id}
+                                            count={song.upvotes}
+                                            voted={voted.has(song.id)}
+                                        />
                                     </li>
                                 ))}
                             </ul>

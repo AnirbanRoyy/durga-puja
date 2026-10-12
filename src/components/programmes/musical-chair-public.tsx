@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { requestMusicalChairSong, upvoteMusicalChairSong } from "@/actions/public";
+import { CollapsibleSection } from "@/components/layout/collapsible-section";
 import { MusicalChairLeaderboard } from "@/components/programmes/musical-chair-leaderboard";
 import { LiveMusicalChairScreen } from "@/components/programmes/live-musical-chair-screen";
 import { StreamRequestForm } from "@/components/music/stream-request-form";
@@ -11,11 +12,12 @@ import {
     listMusicalChairRequests,
     listRounds,
     musicalChairRequestsLeft,
+    votedMusicalChairRequests,
 } from "@/lib/queries";
 import { MC_CATEGORIES } from "@/lib/musical-chair-categories";
 import { musicalChairStandings } from "@/lib/musical-chair-standings";
 import { cn } from "@/lib/utils";
-import { getIpHash } from "@/lib/visitor";
+import { getIpHash, peekVoterHash } from "@/lib/visitor";
 
 export async function MusicalChairPublic({
     programmeId,
@@ -31,20 +33,25 @@ export async function MusicalChairPublic({
         listMusicalChairPlayers(programmeId),
         getIpHash().then((ip) => musicalChairRequestsLeft(programmeId, ip)),
     ]);
-    // One leaderboard per category, the one played last on top.
-    const lastPlayed = rounds
-        .filter((r) => r.category)
-        .sort((a, b) => a.created_at.localeCompare(b.created_at))
-        .at(-1)?.category;
-    const boards = [...MC_CATEGORIES]
-        .sort((a, b) => Number(b === lastPlayed) - Number(a === lastPlayed))
-        .map((category) => ({
-            category,
-            standings: musicalChairStandings(
-                players.filter((p) => p.category === category).map((p) => p.name),
-                rounds.filter((r) => r.category === category),
-            ),
-        }));
+    const voted = await votedMusicalChairRequests(
+        await peekVoterHash(),
+        requests.map((r) => r.id),
+    );
+    // One leaderboard, switchable by category; categories without players are left out.
+    const boards = MC_CATEGORIES.map((category) => ({
+        category,
+        label: t(`categories.${category}`),
+        standings: musicalChairStandings(
+            players.filter((p) => p.category === category).map((p) => p.name),
+            rounds.filter((r) => r.category === category),
+        ),
+    })).filter((b) => b.standings.stillIn.length || b.standings.out.length);
+    // Live = the category the host played last; before any round, the first one with players.
+    const live =
+        rounds
+            .filter((r) => r.category)
+            .sort((a, b) => a.created_at.localeCompare(b.created_at))
+            .at(-1)?.category ?? boards[0]?.category;
 
     return (
         <div className="space-y-10">
@@ -59,18 +66,10 @@ export async function MusicalChairPublic({
 
             <LiveMusicalChairScreen programmeId={programmeId} />
 
-            {boards.map((b) => (
-                <MusicalChairLeaderboard
-                    key={b.category}
-                    title={t(`categories.${b.category}`)}
-                    standings={b.standings}
-                    finished={finished}
-                />
-            ))}
+            {live && <MusicalChairLeaderboard boards={boards} live={live} finished={finished} />}
 
             {rounds.length > 0 && (
-                <section>
-                    <h2 className="text-2xl font-semibold">{t("roundsTitle")}</h2>
+                <CollapsibleSection title={t("roundsTitle")}>
                     <ol className="mt-4 space-y-2">
                         {rounds.map((r) => (
                             <li
@@ -92,74 +91,74 @@ export async function MusicalChairPublic({
                             </li>
                         ))}
                     </ol>
-                </section>
+                </CollapsibleSection>
             )}
 
-            <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div className="min-w-0">
-                    <h2 className="text-2xl font-semibold">{t("requestTitle")}</h2>
-                    <p className="mt-1 mb-4 text-sm text-muted-foreground">{t("requestHint")}</p>
-                    <StreamRequestForm
-                        left={left}
-                        action={requestMusicalChairSong}
-                        hidden={{ programmeId }}
-                    />
-                </div>
-                <div className="min-w-0">
-                    <h3 className="text-lg font-semibold">{t("requestedSongs")}</h3>
-                    {requests.length === 0 ? (
-                        <p className="mt-2 text-sm text-muted-foreground">{t("noRequests")}</p>
-                    ) : (
-                        <ul className="mt-3 space-y-2.5">
-                            {requests.slice(0, 30).map((r) => (
-                                <li key={r.id} className="flex items-center gap-3">
-                                    {r.thumbnail_url ? (
-                                        <Image
-                                            src={r.thumbnail_url}
-                                            alt=""
-                                            width={160}
-                                            height={90}
-                                            className="aspect-video w-16 shrink-0 rounded-lg object-cover"
-                                        />
-                                    ) : (
-                                        <div className="aspect-video w-16 shrink-0 rounded-lg bg-muted" />
-                                    )}
-                                    <div className="min-w-0 flex-1">
-                                        <p className="line-clamp-1 text-sm font-medium">
-                                            {r.title}
-                                        </p>
-                                        <p className="truncate text-xs text-muted-foreground">
-                                            {t("by", { name: r.requested_by })}
-                                            {" · "}
-                                            <span
-                                                className={cn(
-                                                    r.status === "added" &&
-                                                        "font-semibold text-success",
-                                                )}
-                                            >
-                                                {t(
-                                                    `requestStatus.${r.status === "added" ? "added" : "pending"}`,
-                                                )}
-                                            </span>
-                                        </p>
-                                    </div>
-                                    {r.status === "pending" ? (
+            <CollapsibleSection title={t("requestTitle")}>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="min-w-0">
+                        <p className="mt-1 mb-4 text-sm text-muted-foreground">
+                            {t("requestHint")}
+                        </p>
+                        <StreamRequestForm
+                            left={left}
+                            action={requestMusicalChairSong}
+                            hidden={{ programmeId }}
+                        />
+                    </div>
+                    <div className="min-w-0">
+                        <h3 className="text-lg font-semibold">{t("requestedSongs")}</h3>
+                        {requests.length === 0 ? (
+                            <p className="mt-2 text-sm text-muted-foreground">{t("noRequests")}</p>
+                        ) : (
+                            <ul className="mt-3 space-y-2.5">
+                                {requests.slice(0, 30).map((r) => (
+                                    <li key={r.id} className="flex items-center gap-3">
+                                        {r.thumbnail_url ? (
+                                            <Image
+                                                src={r.thumbnail_url}
+                                                alt=""
+                                                width={160}
+                                                height={90}
+                                                className="aspect-video w-16 shrink-0 rounded-lg object-cover"
+                                            />
+                                        ) : (
+                                            <div className="aspect-video w-16 shrink-0 rounded-lg bg-muted" />
+                                        )}
+                                        <div className="min-w-0 flex-1">
+                                            <p className="line-clamp-1 text-sm font-medium">
+                                                {r.title}
+                                            </p>
+                                            <p className="truncate text-xs text-muted-foreground">
+                                                {t("by", { name: r.requested_by })}
+                                                {" · "}
+                                                <span
+                                                    className={cn(
+                                                        r.status === "added" &&
+                                                            "font-semibold text-success",
+                                                    )}
+                                                >
+                                                    {t(
+                                                        `requestStatus.${r.status === "added" ? "added" : "pending"}`,
+                                                    )}
+                                                </span>
+                                            </p>
+                                        </div>
                                         <StreamUpvoteButton
                                             id={r.id}
                                             count={r.upvotes}
+                                            voted={voted.has(r.id)}
+                                            closed={r.status !== "pending"}
+                                            closedMessage={t("votingClosed")}
                                             vote={upvoteMusicalChairSong}
                                         />
-                                    ) : (
-                                        <span className="inline-flex h-9 min-w-14 shrink-0 items-center justify-center rounded-full border px-3 text-sm font-semibold tabular-nums">
-                                            {r.upvotes}
-                                        </span>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
                 </div>
-            </section>
+            </CollapsibleSection>
         </div>
     );
 }

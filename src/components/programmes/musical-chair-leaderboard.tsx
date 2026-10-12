@@ -1,28 +1,80 @@
-import { getTranslations } from "next-intl/server";
+"use client";
+
+import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Award01Icon } from "@hugeicons/core-free-icons";
+import { Badge } from "@/components/ui/badge";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import type { MusicalChairCategory } from "@/lib/musical-chair-categories";
 import type { Standings } from "@/lib/musical-chair-standings";
 import { cn } from "@/lib/utils";
 
-/** Live standings: updates whenever the host saves who is out (the page refreshes on round changes). */
-export async function MusicalChairLeaderboard({
-    title,
-    standings,
+export type LeaderboardBoard = {
+    category: MusicalChairCategory;
+    label: string;
+    standings: Standings;
+};
+
+/**
+ * Live standings for one category at a time. It follows the category the host is playing (the
+ * page refreshes on round changes) until the visitor picks another one from the dropdown.
+ */
+export function MusicalChairLeaderboard({
+    boards,
+    live,
     finished,
 }: Readonly<{
-    title: string;
-    standings: Standings;
+    /** Only categories that have players. */
+    boards: LeaderboardBoard[];
+    live: MusicalChairCategory;
     finished: boolean;
 }>) {
-    const t = await getTranslations("musicalChair.leaderboard");
-    const { stillIn, out } = standings;
-    if (!stillIn.length && !out.length) return null;
+    const t = useTranslations("musicalChair.leaderboard");
+    const [picked, setPicked] = useState<MusicalChairCategory | null>(null);
+    const board =
+        boards.find((b) => b.category === (picked ?? live)) ??
+        boards.find((b) => b.category === live) ??
+        boards[0];
+    if (!board) return null;
+    const { stillIn, out } = board.standings;
 
     return (
         <section aria-live="polite">
-            <h2 className="text-2xl font-semibold">
-                {t("title")} · {title}
-            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-2xl font-semibold">
+                    {t("title")}
+                    {boards.length === 1 && ` · ${board.label}`}
+                </h2>
+                {boards.length > 1 && (
+                    <Select
+                        value={board.category}
+                        onValueChange={(v) => setPicked(v as MusicalChairCategory)}
+                    >
+                        <SelectTrigger aria-label={t("chooseCategory")} className="min-w-32">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent position="popper" align="start">
+                            {boards.map((b) => (
+                                <SelectItem key={b.category} value={b.category}>
+                                    {b.label}
+                                    {b.category === live && !finished && (
+                                        <Badge className="bg-sindoor px-1.5 text-[10px] text-white">
+                                            {t("live")}
+                                        </Badge>
+                                    )}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
+            </div>
             {finished && <p className="mt-1 text-sm text-muted-foreground">{t("finished")}</p>}
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="min-w-0 rounded-2xl border bg-card p-4">

@@ -413,6 +413,30 @@ export async function hasVoted(programmeId: string, voterHash: string): Promise<
     return data?.drawing_id ?? null;
 }
 
+/** Which of these requests this browser has already upvoted, so the heart shows red on reload. */
+async function votedRequests(
+    table: "stream_votes" | "musical_chair_votes",
+    voterHash: string | null,
+    ids: string[],
+): Promise<Set<string>> {
+    if (!voterHash || !ids.length) return new Set();
+    const { data, error } = await db()
+        .from(table)
+        .select("request_id")
+        .eq("voter_hash", voterHash)
+        .in("request_id", ids);
+    if (error) throw new Error(`Failed to load votes: ${error.message}`);
+    return new Set(data.map((v) => v.request_id));
+}
+
+export async function votedStreamRequests(voterHash: string | null, ids: string[]) {
+    return votedRequests("stream_votes", voterHash, ids);
+}
+
+export async function votedMusicalChairRequests(voterHash: string | null, ids: string[]) {
+    return votedRequests("musical_chair_votes", voterHash, ids);
+}
+
 export type EditionSummary = Edition & {
     programmes: number;
     participants: number;

@@ -10,6 +10,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
+import { CollapsibleSection } from "@/components/layout/collapsible-section";
 import { BrainGamesLive } from "@/components/programmes/brain-games-live";
 import { DrawingGallery } from "@/components/programmes/drawing-gallery";
 import { Lineup } from "@/components/programmes/lineup";
@@ -162,12 +163,11 @@ export default async function ProgrammePage(props: Readonly<PageProps<"/programm
                             <Lineup registrations={registrations} locked={programme.order_locked} />
                         )}
                         {rules && (
-                            <section>
-                                <h2 className="text-2xl font-semibold">{t("rules")}</h2>
+                            <CollapsibleSection title={t("rules")}>
                                 <p className="mt-3 whitespace-pre-line text-muted-foreground">
                                     {rules}
                                 </p>
-                            </section>
+                            </CollapsibleSection>
                         )}
                     </div>
 

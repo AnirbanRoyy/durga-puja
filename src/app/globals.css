@@ -52,6 +52,7 @@
     --animate-dhak: dhak 1.2s ease-in-out infinite;
     --animate-glow: glow 3s ease-in-out infinite;
     --animate-heartbeat: heartbeat 1.4s ease-in-out infinite;
+    --animate-heart-pop: heart-pop 0.3s ease-out;
     --animate-spin-slow: spin 60s linear infinite;
 
     @keyframes drift {
@@ -97,6 +98,15 @@
         }
         20% {
             transform: scale(1.1);
+        }
+    }
+    @keyframes heart-pop {
+        0%,
+        100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.35);
         }
     }
     /* Opacity and transform only: animating a blur filter forces a repaint every frame. */
