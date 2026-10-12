@@ -2,6 +2,7 @@ import "server-only";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import type { TeamMember } from "@/lib/database.types";
+import type { Gender } from "@/lib/musical-chair-categories";
 import { db } from "@/lib/supabase/server";
 
 const MAX_AGE = 60 * 60 * 24 * 60;
@@ -12,6 +13,7 @@ export type MyRegistration = {
     members: TeamMember[];
     phone: string;
     age: number | null;
+    gender: Gender | null;
     guardianName: string | null;
     notes: string | null;
     claimKey: string | null;
@@ -57,7 +59,7 @@ export async function getMyRegistration(programmeId: string): Promise<MyRegistra
 
     const { data: contact } = await db()
         .from("registration_contacts")
-        .select("phone, age, guardian_name, notes, edit_token_hash, claim_key")
+        .select("phone, age, gender, guardian_name, notes, edit_token_hash, claim_key")
         .eq("registration_id", registrationId)
         .eq("programme_id", programmeId)
         .maybeSingle();
@@ -80,6 +82,7 @@ export async function getMyRegistration(programmeId: string): Promise<MyRegistra
         members: registration.members,
         phone: contact.phone,
         age: contact.age,
+        gender: contact.gender,
         guardianName: contact.guardian_name,
         notes: contact.notes,
         claimKey: contact.claim_key,

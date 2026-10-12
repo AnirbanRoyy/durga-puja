@@ -15,6 +15,7 @@ import {
     recordRound,
     rejectMusicalChairRequest,
     resetRounds,
+    setMusicalChairGender,
     setRoundEliminated,
 } from "@/actions/admin/content";
 import { AdminCard } from "@/components/admin/admin-bits";
@@ -47,6 +48,13 @@ import {
     randomBetween,
     type MusicalChairState,
 } from "@/lib/musical-chair";
+import {
+    CATEGORY_LABEL,
+    isAdult,
+    MC_CATEGORIES,
+    type MusicalChairCategory,
+    type MusicalChairPlayer,
+} from "@/lib/musical-chair-categories";
 import { playersStillIn } from "@/lib/musical-chair-standings";
 import { browserDb } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -148,17 +156,30 @@ export function MusicalChairConsole({
     songs,
     library,
     requests,
-    rounds,
-    playerNames,
+    rounds: allRounds,
+    players,
 }: Readonly<{
     programmeId: string;
     songs: PoolSong[];
     library: LibrarySong[];
     requests: MusicalChairRequest[];
     rounds: MusicalChairRound[];
-    playerNames: string[];
+    players: MusicalChairPlayer[];
 }>) {
     const router = useRouter();
+    // Start on the category played last, else the first one with players.
+    const [category, setCategory] = useState<MusicalChairCategory>(
+        () =>
+            allRounds
+                .filter((r) => r.category)
+                .sort((a, b) => a.created_at.localeCompare(b.created_at))
+                .at(-1)?.category ??
+            MC_CATEGORIES.find((c) => players.some((p) => p.category === c)) ??
+            "kids",
+    );
+    const rounds = allRounds.filter((r) => r.category === category);
+    const playerNames = players.filter((p) => p.category === category).map((p) => p.name);
+    const unsorted = players.filter((p) => !p.category);
     const [phase, setPhase] = useState<MusicalChairState["phase"]>("idle");
     const [minPlay, setMinPlay] = useState(15);
     const [maxPlay, setMaxPlay] = useState(45);
@@ -345,7 +366,7 @@ export function MusicalChairConsole({
             );
             stopTimerRef.current = setTimeout(() => void stopRound(), playFor * 1000);
 
-            recordRound(programmeId, {
+            recordRound(programmeId, category, {
                 songId: song.id,
                 songTitle: song.title,
                 startOffset: offset,
@@ -372,6 +393,7 @@ export function MusicalChairConsole({
         maxPlay,
         broadcast,
         programmeId,
+        category,
     ]);
 
     useEffect(() => {
@@ -387,6 +409,18 @@ export function MusicalChairConsole({
     }, [startRound]);
 
     const playing = phase === "playing";
+
+    function chooseCategory(next: MusicalChairCategory) {
+        const last = allRounds.filter((r) => r.category === next).at(-1);
+        setCategory(next);
+        setRoundNo(last?.round_no ?? 0);
+        setRoundId(last?.id ?? null);
+        setEliminated(last?.eliminated_name ?? "");
+        setWinner("");
+        setPhase("idle");
+        broadcast({ phase: "idle", round: last?.round_no ?? 0 });
+    }
+
     const stillIn = playersStillIn(playerNames, rounds, roundNo);
     const finalists = playersStillIn(playerNames, rounds);
     const winnerValue = winner || (finalists.length === 1 ? finalists[0] : "");
@@ -403,6 +437,79 @@ export function MusicalChairConsole({
                 filter={`programme_id=eq.${programmeId}`}
             />
             <div className="min-w-0 space-y-6">
+                <div className="rounded-2xl border bg-card p-5">
+                    <h2 className="font-semibold">Category</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Kids are 17 or under. Each category is its own game with its own rounds,
+                        leaderboard and winner.
+                    </p>
+                    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                        {MC_CATEGORIES.map((c) => (
+                            <Button
+                                key={c}
+                                variant={c === category ? "default" : "outline"}
+                                disabled={playing || loading || pending}
+                                onClick={() => chooseCategory(c)}
+                            >
+                                {CATEGORY_LABEL[c]} (
+                                {players.filter((p) => p.category === c).length})
+                            </Button>
+                        ))}
+                    </div>
+                    {unsorted.length > 0 && (
+                        <div className="mt-4 border-t pt-4">
+                            <h3 className="text-sm font-semibold">
+                                Not in a category yet ({unsorted.length})
+                            </h3>
+                            <ul className="mt-2 space-y-2 text-sm">
+                                {unsorted.map((p) => (
+                                    <li
+                                        key={p.registrationId}
+                                        className="flex flex-wrap items-center gap-2"
+                                    >
+                                        <span className="min-w-0 flex-1 truncate font-medium">
+                                            {p.name}
+                                            <span className="ml-1 text-xs font-normal text-muted-foreground">
+                                                {p.age == null ? "no age" : `age ${p.age}`}
+                                            </span>
+                                        </span>
+                                        {isAdult(p.age) ? (
+                                            (["male", "female"] as const).map((g) => (
+                                                <Button
+                                                    key={g}
+                                                    size="xs"
+                                                    variant="outline"
+                                                    disabled={pending}
+                                                    onClick={() =>
+                                                        startTransition(async () => {
+                                                            await setMusicalChairGender(
+                                                                p.registrationId,
+                                                                g,
+                                                            );
+                                                            toast.success(
+                                                                `${p.name} is in the ${g === "male" ? "men's" : "women's"} game`,
+                                                            );
+                                                        })
+                                                    }
+                                                >
+                                                    {g === "male" ? "Male" : "Female"}
+                                                </Button>
+                                            ))
+                                        ) : (
+                                            <Link
+                                                href={`/admin/programmes/${programmeId}/registrations`}
+                                                className="text-xs font-semibold text-primary"
+                                            >
+                                                Add age →
+                                            </Link>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+
                 <div
                     className={cn(
                         "grid min-h-72 place-items-center rounded-3xl border p-8 text-center transition-colors",
@@ -421,9 +528,10 @@ export function MusicalChairConsole({
                         <p className="mt-3 font-heading text-5xl font-bold">
                             {statusLabel(loading, phase)}
                         </p>
-                        {roundNo > 0 && (
-                            <p className="mt-1 text-sm font-semibold opacity-80">Round {roundNo}</p>
-                        )}
+                        <p className="mt-1 text-sm font-semibold opacity-80">
+                            {CATEGORY_LABEL[category]}
+                            {roundNo > 0 && ` · Round ${roundNo}`}
+                        </p>
                         {playing && currentTitle && (
                             <p className="mt-1 text-sm opacity-80">♪ {currentTitle}</p>
                         )}
@@ -512,21 +620,31 @@ export function MusicalChairConsole({
                     </form>
                     {playerNames.length === 0 && (
                         <p className="mt-2 text-xs text-muted-foreground">
-                            Nobody has registered yet. You can still type a name.
+                            Nobody is registered in this category yet. You can still type a name.
                         </p>
                     )}
                 </div>
 
                 <div className="rounded-2xl border bg-card p-5">
-                    <h2 className="font-semibold">Finish the game</h2>
+                    <h2 className="font-semibold">
+                        Finish the {CATEGORY_LABEL[category].toLowerCase()} game
+                    </h2>
                     <form
                         className="mt-3 flex flex-wrap items-start gap-2"
                         onSubmit={(e) => {
                             e.preventDefault();
                             if (!winnerValue.trim()) return;
                             startTransition(async () => {
-                                await finishMusicalChair(programmeId, winnerValue);
-                                toast.success("Leaderboard published and programme completed");
+                                const { completed } = await finishMusicalChair(
+                                    programmeId,
+                                    category,
+                                    winnerValue,
+                                );
+                                toast.success(
+                                    completed
+                                        ? "Leaderboard published and programme completed"
+                                        : `${CATEGORY_LABEL[category]} leaderboard published`,
+                                );
                             });
                         }}
                     >
@@ -706,7 +824,7 @@ export function MusicalChairConsole({
 
                 <div className="rounded-2xl border bg-card p-5">
                     <div className="flex items-center justify-between">
-                        <h2 className="font-semibold">Rounds so far</h2>
+                        <h2 className="font-semibold">{CATEGORY_LABEL[category]} rounds so far</h2>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button
@@ -719,10 +837,14 @@ export function MusicalChairConsole({
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                                 <AlertDialogHeader>
-                                    <AlertDialogTitle>Clear all rounds?</AlertDialogTitle>
+                                    <AlertDialogTitle>
+                                        Clear the {CATEGORY_LABEL[category].toLowerCase()} rounds?
+                                    </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This starts a fresh game. Every round and who was out is
-                                        deleted, and the leaderboard goes back to everyone being in.
+                                        This starts a fresh {CATEGORY_LABEL[category].toLowerCase()}{" "}
+                                        game. Its rounds and who was out are deleted, and its
+                                        leaderboard goes back to everyone being in. Other categories
+                                        are not touched.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -731,7 +853,7 @@ export function MusicalChairConsole({
                                         variant="destructive"
                                         onClick={() =>
                                             startTransition(async () => {
-                                                await resetRounds(programmeId);
+                                                await resetRounds(programmeId, category);
                                                 setRoundNo(0);
                                                 setRoundId(null);
                                                 setEliminated("");

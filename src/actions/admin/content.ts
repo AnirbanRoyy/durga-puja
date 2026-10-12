@@ -7,7 +7,13 @@ import { invalidateCatalog, invalidateSettings } from "@/lib/cache";
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
 import { istLocalToIso } from "@/lib/datetime";
 import type { FeedbackStatus, SongCategory, SongRequestStatus } from "@/lib/database.types";
-import { getCurrentYear } from "@/lib/queries";
+import {
+    CATEGORY_LABEL,
+    MC_CATEGORIES,
+    type Gender,
+    type MusicalChairCategory,
+} from "@/lib/musical-chair-categories";
+import { getCurrentYear, listMusicalChairPlayers } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
 import { bengaliOrTranslated } from "@/lib/translate";
 import { parseWhatsappInvite, parseYouTubeId, type ActionState } from "@/lib/validators";
@@ -360,16 +366,22 @@ export async function publishDrawingResults(programmeId: string) {
 // Musical chair
 // ---------------------------------------------------------------------------
 
+const categorySchema = z.enum(MC_CATEGORIES);
+
+/** Round numbers count up separately in each category. */
 export async function recordRound(
     programmeId: string,
+    category: MusicalChairCategory,
     round: { songId: string | null; songTitle: string; startOffset: number; playDuration: number },
 ): Promise<{ id: string; roundNo: number }> {
     await requireAdmin();
+    const cat = categorySchema.parse(category);
     const supabase = db();
     const { data: last } = await supabase
         .from("musical_chair_rounds")
         .select("round_no")
         .eq("programme_id", programmeId)
+        .eq("category", cat)
         .order("round_no", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -378,6 +390,7 @@ export async function recordRound(
         .from("musical_chair_rounds")
         .insert({
             programme_id: programmeId,
+            category: cat,
             round_no: roundNo,
             song_id: round.songId,
             song_title: round.songTitle.slice(0, 160),
@@ -400,43 +413,80 @@ export async function setRoundEliminated(roundId: string, name: string) {
     refresh();
 }
 
-export async function resetRounds(programmeId: string) {
+export async function resetRounds(programmeId: string, category: MusicalChairCategory) {
     await requireAdmin();
     const { error } = await db()
         .from("musical_chair_rounds")
         .delete()
-        .eq("programme_id", programmeId);
+        .eq("programme_id", programmeId)
+        .eq("category", categorySchema.parse(category));
     if (error) throw error;
     refresh();
 }
 
-/** Winner first, then players in reverse order of elimination. */
-export async function finishMusicalChair(programmeId: string, winner: string) {
+/** For adults who registered before gender was asked: puts them in the men's or women's game. */
+export async function setMusicalChairGender(registrationId: string, gender: Gender) {
     await requireAdmin();
+    const { error } = await db()
+        .from("registration_contacts")
+        .update({ gender: z.enum(["male", "female"]).parse(gender) })
+        .eq("registration_id", z.uuid().parse(registrationId));
+    if (error) throw error;
+    refresh();
+}
+
+/**
+ * Publishes one category's places (winner first, then players in reverse order of elimination),
+ * tagged with the category in the remark. The programme is completed once every category that has
+ * players has a winner.
+ */
+export async function finishMusicalChair(
+    programmeId: string,
+    category: MusicalChairCategory,
+    winner: string,
+) {
+    await requireAdmin();
+    const cat = categorySchema.parse(category);
+    const label = CATEGORY_LABEL[cat];
     const supabase = db();
     const { data: rounds, error } = await supabase
         .from("musical_chair_rounds")
         .select("round_no, eliminated_name")
         .eq("programme_id", programmeId)
+        .eq("category", cat)
         .order("round_no", { ascending: false });
     if (error) throw error;
     const names = [winner.trim(), ...rounds.map((r) => r.eliminated_name?.trim() ?? "")].filter(
         Boolean,
     );
-    await supabase.from("results").delete().eq("programme_id", programmeId);
+    await supabase.from("results").delete().eq("programme_id", programmeId).eq("remark", label);
     if (names.length) {
-        const { error: insertError } = await supabase
-            .from("results")
-            .insert(
-                names
-                    .slice(0, 20)
-                    .map((name, i) => ({ programme_id: programmeId, position: i + 1, name })),
-            );
+        const { error: insertError } = await supabase.from("results").insert(
+            names.slice(0, 20).map((name, i) => ({
+                programme_id: programmeId,
+                position: i + 1,
+                name,
+                remark: label,
+            })),
+        );
         if (insertError) throw insertError;
     }
-    await supabase.from("programmes").update({ status: "completed" }).eq("id", programmeId);
+
+    const [players, { data: done, error: doneError }] = await Promise.all([
+        listMusicalChairPlayers(programmeId),
+        supabase.from("results").select("remark").eq("programme_id", programmeId).eq("position", 1),
+    ]);
+    if (doneError) throw doneError;
+    const finished = new Set(done.map((r) => r.remark));
+    const allDone = MC_CATEGORIES.every(
+        (c) => !players.some((p) => p.category === c) || finished.has(CATEGORY_LABEL[c]),
+    );
+    if (allDone) {
+        await supabase.from("programmes").update({ status: "completed" }).eq("id", programmeId);
+    }
     invalidateCatalog();
     refresh();
+    return { completed: allDone };
 }
 
 // ---------------------------------------------------------------------------

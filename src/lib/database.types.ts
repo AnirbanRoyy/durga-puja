@@ -1,5 +1,7 @@
 // Hand-maintained mirror of supabase/migrations. Keep in sync when the schema changes.
 
+import type { Gender, MusicalChairCategory } from "@/lib/musical-chair-categories";
+
 export type ProgrammeType = "musical_chair" | "singing" | "dance" | "drawing" | "quiz" | "other";
 export type ProgrammeStatus = "upcoming" | "ongoing" | "completed" | "cancelled";
 export type PerformanceStatus = "waiting" | "on_stage" | "done" | "absent";
@@ -76,6 +78,7 @@ export type RegistrationContact = {
     phone: string;
     name_key: string;
     age: number | null;
+    gender: Gender | null;
     guardian_name: string | null;
     notes: string | null;
     edit_token_hash: string | null;
@@ -122,6 +125,7 @@ export type MusicalChairRound = {
     start_offset_sec: number | null;
     play_duration_sec: number | null;
     eliminated_name: string | null;
+    category: MusicalChairCategory | null;
     created_at: string;
 };
 

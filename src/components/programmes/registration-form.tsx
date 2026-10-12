@@ -8,7 +8,9 @@ import { DholSpinner } from "@/components/loaders/dhol-loader";
 import { recoverRegistration, registerForProgramme, updateMyRegistration } from "@/actions/public";
 import { Button } from "@/components/ui/button";
 import { FormAlert, Honeypot, TextField } from "@/components/forms/form-bits";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import type { ProgrammeType, TeamMember } from "@/lib/database.types";
+import type { Gender } from "@/lib/musical-chair-categories";
 import { cn } from "@/lib/utils";
 import type { TeamSetup } from "@/lib/programme-meta";
 import { initialActionState, type ActionState } from "@/lib/validators";
@@ -17,6 +19,7 @@ export type ExistingRegistration = {
     name: string;
     phone: string;
     age: number | null;
+    gender?: Gender | null;
     guardianName: string | null;
     notes: string | null;
     members?: TeamMember[];
@@ -161,6 +164,35 @@ function PairFields({
     );
 }
 
+/** Musical chair puts adults (18+) into the men's or women's game. */
+function GenderField({ value, error }: { value?: string; error?: string }) {
+    const t = useTranslations("forms");
+    return (
+        <Field data-invalid={Boolean(error) || undefined}>
+            <FieldLabel>{t("gender")}</FieldLabel>
+            <div className="flex h-9 items-center gap-5">
+                {(["male", "female"] as const).map((g) => (
+                    <label key={g} className="flex items-center gap-1.5 text-sm">
+                        <input
+                            type="radio"
+                            name="gender"
+                            value={g}
+                            defaultChecked={value === g}
+                            className="size-4 accent-primary"
+                        />
+                        {t(g)}
+                    </label>
+                ))}
+            </div>
+            {error ? (
+                <ErrorText code={error} />
+            ) : (
+                <FieldDescription>{t("genderHint")}</FieldDescription>
+            )}
+        </Field>
+    );
+}
+
 /** Shown when this network has already registered: proves ownership with the phone number. */
 function RecoverForm({ programmeId }: { programmeId: string }) {
     const t = useTranslations("forms");
@@ -218,12 +250,14 @@ export function RegistrationForm({
         initialActionState,
     );
     const forKids = programmeType === "drawing" || programmeType === "musical_chair";
+    const musicalChair = programmeType === "musical_chair" && !team;
 
     const v = state.values ?? {
         name: existing?.name,
         teamName: existing?.name,
         phone: existing?.phone,
         age: existing?.age?.toString(),
+        gender: existing?.gender ?? undefined,
         guardianName: existing?.guardianName ?? undefined,
         notes: existing?.notes ?? undefined,
     };
@@ -276,10 +310,12 @@ export function RegistrationForm({
                     inputMode="numeric"
                     min={1}
                     max={120}
+                    required={musicalChair}
                     defaultValue={v.age}
                     error={state.errors?.age}
                 />
             )}
+            {musicalChair && <GenderField value={v.gender} error={state.errors?.gender} />}
             {forKids && !team && (
                 <TextField
                     name="guardianName"

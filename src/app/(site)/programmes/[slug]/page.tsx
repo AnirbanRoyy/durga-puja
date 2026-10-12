@@ -185,6 +185,7 @@ export default async function ProgrammePage(props: Readonly<PageProps<"/programm
                                             members: mine.members,
                                             phone: mine.phone,
                                             age: mine.age,
+                                            gender: mine.gender,
                                             guardianName: mine.guardianName,
                                             notes: mine.notes,
                                         }}

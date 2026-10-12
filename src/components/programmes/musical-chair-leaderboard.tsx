@@ -6,9 +6,11 @@ import { cn } from "@/lib/utils";
 
 /** Live standings: updates whenever the host saves who is out (the page refreshes on round changes). */
 export async function MusicalChairLeaderboard({
+    title,
     standings,
     finished,
 }: Readonly<{
+    title: string;
     standings: Standings;
     finished: boolean;
 }>) {
@@ -18,7 +20,9 @@ export async function MusicalChairLeaderboard({
 
     return (
         <section aria-live="polite">
-            <h2 className="text-2xl font-semibold">{t("title")}</h2>
+            <h2 className="text-2xl font-semibold">
+                {t("title")} · {title}
+            </h2>
             {finished && <p className="mt-1 text-sm text-muted-foreground">{t("finished")}</p>}
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="min-w-0 rounded-2xl border bg-card p-4">

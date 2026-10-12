@@ -1,6 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
+import { categoryOf, type Gender, type MusicalChairPlayer } from "@/lib/musical-chair-categories";
 import type {
     Drawing,
     Edition,
@@ -197,6 +198,7 @@ export const listRegistrations = cache(async (programmeId: string): Promise<Regi
 export type RegistrationWithPhone = Registration & {
     phone: string | null;
     age: number | null;
+    gender: Gender | null;
     guardian_name: string | null;
     notes: string | null;
 };
@@ -209,7 +211,7 @@ export async function listRegistrationsWithPhones(
         listRegistrations(programmeId),
         db()
             .from("registration_contacts")
-            .select("registration_id, phone, age, guardian_name, notes")
+            .select("registration_id, phone, age, gender, guardian_name, notes")
             .eq("programme_id", programmeId)
             .then((r) => unwrap(r, "contacts")),
     ]);
@@ -220,6 +222,7 @@ export async function listRegistrationsWithPhones(
             ...r,
             phone: c?.phone ?? null,
             age: c?.age ?? null,
+            gender: c?.gender ?? null,
             guardian_name: c?.guardian_name ?? null,
             notes: c?.notes ?? null,
         };
@@ -242,7 +245,7 @@ export async function listAllRegistrationsForAdmin(
             .then((r) => unwrap(r, "registrations")),
         db()
             .from("registration_contacts")
-            .select("registration_id, phone, age, guardian_name, notes")
+            .select("registration_id, phone, age, gender, guardian_name, notes")
             .in("programme_id", ids)
             .then((r) => unwrap(r, "contacts")),
     ]);
@@ -255,6 +258,7 @@ export async function listAllRegistrationsForAdmin(
                 ...r,
                 phone: c?.phone ?? null,
                 age: c?.age ?? null,
+                gender: c?.gender ?? null,
                 guardian_name: c?.guardian_name ?? null,
                 notes: c?.notes ?? null,
             };
@@ -293,6 +297,19 @@ export const listSongRequests = cache(async (includeRejected = false): Promise<S
         "song requests",
     );
 });
+
+/** Musical chair players with their category (kids, men, women); null until age/gender are known. */
+export const listMusicalChairPlayers = cache(
+    async (programmeId: string): Promise<MusicalChairPlayer[]> => {
+        const players = await listRegistrationsWithPhones(programmeId);
+        return players.map((p) => ({
+            registrationId: p.id,
+            name: p.name,
+            age: p.age,
+            category: categoryOf(p.age, p.gender),
+        }));
+    },
+);
 
 export const listRounds = cache(async (programmeId: string): Promise<MusicalChairRound[]> => {
     return unwrap(
