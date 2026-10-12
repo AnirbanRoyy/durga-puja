@@ -1,6 +1,6 @@
 # 0004: Edit songs, clear-text button, no duplicate song links
 
-- **Status:** draft
+- **Status:** implemented
 - **Date:** 2026-10-12
 - **Branch:** ccr-853343e5-sxzw2c
 
@@ -64,3 +64,89 @@ The same YouTube video counts as the same link whatever form it was pasted in (`
 8. Any text field (admin Registrations search, registration name, stream request link): type text, an X appears; tap it: the field is empty, focused, the X is gone, and the search list resets. No X on an empty field or on the age (number) field.
 9. At 360px the edit form and X buttons fit with no sideways scroll.
 10. All `ZZ` test songs and requests deleted afterwards.
+
+## Plan
+
+Spec: `.claude/specs/0004-edit-songs-clear-inputs-no-duplicate-links.md` (approved).
+
+### Context
+
+On admin Songs, a song can only be made active, inactive or featured after it is added. A wrong title, artist, category or link means deleting and re-adding it. Text fields have no one-tap clear, which hurts on phones. Admin can add the same YouTube video to a library twice. Visitor requests (pandal stream and musical chair) are already deduped by video ID at DB level (`unique (year, youtube_id)`, `unique (programme_id, youtube_id)` plus the `in_pool` check), and so are the admin paths `addSongsToMusicalChairPool`, `addMusicalChairRequestToPool` and `add_stream_songs`. The gaps are **`addYouTubeSong`** and the new edit action.
+
+**No migration.** All checks are app-level in server actions. A unique index on `songs (pool, youtube_id)` would fail if prod already has duplicates, and Supabase MCP isn't connected in this session. A race between two simultaneous admin adds is accepted, since there is one organiser team.
+
+### 1. Edit a song
+
+**`src/actions/admin/content.ts`**
+
+- Add a helper `findPoolDuplicate(pool, youtubeId, exceptId?)`. It runs `db().from("songs").select("id, title").eq("pool", pool).eq("youtube_id", youtubeId)`, adds `.neq("id", exceptId)` when given, uses `.limit(1).maybeSingle()`, and returns the title or null.
+- Add `editSong(_prev: ActionState, formData: FormData): Promise<ActionState>`:
+    - Calls `requireAdmin()` and reads `id`.
+    - Loads the song (`source, pool`). If it's missing, returns "Song not found."
+    - Validates title, artist and category with the same rules as `youtubeSongSchema`, via a `songDetailsSchema` that `youtubeSongSchema` extends with `url`.
+    - For `source === "youtube"`: `parseYouTubeId(url)`. On failure it returns "That doesn't look like a YouTube link.". Then `findPoolDuplicate(pool, id, songId)`, which returns `Already in this library as “<title>”`.
+    - Updates `title, artist, category` and, for YouTube songs, `youtube_id`. MP3 rows ignore the link and category.
+    - Calls `refresh()` and returns `{ ok: true, code: "Song updated." }`. On failure it returns `values: raw` so the form refills.
+- The existing `updateSong` (star and Active switch) stays as is.
+
+**`src/components/admin/songs-manager.tsx`**
+
+- In `SongList`, add a pencil Button (`PencilEdit02Icon`, `title="Edit song"`) before the star. Its state is `editingId`, and only one row edits at a time.
+- When editing, the `<li>` renders a new `EditSongForm` under the row's top line. It uses `useActionState(editSong)` and `useActionToast` (the same pattern as `AddYouTubeSongForm`).
+    - It has a hidden `id` field and inputs for Title and Artist.
+    - YouTube songs also get a Link input (default `https://youtu.be/<youtube_id>`) and a `NativeSelect` over the existing `CATEGORIES`.
+    - MP3 songs show a short note: "To change the file, delete and re-upload."
+    - Buttons: Save and Cancel. Cancel clears `editingId`. On `state.ok`, an effect closes the form.
+    - Layout is `grid grid-cols-1 sm:grid-cols-2` with base `grid-cols-1` per the 360px rule. `li` becomes `flex-wrap` / `flex-col` when editing so it fits phones.
+- To show the category of YouTube songs in the row, reuse the existing `songDetail()`, which already does this.
+
+### 2. Clear (X) button: `src/components/ui/input.tsx`
+
+The shared `Input` gets the X, so every `Input` and `TextField` (public forms go through `form-bits.tsx`) picks it up.
+
+- **Which inputs are clearable:** those where `type` is undefined, `text`, `search`, `url`, `email` or `tel`, and that are not `disabled` or `readOnly`. Any other input renders exactly as today, as a bare `<input>`.
+- **Markup for clearable inputs:** a `<div data-slot="input-wrapper" className={cn("relative w-full min-w-0", className)}>`. The caller's `className` moves to the wrapper, because text inputs today only pass layout classes like `hidden sm:block` (results editor). The wrapper contains:
+    - the input with `pr-8` added, so text never runs under the X;
+    - when it has text, a `<button type="button" aria-label={t("clear")}>` positioned `absolute inset-y-0 right-0`, `size-8` (full input height), with `Cancel01Icon` in muted colour.
+- **Has-text state:** for a controlled input this is `String(props.value ?? "") !== ""`. For an uncontrolled one it's local state, seeded from `defaultValue` and updated in the wrapped `onChange`. A `reset` listener on `input.form` re-reads `input.value` in a `setTimeout`, because React 19 resets action forms.
+- **Clear action:**
+    - `onPointerDown` calls `preventDefault()` so the input keeps focus.
+    - `onClick` sets the value through the native setter (`Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set`) and dispatches a bubbling `input` event. React's `onChange` then fires with `""`, so controlled parents (search boxes) update their state and uncontrolled forms submit empty.
+    - Then `focus()`.
+- **Refs:** merge the forwarded `ref` (React 19 ref-as-prop) with an internal ref.
+- **Label text:** `forms.clear` in `messages/en.json` ("Clear") and `messages/bn.json` ("মুছুন"). The admin's nested provider already passes `forms`, and the root layout passes everything. The login page sits under the root provider.
+- Textareas are untouched.
+
+### 3. No duplicate links
+
+- **`addYouTubeSong`:** after `parseYouTubeId`, call `findPoolDuplicate(pool, youtubeId)`. If it finds one, return `{ ok: false, code: "Already in this library as “…”", values: raw }`. `useActionToast` shows it and the form keeps its input.
+- **`editSong`:** uses the same check, excluding itself (above).
+- **Visitors and other admin add paths:** no code change. They already dedupe by parsed video ID (verify in testing). `parseYouTubeId` (`src/lib/validators.ts`) already normalises `youtu.be`, `watch?v=`, `shorts`, `embed`, `live`, `&t=` and `?si=`.
+
+### 4. Docs
+
+- Spec: append this plan under `## Plan` and set the status to `planned`, then `implemented` at the end.
+- `.claude/context.md`:
+    - Admin: "Songs: edit title/artist/category/link (one copy of a video per library)".
+    - UI: "Text inputs have an X clear button (`ui/input.tsx`)".
+    - Bump the "Specs done" list to 0004.
+    - Add a suggestion: "Unique index on `songs(pool, youtube_id)` after cleaning existing duplicates."
+
+### Critical files
+
+- `src/actions/admin/content.ts`: `editSong`, `findPoolDuplicate`, and the check in `addYouTubeSong`
+- `src/components/admin/songs-manager.tsx`: pencil button and `EditSongForm`
+- `src/components/ui/input.tsx`: the clear button
+- `messages/en.json`, `messages/bn.json`: `forms.clear`
+
+### Verification
+
+This container has no `.env` and no Supabase access, so DB-backed pages can't run here.
+
+1. `bun install`, `bun run typecheck`, `bun run lint`, `bun run format:check`, `bun run build` (with dummy env vars if `env.ts` requires them, only to compile).
+2. **Clear button in a real browser:** a scratch harness in the scratchpad (not committed). It bundles `Input` with `bun build` and renders it in headless Chromium via Playwright at 360px. Cases to check:
+    - **Controlled search input:** type, the X appears; click it, the state becomes "", the input is focused and the X is gone.
+    - **Uncontrolled input in a form:** clear it, `FormData` gives "".
+    - **No X:** on an empty field, `type="number"`, or a disabled field.
+    - **`className="hidden sm:block"`:** still hides it at 360px.
+3. **The user runs the spec's acceptance criteria 1–10** on a prod build (port 3140) with real env: edit YouTube and MP3 songs, refused duplicate across URL forms, allowed across libraries, visitor re-request upvotes, X on search, and cleanup of `ZZ` data.
