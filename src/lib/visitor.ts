@@ -2,15 +2,17 @@ import "server-only";
 import { createHmac, randomUUID } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { serverEnv } from "@/lib/env";
+import { VISITOR_COOKIE } from "@/constants";
 
-export const VISITOR_COOKIE = "dp_vid";
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
 /** Anonymous per-browser id. proxy.ts sets it on first visit; this is the fallback. */
 export async function getVisitorId(): Promise<string> {
     const store = await cookies();
     const existing = store.get(VISITOR_COOKIE)?.value;
-    if (existing) return existing;
+    if (existing) {
+        return existing;
+    }
     const id = randomUUID();
     store.set(VISITOR_COOKIE, id, {
         httpOnly: true,

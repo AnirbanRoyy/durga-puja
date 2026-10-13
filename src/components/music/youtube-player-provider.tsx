@@ -53,16 +53,22 @@ export function YouTubePlayerProvider({ children }: { children: ReactNode }) {
 
     const advance = useCallback((delta: number) => {
         const q = queueRef.current;
-        if (q.length === 0) return;
+        if (q.length === 0) {
+            return;
+        }
         setIndex((i) => (i + delta + q.length) % q.length);
     }, []);
 
     // Load whichever track is current into the (lazily created) player.
     useEffect(() => {
-        if (!current) return;
+        if (!current) {
+            return;
+        }
         let cancelled = false;
         loadYouTubeApi().then((YT) => {
-            if (cancelled || !hostRef.current) return;
+            if (cancelled || !hostRef.current) {
+                return;
+            }
             if (playerRef.current) {
                 playerRef.current.loadVideoById(current.youtubeId);
                 return;
@@ -77,8 +83,12 @@ export function YouTubePlayerProvider({ children }: { children: ReactNode }) {
                 events: {
                     onReady: (e) => e.target.playVideo(),
                     onStateChange: (e) => {
-                        if (e.data === YT.PlayerState.PLAYING) setIsPlaying(true);
-                        if (e.data === YT.PlayerState.PAUSED) setIsPlaying(false);
+                        if (e.data === YT.PlayerState.PLAYING) {
+                            setIsPlaying(true);
+                        }
+                        if (e.data === YT.PlayerState.PAUSED) {
+                            setIsPlaying(false);
+                        }
                         if (e.data === YT.PlayerState.ENDED) {
                             setIsPlaying(false);
                             advance(1);
@@ -93,16 +103,23 @@ export function YouTubePlayerProvider({ children }: { children: ReactNode }) {
     }, [current, advance]);
 
     const playQueue = useCallback((tracks: PlayableTrack[], startIndex = 0) => {
-        if (tracks.length === 0) return;
+        if (tracks.length === 0) {
+            return;
+        }
         setQueue(tracks);
         setIndex(Math.min(Math.max(startIndex, 0), tracks.length - 1));
     }, []);
 
     const toggle = useCallback(() => {
         const player = playerRef.current;
-        if (!player) return;
-        if (isPlaying) player.pauseVideo();
-        else player.playVideo();
+        if (!player) {
+            return;
+        }
+        if (isPlaying) {
+            player.pauseVideo();
+        } else {
+            player.playVideo();
+        }
     }, [isPlaying]);
 
     const close = useCallback(() => {
@@ -138,6 +155,8 @@ export function YouTubePlayerProvider({ children }: { children: ReactNode }) {
 
 export function usePlayer(): PlayerContextValue {
     const ctx = useContext(PlayerContext);
-    if (!ctx) throw new Error("usePlayer must be used inside YouTubePlayerProvider");
+    if (!ctx) {
+        throw new Error("usePlayer must be used inside YouTubePlayerProvider");
+    }
     return ctx;
 }

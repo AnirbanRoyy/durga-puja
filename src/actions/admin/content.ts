@@ -7,34 +7,18 @@ import { invalidateCatalog, invalidateSettings } from "@/lib/cache";
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
 import { istLocalToIso } from "@/lib/datetime";
 import type { FeedbackStatus, SongCategory, SongRequestStatus } from "@/lib/database.types";
-import {
-    CATEGORY_LABEL,
-    MC_CATEGORIES,
-    type Gender,
-    type MusicalChairCategory,
-} from "@/lib/musical-chair-categories";
+import { type Gender, type MusicalChairCategory } from "@/lib/musical-chair-categories";
 import { getCurrentYear, listMusicalChairPlayers } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
 import { bengaliOrTranslated } from "@/lib/translate";
 import { parseWhatsappInvite, parseYouTubeId, type ActionState } from "@/lib/validators";
-
-const CLOUDINARY_PREFIX = "https://res.cloudinary.com/";
+import { CATEGORY_LABEL, CLOUDINARY_PREFIX, MC_CATEGORIES, SONG_CATEGORIES } from "@/constants";
 
 /** A text field of a form; anything that isn't text (a file) counts as empty. */
 function text(formData: FormData, key: string): string {
     const value = formData.get(key);
     return typeof value === "string" ? value : "";
 }
-
-const CATEGORIES = [
-    "mahalaya",
-    "agomoni",
-    "dhunuchi",
-    "bhajan",
-    "modern",
-    "bollywood",
-    "other",
-] as const;
 
 // ---------------------------------------------------------------------------
 // Songs
@@ -48,7 +32,7 @@ const songDetailsSchema = z.object({
         .max(120)
         .optional()
         .transform((v) => v || null),
-    category: z.enum(CATEGORIES),
+    category: z.enum(SONG_CATEGORIES),
 });
 
 const youtubeSongSchema = songDetailsSchema.extend({
@@ -62,9 +46,13 @@ async function findPoolDuplicate(
     exceptId?: string,
 ): Promise<string | null> {
     let query = db().from("songs").select("title").eq("pool", pool).eq("youtube_id", youtubeId);
-    if (exceptId) query = query.neq("id", exceptId);
+    if (exceptId) {
+        query = query.neq("id", exceptId);
+    }
     const { data, error } = await query.limit(1).maybeSingle();
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     return data?.title ?? null;
 }
 
@@ -78,12 +66,15 @@ export async function addYouTubeSong(_prev: ActionState, formData: FormData): Pr
         return { ok: false, code: parsed.error.issues[0]?.message ?? "Invalid input", values: raw };
     }
     const youtubeId = parseYouTubeId(parsed.data.url);
-    if (!youtubeId)
+    if (!youtubeId) {
         return { ok: false, code: "That doesn't look like a YouTube link.", values: raw };
+    }
 
     const pool = formData.get("pool") === "musical_chair" ? "musical_chair" : "music_page";
     const duplicate = await findPoolDuplicate(pool, youtubeId);
-    if (duplicate) return { ok: false, code: duplicateMessage(duplicate), values: raw };
+    if (duplicate) {
+        return { ok: false, code: duplicateMessage(duplicate), values: raw };
+    }
 
     const { error } = await db()
         .from("songs")
@@ -96,7 +87,9 @@ export async function addYouTubeSong(_prev: ActionState, formData: FormData): Pr
             pool,
             featured: pool === "music_page" && formData.get("featured") === "on",
         });
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
     return { ok: true, code: "Song added." };
 }
@@ -111,8 +104,12 @@ export async function editSong(_prev: ActionState, formData: FormData): Promise<
         .select("id, source, pool, category")
         .eq("id", text(formData, "id"))
         .maybeSingle();
-    if (error) throw error;
-    if (!song) return { ok: false, code: "Song not found.", values: raw };
+    if (error) {
+        throw error;
+    }
+    if (!song) {
+        return { ok: false, code: "Song not found.", values: raw };
+    }
 
     const isYouTube = song.source === "youtube";
     const parsed = songDetailsSchema.safeParse({
@@ -131,16 +128,21 @@ export async function editSong(_prev: ActionState, formData: FormData): Promise<
     } = { title: parsed.data.title, artist: parsed.data.artist };
     if (isYouTube) {
         const youtubeId = parseYouTubeId(text(formData, "url"));
-        if (!youtubeId)
+        if (!youtubeId) {
             return { ok: false, code: "That doesn't look like a YouTube link.", values: raw };
+        }
         const duplicate = await findPoolDuplicate(song.pool, youtubeId, song.id);
-        if (duplicate) return { ok: false, code: duplicateMessage(duplicate), values: raw };
+        if (duplicate) {
+            return { ok: false, code: duplicateMessage(duplicate), values: raw };
+        }
         patch.category = parsed.data.category;
         patch.youtube_id = youtubeId;
     }
 
     const { error: updateError } = await supabase.from("songs").update(patch).eq("id", song.id);
-    if (updateError) throw updateError;
+    if (updateError) {
+        throw updateError;
+    }
     refresh();
     return { ok: true, code: "Song updated." };
 }
@@ -175,7 +177,9 @@ export async function addMusicalChairSong(input: UploadedAudio) {
         })
         .select("id")
         .single();
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     if (input.requestId) {
         await supabase
             .from("song_requests")
@@ -190,7 +194,9 @@ export async function addSongsToMusicalChairPool(
     songIds: string[],
 ): Promise<{ ok: true; added: number } | { ok: false; message: string }> {
     await requireAdmin();
-    if (!songIds.length) return { ok: false, message: "Pick at least one song." };
+    if (!songIds.length) {
+        return { ok: false, message: "Pick at least one song." };
+    }
     const supabase = db();
     const { data: library, error } = await supabase
         .from("songs")
@@ -198,13 +204,17 @@ export async function addSongsToMusicalChairPool(
         .in("id", songIds)
         .eq("source", "youtube")
         .eq("active", true);
-    if (error) return { ok: false, message: error.message };
+    if (error) {
+        return { ok: false, message: error.message };
+    }
     const { data: pool, error: poolError } = await supabase
         .from("songs")
         .select("youtube_id")
         .eq("pool", "musical_chair")
         .not("youtube_id", "is", null);
-    if (poolError) return { ok: false, message: poolError.message };
+    if (poolError) {
+        return { ok: false, message: poolError.message };
+    }
     const have = new Set(pool.map((s) => s.youtube_id));
     const fresh = library.filter((s) => s.youtube_id && !have.has(s.youtube_id));
     if (fresh.length) {
@@ -218,7 +228,9 @@ export async function addSongsToMusicalChairPool(
                 pool: "musical_chair" as const,
             })),
         );
-        if (insertError) return { ok: false, message: insertError.message };
+        if (insertError) {
+            return { ok: false, message: insertError.message };
+        }
     }
     refresh();
     return { ok: true, added: fresh.length };
@@ -233,8 +245,12 @@ export async function addMusicalChairRequestToPool(requestId: string) {
         .select("*")
         .eq("id", requestId)
         .maybeSingle();
-    if (error) throw error;
-    if (!request) throw new Error("Request not found");
+    if (error) {
+        throw error;
+    }
+    if (!request) {
+        throw new Error("Request not found");
+    }
 
     const { data: existing } = await supabase
         .from("songs")
@@ -257,14 +273,18 @@ export async function addMusicalChairRequestToPool(requestId: string) {
             })
             .select("id")
             .single();
-        if (insertError) throw insertError;
+        if (insertError) {
+            throw insertError;
+        }
         songId = song.id;
     }
     const { error: updateError } = await supabase
         .from("musical_chair_requests")
         .update({ status: "added", song_id: songId })
         .eq("id", requestId);
-    if (updateError) throw updateError;
+    if (updateError) {
+        throw updateError;
+    }
     refresh();
 }
 
@@ -274,7 +294,9 @@ export async function rejectMusicalChairRequest(requestId: string) {
         .from("musical_chair_requests")
         .update({ status: "rejected" })
         .eq("id", requestId);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
@@ -295,7 +317,9 @@ export async function updateSong(
         await supabase.from("songs").update({ featured: false }).eq("featured", true);
     }
     const { error } = await supabase.from("songs").update(patch).eq("id", id);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
@@ -308,22 +332,30 @@ export async function deleteSong(id: string) {
         .eq("id", id)
         .select("cloudinary_public_id")
         .single();
-    if (error) throw error;
-    if (song.cloudinary_public_id) await destroyCloudinaryAsset(song.cloudinary_public_id, "video");
+    if (error) {
+        throw error;
+    }
+    if (song.cloudinary_public_id) {
+        await destroyCloudinaryAsset(song.cloudinary_public_id, "video");
+    }
     refresh();
 }
 
 export async function setSongRequestStatus(id: string, status: SongRequestStatus) {
     await requireAdmin();
     const { error } = await db().from("song_requests").update({ status }).eq("id", id);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
 export async function deleteSongRequest(id: string) {
     await requireAdmin();
     const { error } = await db().from("song_requests").delete().eq("id", id);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
@@ -341,7 +373,9 @@ export type UploadedImage = {
 
 export async function addDrawing(programmeId: string, image: UploadedImage) {
     await requireAdmin();
-    if (!image.imageUrl.startsWith(CLOUDINARY_PREFIX)) throw new Error("Invalid upload");
+    if (!image.imageUrl.startsWith(CLOUDINARY_PREFIX)) {
+        throw new Error("Invalid upload");
+    }
     const { error } = await db()
         .from("drawings")
         .insert({
@@ -356,7 +390,9 @@ export async function addDrawing(programmeId: string, image: UploadedImage) {
             width: image.width,
             height: image.height,
         });
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
@@ -366,7 +402,9 @@ export async function updateDrawing(
 ) {
     await requireAdmin();
     const name = patch.child_name.trim().slice(0, 80);
-    if (!name) throw new Error("Name is required");
+    if (!name) {
+        throw new Error("Name is required");
+    }
     const { error } = await db()
         .from("drawings")
         .update({
@@ -375,7 +413,9 @@ export async function updateDrawing(
             title: patch.title?.trim().slice(0, 120) || null,
         })
         .eq("id", id);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
@@ -387,8 +427,12 @@ export async function deleteDrawing(id: string) {
         .eq("id", id)
         .select("cloudinary_public_id")
         .single();
-    if (error) throw error;
-    if (data.cloudinary_public_id) await destroyCloudinaryAsset(data.cloudinary_public_id, "image");
+    if (error) {
+        throw error;
+    }
+    if (data.cloudinary_public_id) {
+        await destroyCloudinaryAsset(data.cloudinary_public_id, "image");
+    }
     refresh();
 }
 
@@ -401,7 +445,9 @@ export async function publishDrawingResults(programmeId: string) {
         .from("drawings")
         .select("child_name, title, vote_count, last_vote_at")
         .eq("programme_id", programmeId);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     const ranked = [...drawings]
         .sort(
             (a, b) =>
@@ -420,7 +466,9 @@ export async function publishDrawingResults(programmeId: string) {
                 remark: d.title,
             })),
         );
-        if (insertError) throw insertError;
+        if (insertError) {
+            throw insertError;
+        }
     }
     await supabase.from("programmes").update({ status: "completed" }).eq("id", programmeId);
     invalidateCatalog();
@@ -464,7 +512,9 @@ export async function recordRound(
         })
         .select("id")
         .single();
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     return { id: data.id, roundNo };
 }
 
@@ -474,7 +524,9 @@ export async function setRoundEliminated(roundId: string, name: string) {
         .from("musical_chair_rounds")
         .update({ eliminated_name: name.trim().slice(0, 80) || null })
         .eq("id", roundId);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
@@ -485,7 +537,9 @@ export async function resetRounds(programmeId: string, category: MusicalChairCat
         .delete()
         .eq("programme_id", programmeId)
         .eq("category", categorySchema.parse(category));
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
@@ -496,7 +550,9 @@ export async function setMusicalChairGender(registrationId: string, gender: Gend
         .from("registration_contacts")
         .update({ gender: z.enum(["male", "female"]).parse(gender) })
         .eq("registration_id", z.uuid().parse(registrationId));
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
@@ -520,7 +576,9 @@ export async function finishMusicalChair(
         .eq("programme_id", programmeId)
         .eq("category", cat)
         .order("round_no", { ascending: false });
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     const names = [winner.trim(), ...rounds.map((r) => r.eliminated_name?.trim() ?? "")].filter(
         Boolean,
     );
@@ -534,14 +592,18 @@ export async function finishMusicalChair(
                 remark: label,
             })),
         );
-        if (insertError) throw insertError;
+        if (insertError) {
+            throw insertError;
+        }
     }
 
     const [players, { data: done, error: doneError }] = await Promise.all([
         listMusicalChairPlayers(programmeId),
         supabase.from("results").select("remark").eq("programme_id", programmeId).eq("position", 1),
     ]);
-    if (doneError) throw doneError;
+    if (doneError) {
+        throw doneError;
+    }
     const finished = new Set(done.map((r) => r.remark));
     const allDone = MC_CATEGORIES.every(
         (c) => !players.some((p) => p.category === c) || finished.has(CATEGORY_LABEL[c]),
@@ -561,14 +623,18 @@ export async function finishMusicalChair(
 export async function setFeedbackStatus(id: string, status: FeedbackStatus) {
     await requireAdmin();
     const { error } = await db().from("feedback").update({ status }).eq("id", id);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
 export async function deleteFeedback(id: string) {
     await requireAdmin();
     const { error } = await db().from("feedback").delete().eq("id", id);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
@@ -580,7 +646,9 @@ async function saveSetting(key: string, value: Record<string, unknown>) {
     const { error } = await db()
         .from("settings")
         .upsert({ key, value, updated_at: new Date().toISOString() });
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     invalidateSettings();
 }
 
@@ -608,7 +676,9 @@ export async function saveEventSettings(
             dashami,
         })
         .eq("year", await getCurrentYear());
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     invalidateCatalog();
     refresh();
     return { ok: true, code: "Event settings saved." };
@@ -661,7 +731,9 @@ export async function startEdition(_prev: ActionState, formData: FormData): Prom
 export async function makeEditionCurrent(year: number) {
     await requireAdmin();
     const { error } = await db().rpc("set_current_edition", { p_year: year });
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     invalidateCatalog();
     refresh();
 }

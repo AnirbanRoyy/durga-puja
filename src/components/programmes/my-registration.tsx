@@ -35,8 +35,11 @@ export function MyRegistration({
     function withdraw() {
         startTransition(async () => {
             const result = await withdrawMyRegistration(programmeId);
-            if (result.ok) toast.success(success("withdrawn"));
-            else toast.error(errors("notYours"));
+            if (result.ok) {
+                toast.success(success("withdrawn"));
+            } else {
+                toast.error(errors("notYours"));
+            }
         });
     }
 

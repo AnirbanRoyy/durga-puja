@@ -1,4 +1,5 @@
 import type { MusicalChairRound } from "@/lib/database.types";
+import type { MusicalChairCategory } from "@/lib/musical-chair-categories";
 
 export type Standings = {
     /** Registered players not yet out. */
@@ -43,4 +44,28 @@ export function playersStillIn(
             .map((r) => key(r.eliminated_name!)),
     );
     return playerNames.filter((n) => !out.has(key(n)));
+}
+
+/**
+ * The musical chair category the host is playing now: the category of the latest round. Before any
+ * round has been played, it is the first category that has players, or null when there is none.
+ */
+export function liveMusicalChairCategory(
+    rounds: MusicalChairRound[],
+    categoriesWithPlayers: MusicalChairCategory[],
+): MusicalChairCategory | null {
+    let latest: MusicalChairRound | null = null;
+    for (const round of rounds) {
+        if (!round.category) {
+            continue;
+        }
+        if (latest === null || round.created_at > latest.created_at) {
+            latest = round;
+        }
+    }
+
+    if (latest?.category) {
+        return latest.category;
+    }
+    return categoriesWithPlayers[0] ?? null;
 }

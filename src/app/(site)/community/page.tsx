@@ -21,8 +21,12 @@ export async function generateMetadata() {
 
 /** Uses the uploaded QR if there is one, otherwise draws one from the invite link. */
 async function resolveQr(invite: string | null, uploaded: string | null) {
-    if (uploaded) return { src: uploaded, generated: false };
-    if (!invite) return null;
+    if (uploaded) {
+        return { src: uploaded, generated: false };
+    }
+    if (!invite) {
+        return null;
+    }
     const src = await QRCode.toDataURL(invite, {
         errorCorrectionLevel: "M",
         margin: 1,

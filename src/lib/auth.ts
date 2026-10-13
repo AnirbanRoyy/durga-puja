@@ -2,12 +2,8 @@ import "server-only";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { serverEnv } from "@/lib/env";
-import {
-    ADMIN_COOKIE,
-    ADMIN_SESSION_MAX_AGE,
-    signAdminToken,
-    verifyAdminToken,
-} from "@/lib/session-token";
+import { signAdminToken, verifyAdminToken } from "@/lib/session-token";
+import { ADMIN_COOKIE, ADMIN_SESSION_MAX_AGE } from "@/constants";
 
 export function isCorrectPassword(input: string): boolean {
     // Hash both sides so the comparison is constant-time regardless of length.

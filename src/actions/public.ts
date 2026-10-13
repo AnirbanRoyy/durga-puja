@@ -17,7 +17,7 @@ import {
     rememberRegistration,
 } from "@/lib/my-registration";
 import { rateLimit } from "@/lib/rate-limit";
-import { getCurrentYear, STREAM_REQUEST_LIMIT } from "@/lib/queries";
+import { getCurrentYear } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
 import { parseRegistration } from "@/lib/registration-input";
 import { fetchYouTubeInfo } from "@/lib/youtube-oembed";
@@ -31,11 +31,14 @@ import {
     type ActionState,
 } from "@/lib/validators";
 import { getClientIp, getIpHash, getVisitorId, getVoterHash } from "@/lib/visitor";
+import { STREAM_REQUEST_LIMIT } from "@/constants";
 
 function formObject(formData: FormData): Record<string, string> {
     const out: Record<string, string> = {};
     for (const [key, value] of formData.entries()) {
-        if (typeof value === "string") out[key] = value;
+        if (typeof value === "string") {
+            out[key] = value;
+        }
     }
     return out;
 }
@@ -49,13 +52,17 @@ function field(formData: FormData, key: string): string {
 /** Field errors for the link and name of a song request, or null when both are fine. */
 function songRequestErrors(videoId: string | null, name: string): Record<string, string> | null {
     const nameOk = name.length >= 2 && name.length <= 40;
-    if (videoId && nameOk) return null;
+    if (videoId && nameOk) {
+        return null;
+    }
     return { ...(videoId ? {} : { link: "link" }), ...(nameOk ? {} : { name: "name" }) };
 }
 
 /** One visitor (and one network) may only send so many song requests an hour. */
 async function songRequestsTooFast(prefix: string, perVisitor: number, perNetwork: number) {
-    if (!(await rateLimit(`${prefix}:${await getVisitorId()}`, perVisitor, 3600))) return true;
+    if (!(await rateLimit(`${prefix}:${await getVisitorId()}`, perVisitor, 3600))) {
+        return true;
+    }
     return !(await rateLimit(`${prefix}-ip:${await getClientIp()}`, perNetwork, 3600));
 }
 
@@ -72,7 +79,9 @@ export async function registerForProgramme(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    if (isBot(formData)) return { ok: true, code: "registered" };
+    if (isBot(formData)) {
+        return { ok: true, code: "registered" };
+    }
 
     const ip = await getClientIp();
     if (!(await rateLimit(`register:${ip}`, 15, 600))) {
@@ -101,12 +110,16 @@ export async function registerForProgramme(
         .from("registrations")
         .select("sequence_no")
         .eq("programme_id", programme.id);
-    if (countError) throw countError;
+    if (countError) {
+        throw countError;
+    }
     if (programme.max_participants && existing.length >= programme.max_participants) {
         return fail(formData, "full");
     }
 
-    if (!(await claimDevice(ip, programme.slug))) return fail(formData, "deviceUsed");
+    if (!(await claimDevice(ip, programme.slug))) {
+        return fail(formData, "deviceUsed");
+    }
 
     // Once the call order is locked, late entries go to the end of the line.
     const sequenceNo = programme.order_locked
@@ -144,7 +157,9 @@ export async function registerForProgramme(
     if (contactError) {
         await supabase.from("registrations").delete().eq("id", registration.id);
         await releaseDevice(ip, programme.slug);
-        if (contactError.code === "23505") return fail(formData, "duplicate");
+        if (contactError.code === "23505") {
+            return fail(formData, "duplicate");
+        }
         throw contactError;
     }
 
@@ -159,11 +174,15 @@ export async function updateMyRegistration(
     formData: FormData,
 ): Promise<ActionState> {
     const parsed = await parseRegistration(formObject(formData));
-    if (!parsed.ok) return fail(formData, "invalid", parsed.errors);
+    if (!parsed.ok) {
+        return fail(formData, "invalid", parsed.errors);
+    }
     const { programme, input } = parsed;
 
     const mine = await getMyRegistration(programme.id);
-    if (!mine) return fail(formData, "notYours");
+    if (!mine) {
+        return fail(formData, "notYours");
+    }
 
     const supabase = db();
     const { error: contactError } = await supabase
@@ -178,14 +197,18 @@ export async function updateMyRegistration(
         })
         .eq("registration_id", mine.registrationId);
     if (contactError) {
-        if (contactError.code === "23505") return fail(formData, "duplicate");
+        if (contactError.code === "23505") {
+            return fail(formData, "duplicate");
+        }
         throw contactError;
     }
     const { error } = await supabase
         .from("registrations")
         .update({ name: input.name, members: input.members })
         .eq("id", mine.registrationId);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
 
     refresh();
     return { ok: true, code: "updated" };
@@ -194,11 +217,17 @@ export async function updateMyRegistration(
 /** Withdraw: removes the registration and frees this network to register again. */
 export async function withdrawMyRegistration(programmeId: string): Promise<ActionState> {
     const mine = await getMyRegistration(programmeId);
-    if (!mine) return { ok: false, code: "notYours" };
+    if (!mine) {
+        return { ok: false, code: "notYours" };
+    }
 
     const { error } = await db().from("registrations").delete().eq("id", mine.registrationId);
-    if (error) throw error;
-    if (mine.claimKey) await releaseKey(mine.claimKey);
+    if (error) {
+        throw error;
+    }
+    if (mine.claimKey) {
+        await releaseKey(mine.claimKey);
+    }
     await forgetRegistration(programmeId);
     refresh();
     return { ok: true, code: "withdrawn" };
@@ -219,7 +248,9 @@ export async function recoverRegistration(
     }
 
     const ip = await getClientIp();
-    if (!(await rateLimit(`recover:${ip}`, 8, 600))) return fail(formData, "rateLimited");
+    if (!(await rateLimit(`recover:${ip}`, 8, 600))) {
+        return fail(formData, "rateLimited");
+    }
 
     const supabase = db();
     const { data: programme } = await supabase
@@ -228,7 +259,9 @@ export async function recoverRegistration(
         .eq("id", programmeId)
         .maybeSingle();
     const key = programme ? deviceKey(ip, programme.slug) : null;
-    if (!key) return fail(formData, "noMatch");
+    if (!key) {
+        return fail(formData, "noMatch");
+    }
 
     const { data: contact } = await supabase
         .from("registration_contacts")
@@ -237,14 +270,18 @@ export async function recoverRegistration(
         .eq("phone", phone.data)
         .eq("claim_key", key)
         .maybeSingle();
-    if (!contact) return fail(formData, "noMatch");
+    if (!contact) {
+        return fail(formData, "noMatch");
+    }
 
     const edit = newEditToken();
     const { error } = await supabase
         .from("registration_contacts")
         .update({ edit_token_hash: edit.hash })
         .eq("registration_id", contact.registration_id);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
 
     await rememberRegistration(programmeId, contact.registration_id, edit.token);
     refresh();
@@ -252,10 +289,14 @@ export async function recoverRegistration(
 }
 
 export async function requestSong(_prev: ActionState, formData: FormData): Promise<ActionState> {
-    if (isBot(formData)) return { ok: true, code: "requested" };
+    if (isBot(formData)) {
+        return { ok: true, code: "requested" };
+    }
 
     const parsed = songRequestSchema.safeParse(formObject(formData));
-    if (!parsed.success) return fail(formData, "invalid", fieldErrors(parsed.error));
+    if (!parsed.success) {
+        return fail(formData, "invalid", fieldErrors(parsed.error));
+    }
     const input = parsed.data;
 
     if (!(await rateLimit(`song:${await getVisitorId()}`, 5, 3600))) {
@@ -263,7 +304,9 @@ export async function requestSong(_prev: ActionState, formData: FormData): Promi
     }
 
     const key = normalizeSongKey(input.title);
-    if (!key) return fail(formData, "invalid", { title: "title" });
+    if (!key) {
+        return fail(formData, "invalid", { title: "title" });
+    }
 
     const { error } = await db().rpc("request_song", {
         p_title: input.title,
@@ -272,7 +315,9 @@ export async function requestSong(_prev: ActionState, formData: FormData): Promi
         p_requested_by: input.requestedBy,
         p_normalized_key: key,
     });
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
 
     refresh();
     return { ok: true, code: "requested" };
@@ -283,16 +328,24 @@ export async function requestStreamSong(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    if (isBot(formData)) return { ok: true, code: "streamAdded" };
+    if (isBot(formData)) {
+        return { ok: true, code: "streamAdded" };
+    }
 
     const name = field(formData, "name").trim();
     const videoId = parseYouTubeId(field(formData, "link"));
     const errors = songRequestErrors(videoId, name);
-    if (errors || !videoId) return fail(formData, "invalid", errors ?? undefined);
-    if (await songRequestsTooFast("stream", 6, 30)) return fail(formData, "rateLimited");
+    if (errors || !videoId) {
+        return fail(formData, "invalid", errors ?? undefined);
+    }
+    if (await songRequestsTooFast("stream", 6, 30)) {
+        return fail(formData, "rateLimited");
+    }
 
     const info = await fetchYouTubeInfo(videoId);
-    if (!info) return fail(formData, "streamUnavailable", { link: "link" });
+    if (!info) {
+        return fail(formData, "streamUnavailable", { link: "link" });
+    }
 
     const { data, error } = await db().rpc("request_stream_song", {
         p_year: await getCurrentYear(),
@@ -305,10 +358,18 @@ export async function requestStreamSong(
         p_ip_hash: await getIpHash(),
         p_limit: STREAM_REQUEST_LIMIT,
     });
-    if (error) throw error;
-    if (data === "rejected") return fail(formData, "streamRejected");
-    if (data === "limit_reached") return fail(formData, "streamLimit");
-    if (data === "already_requested") return fail(formData, "streamAlready");
+    if (error) {
+        throw error;
+    }
+    if (data === "rejected") {
+        return fail(formData, "streamRejected");
+    }
+    if (data === "limit_reached") {
+        return fail(formData, "streamLimit");
+    }
+    if (data === "already_requested") {
+        return fail(formData, "streamAlready");
+    }
     refresh();
     const codes = {
         added: "streamAdded",
@@ -323,15 +384,23 @@ export async function requestMusicalChairSong(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    if (isBot(formData)) return { ok: true, code: "streamAdded" };
+    if (isBot(formData)) {
+        return { ok: true, code: "streamAdded" };
+    }
 
     const programmeId = field(formData, "programmeId");
     const name = field(formData, "name").trim();
     const videoId = parseYouTubeId(field(formData, "link"));
-    if (!z.uuid().safeParse(programmeId).success) return fail(formData, "invalid");
+    if (!z.uuid().safeParse(programmeId).success) {
+        return fail(formData, "invalid");
+    }
     const errors = songRequestErrors(videoId, name);
-    if (errors || !videoId) return fail(formData, "invalid", errors ?? undefined);
-    if (await songRequestsTooFast("mcsong", 6, 30)) return fail(formData, "rateLimited");
+    if (errors || !videoId) {
+        return fail(formData, "invalid", errors ?? undefined);
+    }
+    if (await songRequestsTooFast("mcsong", 6, 30)) {
+        return fail(formData, "rateLimited");
+    }
 
     const supabase = db();
     const { data: programme } = await supabase
@@ -339,13 +408,17 @@ export async function requestMusicalChairSong(
         .select("type, status")
         .eq("id", programmeId)
         .maybeSingle();
-    if (programme?.type !== "musical_chair") return fail(formData, "invalid");
+    if (programme?.type !== "musical_chair") {
+        return fail(formData, "invalid");
+    }
     if (programme.status === "completed" || programme.status === "cancelled") {
         return fail(formData, "registrationClosed");
     }
 
     const info = await fetchYouTubeInfo(videoId);
-    if (!info) return fail(formData, "streamUnavailable", { link: "link" });
+    if (!info) {
+        return fail(formData, "streamUnavailable", { link: "link" });
+    }
 
     const { data, error } = await supabase.rpc("request_musical_chair_song", {
         p_programme_id: programmeId,
@@ -358,24 +431,42 @@ export async function requestMusicalChairSong(
         p_ip_hash: await getIpHash(),
         p_limit: STREAM_REQUEST_LIMIT,
     });
-    if (error) throw error;
-    if (data === "rejected") return fail(formData, "streamRejected");
-    if (data === "limit_reached") return fail(formData, "streamLimit");
-    if (data === "already_requested") return fail(formData, "streamAlready");
-    if (data === "in_pool") return fail(formData, "mcInPool");
+    if (error) {
+        throw error;
+    }
+    if (data === "rejected") {
+        return fail(formData, "streamRejected");
+    }
+    if (data === "limit_reached") {
+        return fail(formData, "streamLimit");
+    }
+    if (data === "already_requested") {
+        return fail(formData, "streamAlready");
+    }
+    if (data === "in_pool") {
+        return fail(formData, "mcInPool");
+    }
     refresh();
     return { ok: true, code: data === "added" ? "streamAdded" : "streamUpvoted" };
 }
 
 export async function upvoteMusicalChairSong(requestId: string): Promise<StreamVoteResult> {
-    if (!/^[0-9a-f-]{36}$/i.test(requestId)) return "not_found";
-    if (!(await rateLimit(`mcvote:${await getVisitorId()}`, 60, 3600))) return "rate_limited";
+    if (!/^[0-9a-f-]{36}$/i.test(requestId)) {
+        return "not_found";
+    }
+    if (!(await rateLimit(`mcvote:${await getVisitorId()}`, 60, 3600))) {
+        return "rate_limited";
+    }
     const { data, error } = await db().rpc("upvote_musical_chair_request", {
         p_request_id: requestId,
         p_voter_hash: await getVoterHash(),
     });
-    if (error) throw error;
-    if (data === "ok") refresh();
+    if (error) {
+        throw error;
+    }
+    if (data === "ok") {
+        refresh();
+    }
     return data;
 }
 
@@ -384,11 +475,14 @@ export async function requestQuotaReset(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    if (isBot(formData)) return { ok: true, code: "quotaAsked" };
+    if (isBot(formData)) {
+        return { ok: true, code: "quotaAsked" };
+    }
 
     const name = field(formData, "quotaName").trim();
-    if (name.length < 2 || name.length > 40)
+    if (name.length < 2 || name.length > 40) {
         return fail(formData, "invalid", { quotaName: "name" });
+    }
     if (!(await rateLimit(`stream-quota:${await getClientIp()}`, 5, 3600))) {
         return fail(formData, "rateLimited");
     }
@@ -399,8 +493,12 @@ export async function requestQuotaReset(
         p_name: name,
         p_limit: STREAM_REQUEST_LIMIT,
     });
-    if (error) throw error;
-    if (data === "declined") return fail(formData, "quotaDeclined");
+    if (error) {
+        throw error;
+    }
+    if (data === "declined") {
+        return fail(formData, "quotaDeclined");
+    }
     refresh();
     return { ok: true, code: data === "created" ? "quotaAsked" : "quotaPending" };
 }
@@ -408,14 +506,22 @@ export async function requestQuotaReset(
 export type StreamVoteResult = "ok" | "already_voted" | "closed" | "not_found" | "rate_limited";
 
 export async function upvoteStreamSong(requestId: string): Promise<StreamVoteResult> {
-    if (!/^[0-9a-f-]{36}$/i.test(requestId)) return "not_found";
-    if (!(await rateLimit(`streamvote:${await getVisitorId()}`, 60, 3600))) return "rate_limited";
+    if (!/^[0-9a-f-]{36}$/i.test(requestId)) {
+        return "not_found";
+    }
+    if (!(await rateLimit(`streamvote:${await getVisitorId()}`, 60, 3600))) {
+        return "rate_limited";
+    }
     const { data, error } = await db().rpc("upvote_stream_request", {
         p_request_id: requestId,
         p_voter_hash: await getVoterHash(),
     });
-    if (error) throw error;
-    if (data === "ok") refresh();
+    if (error) {
+        throw error;
+    }
+    if (data === "ok") {
+        refresh();
+    }
     return data;
 }
 
@@ -426,9 +532,13 @@ export type VoteResult = "ok" | "already_voted" | "closed" | "not_found" | "rate
  * `user:drawing:<programme>:<ip>`) and per browser (the visitor cookie, enforced in `cast_vote`).
  */
 export async function castVote(drawingId: string): Promise<VoteResult> {
-    if (!/^[0-9a-f-]{36}$/i.test(drawingId)) return "not_found";
+    if (!/^[0-9a-f-]{36}$/i.test(drawingId)) {
+        return "not_found";
+    }
     const ip = await getClientIp();
-    if (!(await rateLimit(`vote:${ip}`, 60, 3600))) return "rate_limited";
+    if (!(await rateLimit(`vote:${ip}`, 60, 3600))) {
+        return "rate_limited";
+    }
 
     const supabase = db();
     const { data: drawing } = await supabase
@@ -436,16 +546,22 @@ export async function castVote(drawingId: string): Promise<VoteResult> {
         .select("programme_id")
         .eq("id", drawingId)
         .maybeSingle();
-    if (!drawing) return "not_found";
+    if (!drawing) {
+        return "not_found";
+    }
     const { data: programme } = await supabase
         .from("programmes")
         .select("slug")
         .eq("id", drawing.programme_id)
         .maybeSingle();
-    if (!programme) return "not_found";
+    if (!programme) {
+        return "not_found";
+    }
 
     const key = drawingVoteKey(ip, programme.slug);
-    if (!(await claimKey(key))) return "already_voted";
+    if (!(await claimKey(key))) {
+        return "already_voted";
+    }
 
     const { data, error } = await supabase.rpc("cast_vote", {
         p_drawing_id: drawingId,
@@ -453,8 +569,12 @@ export async function castVote(drawingId: string): Promise<VoteResult> {
     });
     // Only a counted vote keeps the network's bit; a refused or failed one gives it back.
     if (error || data !== "ok") {
-        if (key) await releaseKey(key);
-        if (error) throw error;
+        if (key) {
+            await releaseKey(key);
+        }
+        if (error) {
+            throw error;
+        }
         return data;
     }
     refresh();
@@ -462,16 +582,22 @@ export async function castVote(drawingId: string): Promise<VoteResult> {
 }
 
 export async function submitFeedback(_prev: ActionState, formData: FormData): Promise<ActionState> {
-    if (isBot(formData)) return { ok: true, code: "feedbackSent" };
+    if (isBot(formData)) {
+        return { ok: true, code: "feedbackSent" };
+    }
 
     const parsed = feedbackSchema.safeParse(formObject(formData));
-    if (!parsed.success) return fail(formData, "invalid", fieldErrors(parsed.error));
+    if (!parsed.success) {
+        return fail(formData, "invalid", fieldErrors(parsed.error));
+    }
 
     if (!(await rateLimit(`feedback:${await getClientIp()}`, 5, 3600))) {
         return fail(formData, "rateLimited");
     }
 
     const { error } = await db().from("feedback").insert(parsed.data);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     return { ok: true, code: "feedbackSent" };
 }

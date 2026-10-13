@@ -10,7 +10,9 @@ export const metadata = {
 };
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
-    if (!(await isAdmin())) redirect("/admin/login");
+    if (!(await isAdmin())) {
+        redirect("/admin/login");
+    }
     return (
         <div className="flex min-h-screen flex-col lg:flex-row">
             <AdminNav />

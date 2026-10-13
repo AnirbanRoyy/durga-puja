@@ -106,15 +106,23 @@ export function normalizeSongKey(title: string): string {
 /** Extracts the 11-char video id from any common YouTube URL form, or accepts a bare id. */
 export function parseYouTubeId(input: string): string | null {
     const value = input.trim();
-    if (/^[\w-]{11}$/.test(value)) return value;
+    if (/^[\w-]{11}$/.test(value)) {
+        return value;
+    }
     try {
         const url = new URL(value);
-        if (url.hostname === "youtu.be") return url.pathname.slice(1, 12) || null;
+        if (url.hostname === "youtu.be") {
+            return url.pathname.slice(1, 12) || null;
+        }
         if (url.hostname.endsWith("youtube.com")) {
             const v = url.searchParams.get("v");
-            if (v) return v.slice(0, 11);
+            if (v) {
+                return v.slice(0, 11);
+            }
             const match = url.pathname.match(/\/(?:embed|shorts|live)\/([\w-]{11})/);
-            if (match) return match[1];
+            if (match) {
+                return match[1];
+            }
         }
     } catch {
         return null;
@@ -129,7 +137,9 @@ export function parseYouTubeId(input: string): string | null {
 export function parseWhatsappInvite(input: string): string | null {
     try {
         const url = new URL(input.trim());
-        if (url.protocol !== "https:") return null;
+        if (url.protocol !== "https:") {
+            return null;
+        }
         const host = url.hostname.replace(/^www\./, "");
         const path = url.pathname.replace(/\/$/, "");
         const ok =

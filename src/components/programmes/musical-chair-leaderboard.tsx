@@ -38,11 +38,11 @@ export function MusicalChairLeaderboard({
 }>) {
     const t = useTranslations("musicalChair.leaderboard");
     const [picked, setPicked] = useState<MusicalChairCategory | null>(null);
-    const board =
-        boards.find((b) => b.category === (picked ?? live)) ??
-        boards.find((b) => b.category === live) ??
-        boards[0];
-    if (!board) return null;
+    const shownCategory = picked ?? live;
+    const board = boards.find((b) => b.category === shownCategory) ?? boards[0];
+    if (!board) {
+        return null;
+    }
     const { stillIn, out } = board.standings;
 
     return (

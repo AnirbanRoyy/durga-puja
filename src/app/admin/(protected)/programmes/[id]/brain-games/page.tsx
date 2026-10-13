@@ -10,7 +10,9 @@ export default async function BrainGamesAdminPage(
 ) {
     const { id } = await props.params;
     const programme = await getProgrammeById(id);
-    if (!programme || programme.type !== "quiz") notFound();
+    if (!programme || programme.type !== "quiz") {
+        notFound();
+    }
 
     const { rounds, questions, teams } = await getQuizAdmin(id);
 

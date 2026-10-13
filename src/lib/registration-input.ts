@@ -49,8 +49,12 @@ function readTeamForm(values: Record<string, string>) {
     const rows: { name: string; row: number }[] = [];
     for (let row = 0; row < 20; row++) {
         const name = values[`member_${row}`];
-        if (name === undefined) break;
-        if (name.trim()) rows.push({ name, row });
+        if (name === undefined) {
+            break;
+        }
+        if (name.trim()) {
+            rows.push({ name, row });
+        }
     }
     const leaderRow = Number(values.leader);
     return {
@@ -64,15 +68,21 @@ export async function parseRegistration(
     values: Record<string, string>,
 ): Promise<ParsedRegistration> {
     const id = z.uuid().safeParse(values.programmeId);
-    if (!id.success) return { ok: false, programme: null, errors: { form: "invalid" } };
+    if (!id.success) {
+        return { ok: false, programme: null, errors: { form: "invalid" } };
+    }
 
     const { data: programme, error } = await db()
         .from("programmes")
         .select(PROGRAMME_COLUMNS)
         .eq("id", id.data)
         .maybeSingle();
-    if (error) throw error;
-    if (!programme) return { ok: false, programme: null, errors: { form: "invalid" } };
+    if (error) {
+        throw error;
+    }
+    if (!programme) {
+        return { ok: false, programme: null, errors: { form: "invalid" } };
+    }
 
     if (programme.team_format === "team") {
         const { min, max } = teamLimits(programme);
@@ -83,7 +93,9 @@ export async function parseRegistration(
             notes: values.notes,
             ...readTeamForm(values),
         });
-        if (!parsed.success) return { ok: false, programme, errors: fieldErrors(parsed.error) };
+        if (!parsed.success) {
+            return { ok: false, programme, errors: fieldErrors(parsed.error) };
+        }
         const team = parsed.data;
         return {
             ok: true,
@@ -105,7 +117,9 @@ export async function parseRegistration(
 
     if (programme.team_format === "pair") {
         const parsed = pairRegistrationSchema.safeParse(values);
-        if (!parsed.success) return { ok: false, programme, errors: fieldErrors(parsed.error) };
+        if (!parsed.success) {
+            return { ok: false, programme, errors: fieldErrors(parsed.error) };
+        }
         const pair = parsed.data;
         return {
             ok: true,
@@ -126,13 +140,17 @@ export async function parseRegistration(
     }
 
     const parsed = registrationSchema.safeParse(values);
-    if (!parsed.success) return { ok: false, programme, errors: fieldErrors(parsed.error) };
+    if (!parsed.success) {
+        return { ok: false, programme, errors: fieldErrors(parsed.error) };
+    }
     const input = parsed.data;
     // Musical chair groups players into kids, men and women, so it needs the age (and gender for adults).
     if (programme.type !== "musical_chair") {
         return { ok: true, programme, input: { ...input, gender: null, members: [] } };
     }
-    if (input.age == null) return { ok: false, programme, errors: { age: "age" } };
+    if (input.age == null) {
+        return { ok: false, programme, errors: { age: "age" } };
+    }
     if (isAdult(input.age) && !input.gender) {
         return { ok: false, programme, errors: { gender: "gender" } };
     }

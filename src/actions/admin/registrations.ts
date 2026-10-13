@@ -19,11 +19,15 @@ export async function adminUpdateRegistration(
     await requireAdmin();
     const values: Record<string, string> = {};
     for (const [key, value] of formData.entries()) {
-        if (typeof value === "string") values[key] = value;
+        if (typeof value === "string") {
+            values[key] = value;
+        }
     }
 
     const id = z.uuid().safeParse(values.registrationId);
-    if (!id.success) return { ok: false, code: "generic", values };
+    if (!id.success) {
+        return { ok: false, code: "generic", values };
+    }
 
     const supabase = db();
     const { data: registration, error: findError } = await supabase
@@ -31,12 +35,18 @@ export async function adminUpdateRegistration(
         .select("id, programme_id")
         .eq("id", id.data)
         .maybeSingle();
-    if (findError) throw findError;
-    if (!registration) return { ok: false, code: "generic", values };
+    if (findError) {
+        throw findError;
+    }
+    if (!registration) {
+        return { ok: false, code: "generic", values };
+    }
 
     // The programme comes from the registration itself, never from the form.
     const parsed = await parseRegistration({ ...values, programmeId: registration.programme_id });
-    if (!parsed.ok) return { ok: false, code: "invalid", errors: parsed.errors, values };
+    if (!parsed.ok) {
+        return { ok: false, code: "invalid", errors: parsed.errors, values };
+    }
     const { input } = parsed;
 
     const { error: contactError } = await supabase
@@ -51,14 +61,18 @@ export async function adminUpdateRegistration(
         })
         .eq("registration_id", registration.id);
     if (contactError) {
-        if (contactError.code === "23505") return { ok: false, code: "duplicate", values };
+        if (contactError.code === "23505") {
+            return { ok: false, code: "duplicate", values };
+        }
         throw contactError;
     }
     const { error } = await supabase
         .from("registrations")
         .update({ name: input.name, members: input.members })
         .eq("id", registration.id);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
 
     refresh();
     return { ok: true, code: "updated" };
@@ -76,11 +90,15 @@ export async function adminCreateRegistration(
     await requireAdmin();
     const values: Record<string, string> = {};
     for (const [key, value] of formData.entries()) {
-        if (typeof value === "string") values[key] = value;
+        if (typeof value === "string") {
+            values[key] = value;
+        }
     }
 
     const parsed = await parseRegistration(values);
-    if (!parsed.ok) return { ok: false, code: "invalid", errors: parsed.errors, values };
+    if (!parsed.ok) {
+        return { ok: false, code: "invalid", errors: parsed.errors, values };
+    }
     const { programme, input } = parsed;
 
     const supabase = db();
@@ -88,7 +106,9 @@ export async function adminCreateRegistration(
         .from("registrations")
         .select("sequence_no")
         .eq("programme_id", programme.id);
-    if (countError) throw countError;
+    if (countError) {
+        throw countError;
+    }
 
     // Once the call order is locked, late entries go to the end of the line.
     const sequenceNo = programme.order_locked
@@ -105,7 +125,9 @@ export async function adminCreateRegistration(
         })
         .select("id")
         .single();
-    if (insertError) throw insertError;
+    if (insertError) {
+        throw insertError;
+    }
 
     const { error: contactError } = await supabase.from("registration_contacts").insert({
         registration_id: registration.id,
@@ -119,7 +141,9 @@ export async function adminCreateRegistration(
     });
     if (contactError) {
         await supabase.from("registrations").delete().eq("id", registration.id);
-        if (contactError.code === "23505") return { ok: false, code: "duplicate", values };
+        if (contactError.code === "23505") {
+            return { ok: false, code: "duplicate", values };
+        }
         throw contactError;
     }
 

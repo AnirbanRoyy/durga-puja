@@ -12,7 +12,9 @@ export default async function RegistrationsPage(
 ) {
     const { id } = await props.params;
     const programme = await getProgrammeById(id);
-    if (!programme) notFound();
+    if (!programme) {
+        notFound();
+    }
     const registrations = await listRegistrationsWithPhones(id);
 
     return (

@@ -5,15 +5,13 @@ import { useTranslations } from "next-intl";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { cn } from "cn";
+import { CLEARABLE_INPUT_TYPES } from "@/constants";
 
 const inputClass =
     "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40";
 
-/** Free-text inputs get the X clear button; numbers, dates, passwords and files don't. */
-const CLEARABLE_TYPES = new Set([undefined, "text", "search", "url", "email", "tel"]);
-
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
-    if (!CLEARABLE_TYPES.has(type) || props.disabled || props.readOnly) {
+    if (!CLEARABLE_INPUT_TYPES.has(type) || props.disabled || props.readOnly) {
         return (
             <input type={type} data-slot="input" className={cn(inputClass, className)} {...props} />
         );
@@ -35,8 +33,12 @@ function ClearableInput({ className, ref, onChange, ...props }: React.ComponentP
     const setRefs = React.useCallback(
         (node: HTMLInputElement | null) => {
             inputRef.current = node;
-            if (typeof ref === "function") return ref(node);
-            if (ref) ref.current = node;
+            if (typeof ref === "function") {
+                return ref(node);
+            }
+            if (ref) {
+                ref.current = node;
+            }
         },
         [ref],
     );
@@ -44,7 +46,9 @@ function ClearableInput({ className, ref, onChange, ...props }: React.ComponentP
     // React resets action forms after they submit; pick up the value the input reset to.
     React.useEffect(() => {
         const form = inputRef.current?.form;
-        if (!form || controlled) return;
+        if (!form || controlled) {
+            return;
+        }
         const onReset = () => setTimeout(() => setTyped(Boolean(inputRef.current?.value)), 0);
         form.addEventListener("reset", onReset);
         return () => form.removeEventListener("reset", onReset);
@@ -52,7 +56,9 @@ function ClearableInput({ className, ref, onChange, ...props }: React.ComponentP
 
     const clear = () => {
         const input = inputRef.current;
-        if (!input) return;
+        if (!input) {
+            return;
+        }
         // Set the value the way typing does, so React's onChange runs and controlled parents update.
         Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, "");
         input.dispatchEvent(new Event("input", { bubbles: true }));

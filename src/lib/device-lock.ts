@@ -11,7 +11,9 @@ const TTL_SECONDS = 60 * 60 * 24 * 60; // outlives the festival, then cleans its
 let client: Redis | null | undefined;
 
 function redis(): Redis | null {
-    if (client !== undefined) return client;
+    if (client !== undefined) {
+        return client;
+    }
     const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
     client = url && token ? new Redis({ url, token }) : null;
@@ -35,10 +37,14 @@ export function drawingVoteKey(ip: string, programme: string): string | null {
 /** Atomically sets the bit. Returns false if it was already set. */
 export async function claimKey(key: string | null): Promise<boolean> {
     const r = redis();
-    if (!r || !key) return true;
+    if (!r || !key) {
+        return true;
+    }
     try {
         const previous = await r.setbit(key, 0, 1);
-        if (previous === 0) await r.expire(key, TTL_SECONDS);
+        if (previous === 0) {
+            await r.expire(key, TTL_SECONDS);
+        }
         return previous === 0;
     } catch (error) {
         console.error("device-lock: claim failed", error);
@@ -54,12 +60,16 @@ export async function claimDevice(ip: string, programme: string): Promise<boolea
 /** Clears the bit again, e.g. when the registration did not actually go through. */
 export async function releaseDevice(ip: string, programme: string): Promise<void> {
     const key = deviceKey(ip, programme);
-    if (key) await releaseKey(key);
+    if (key) {
+        await releaseKey(key);
+    }
 }
 
 export async function releaseKey(key: string): Promise<void> {
     const r = redis();
-    if (!r) return;
+    if (!r) {
+        return;
+    }
     try {
         await r.setbit(key, 0, 0);
     } catch (error) {

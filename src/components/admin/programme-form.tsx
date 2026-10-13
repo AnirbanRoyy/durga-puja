@@ -14,9 +14,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { NativeSelect } from "@/components/admin/native-select";
 import type { Programme } from "@/lib/database.types";
 import { isoToIstLocal } from "@/lib/datetime";
-import { PROGRAMME_STATUSES, PROGRAMME_TYPES } from "@/lib/programme-meta";
 import { useActionToast } from "@/components/admin/use-action-toast";
 import { initialActionState } from "@/lib/validators";
+import { PROGRAMME_STATUSES, PROGRAMME_TYPES } from "@/constants";
 
 const TEAM_FORMATS = ["individual", "team", "pair"] as const;
 

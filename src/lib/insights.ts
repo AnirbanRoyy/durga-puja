@@ -32,7 +32,9 @@ export async function buildInsights(
             (new Date(programme.ends_at).getTime() - new Date(programme.starts_at).getTime()) /
                 60000,
         );
-        if (minutes > 0) insights.push({ key: "duration", value: minutes });
+        if (minutes > 0) {
+            insights.push({ key: "duration", value: minutes });
+        }
     }
 
     switch (programme.type) {

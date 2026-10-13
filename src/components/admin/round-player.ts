@@ -32,8 +32,11 @@ function fadeValue(from: number, to: number, ms: number, set: (v: number) => voi
         const step = () => {
             const t = ms <= 0 ? 1 : Math.min(1, (performance.now() - begin) / ms);
             set(Math.min(1, Math.max(0, from + (to - from) * t)));
-            if (t < 1) requestAnimationFrame(step);
-            else resolve();
+            if (t < 1) {
+                requestAnimationFrame(step);
+            } else {
+                resolve();
+            }
         };
         step();
     });
@@ -130,8 +133,12 @@ export function createYouTubeVoice(host: HTMLElement): RoundVoice {
                                 resolve(created);
                             },
                             onStateChange: (e) => {
-                                if (e.data === YT.PlayerState.PLAYING) waiter?.ok();
-                                if (e.data === YT.PlayerState.ENDED && playing) ended?.();
+                                if (e.data === YT.PlayerState.PLAYING) {
+                                    waiter?.ok();
+                                }
+                                if (e.data === YT.PlayerState.ENDED && playing) {
+                                    ended?.();
+                                }
                             },
                             onError: (e) =>
                                 waiter?.fail(
@@ -180,13 +187,17 @@ export function createYouTubeVoice(host: HTMLElement): RoundVoice {
             const length = p.getDuration();
             const duration = length > 0 ? length : null;
             const offset = pickOffset(duration);
-            if (offset > 0) p.seekTo(offset, true);
+            if (offset > 0) {
+                p.seekTo(offset, true);
+            }
             playing = true;
             return { duration, offset };
         },
         fadeTo(target, ms) {
             const p = player;
-            if (!p) return Promise.resolve();
+            if (!p) {
+                return Promise.resolve();
+            }
             return fadeValue(volume, target, ms, (v) => {
                 volume = v;
                 p.setVolume(Math.round(v * 100));

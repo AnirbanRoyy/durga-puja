@@ -6,8 +6,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Chair01Icon, MusicNote03Icon } from "@hugeicons/core-free-icons";
 import { browserDb } from "@/lib/supabase/client";
-import { MC_EVENT, musicalChairChannel, type MusicalChairState } from "@/lib/musical-chair";
+import { musicalChairChannel, type MusicalChairState } from "@/lib/musical-chair";
 import { cn } from "@/lib/utils";
+import { MC_EVENT } from "@/constants";
 
 /** Big live indicator that mirrors the host console — works on phones and on a projector. */
 export function LiveMusicalChairScreen({ programmeId }: { programmeId: string }) {

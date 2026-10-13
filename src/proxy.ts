@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ADMIN_COOKIE, verifyAdminToken } from "@/lib/session-token";
-
-const VISITOR_COOKIE = "dp_vid";
+import { verifyAdminToken } from "@/lib/session-token";
+import { ADMIN_COOKIE, VISITOR_COOKIE } from "@/constants";
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;

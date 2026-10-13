@@ -2,7 +2,9 @@ const IST_OFFSET = "+05:30";
 
 /** `<input type="datetime-local">` value (entered as IST) → ISO timestamp. */
 export function istLocalToIso(value: string | null | undefined): string | null {
-    if (!value) return null;
+    if (!value) {
+        return null;
+    }
     const withSeconds = value.length === 16 ? `${value}:00` : value;
     const date = new Date(`${withSeconds}${IST_OFFSET}`);
     return Number.isNaN(date.getTime()) ? null : date.toISOString();
@@ -10,7 +12,9 @@ export function istLocalToIso(value: string | null | undefined): string | null {
 
 /** ISO timestamp → `datetime-local` value shown in IST. */
 export function isoToIstLocal(iso: string | null | undefined): string {
-    if (!iso) return "";
+    if (!iso) {
+        return "";
+    }
     const parts = new Intl.DateTimeFormat("en-CA", {
         timeZone: "Asia/Kolkata",
         year: "numeric",
@@ -25,7 +29,9 @@ export function isoToIstLocal(iso: string | null | undefined): string {
 }
 
 export function formatIst(iso: string | null | undefined): string {
-    if (!iso) return "—";
+    if (!iso) {
+        return "—";
+    }
     return new Intl.DateTimeFormat("en-IN", {
         timeZone: "Asia/Kolkata",
         weekday: "short",

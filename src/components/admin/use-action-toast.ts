@@ -10,8 +10,13 @@ import type { ActionState } from "@/lib/validators";
  */
 export function useActionToast(state: ActionState) {
     useEffect(() => {
-        if (!state.code) return;
-        if (state.ok) toast.success(state.code);
-        else toast.error(state.code);
+        if (!state.code) {
+            return;
+        }
+        if (state.ok) {
+            toast.success(state.code);
+        } else {
+            toast.error(state.code);
+        }
     }, [state]);
 }

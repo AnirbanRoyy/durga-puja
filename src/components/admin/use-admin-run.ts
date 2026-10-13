@@ -13,9 +13,11 @@ export function useAdminRun() {
         startTransition(async () => {
             try {
                 const result = (await fn()) as { ok?: boolean; message?: string } | undefined;
-                if (result && result.ok === false)
+                if (result && result.ok === false) {
                     toast.error(result.message ?? "Something went wrong");
-                else toast.success(success);
+                } else {
+                    toast.success(success);
+                }
             } catch (e) {
                 toast.error(e instanceof Error ? e.message : "Something went wrong");
             }

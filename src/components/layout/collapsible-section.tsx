@@ -3,9 +3,8 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
+import { DESKTOP_MEDIA_QUERY } from "@/constants";
 import { cn } from "@/lib/utils";
-
-const DESKTOP = "(min-width: 1024px)";
 
 /**
  * A section whose heading folds it away: closed on phones, open on large screens, until the
@@ -29,7 +28,7 @@ export function CollapsibleSection({
     const [desktop, setDesktop] = useState(false);
 
     useEffect(() => {
-        const query = window.matchMedia(DESKTOP);
+        const query = window.matchMedia(DESKTOP_MEDIA_QUERY);
         const sync = () => setDesktop(query.matches);
         sync();
         query.addEventListener("change", sync);

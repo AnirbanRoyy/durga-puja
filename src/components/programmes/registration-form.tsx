@@ -32,7 +32,9 @@ type FormState = { errors?: Record<string, string> };
 
 function ErrorText({ code }: { code?: string }) {
     const t = useTranslations("forms.errors");
-    if (!code) return null;
+    if (!code) {
+        return null;
+    }
     return <p className="text-sm text-destructive">{t.has(code) ? t(code) : t("invalid")}</p>;
 }
 
@@ -263,7 +265,9 @@ export function RegistrationForm({
     };
     const saved = state.ok && (state.code === "updated" || state.code === "created");
     useEffect(() => {
-        if (saved) onSaved?.();
+        if (saved) {
+            onSaved?.();
+        }
         // onSaved is expected to be stable enough; run only when a save happens.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [saved, state]);

@@ -34,8 +34,12 @@ export function AllRegistrations({
 
     const needle = query.trim().toLowerCase();
     const visible = registrations.filter((r) => {
-        if (programmeId !== ALL && r.programme_id !== programmeId) return false;
-        if (!needle) return true;
+        if (programmeId !== ALL && r.programme_id !== programmeId) {
+            return false;
+        }
+        if (!needle) {
+            return true;
+        }
         return (
             r.name.toLowerCase().includes(needle) ||
             (r.phone ?? "").includes(needle) ||
@@ -118,7 +122,9 @@ export function AllRegistrations({
                         )}
                         {visible.map((r) => {
                             const programme = byId.get(r.programme_id);
-                            if (!programme) return null;
+                            if (!programme) {
+                                return null;
+                            }
                             return (
                                 <tr key={r.id}>
                                     <td className="px-4 py-3 text-muted-foreground">

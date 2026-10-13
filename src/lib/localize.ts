@@ -6,6 +6,8 @@ export function pick(
     bn: string | null | undefined,
 ): string | null;
 export function pick(locale: string, en: string | null | undefined, bn: string | null | undefined) {
-    if (locale === "bn" && bn) return bn;
+    if (locale === "bn" && bn) {
+        return bn;
+    }
     return en ?? bn ?? null;
 }

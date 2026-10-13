@@ -86,7 +86,9 @@ export function StreamConsole({
     // Visitors' "more requests" asks are private, so they don't arrive by realtime: check now and then.
     useEffect(() => {
         const timer = setInterval(() => {
-            if (document.visibilityState === "visible") router.refresh();
+            if (document.visibilityState === "visible") {
+                router.refresh();
+            }
         }, 20_000);
         return () => clearInterval(timer);
     }, [router]);
@@ -101,9 +103,12 @@ export function StreamConsole({
         (action: () => Promise<StreamActionResult>, success?: string) =>
             start(async () => {
                 const result = await action();
-                if (!result.ok) toast.error(result.message);
-                else {
-                    if (success) toast.success(success);
+                if (!result.ok) {
+                    toast.error(result.message);
+                } else {
+                    if (success) {
+                        toast.success(success);
+                    }
                     router.refresh();
                 }
             }),
@@ -111,10 +116,14 @@ export function StreamConsole({
     );
 
     const advance = useCallback(() => {
-        if (advancing.current) return;
+        if (advancing.current) {
+            return;
+        }
         advancing.current = true;
         void advanceStream().then((result) => {
-            if (!result.ok) toast.error(result.message);
+            if (!result.ok) {
+                toast.error(result.message);
+            }
             router.refresh();
         });
     }, [router]);
@@ -134,7 +143,9 @@ export function StreamConsole({
             return;
         }
         void loadYouTubeApi().then((YT) => {
-            if (cancelled || !hostRef.current || playerRef.current) return;
+            if (cancelled || !hostRef.current || playerRef.current) {
+                return;
+            }
             const mount = document.createElement("div");
             hostRef.current.replaceChildren(mount);
             playerRef.current = new YT.Player(mount, {
@@ -148,7 +159,9 @@ export function StreamConsole({
                         e.target.playVideo();
                     },
                     onStateChange: (e) => {
-                        if (e.data === YT.PlayerState.ENDED) advance();
+                        if (e.data === YT.PlayerState.ENDED) {
+                            advance();
+                        }
                     },
                     // Removed, private or not embeddable: skip it instead of getting stuck in silence.
                     onError: () => {
@@ -170,7 +183,9 @@ export function StreamConsole({
 
     // Keep the phone awake while the pandal stream is running.
     useEffect(() => {
-        if (!isStreaming) return;
+        if (!isStreaming) {
+            return;
+        }
         let lock: WakeLockSentinelLike | null = null;
         const nav = navigator as Navigator & {
             wakeLock?: { request: (type: "screen") => Promise<WakeLockSentinelLike> };

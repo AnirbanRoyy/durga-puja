@@ -33,12 +33,17 @@ export function BackButton({
     const router = useRouter();
     const pathname = usePathname();
 
-    if (rootPath && pathname === rootPath) return null;
+    if (rootPath && pathname === rootPath) {
+        return null;
+    }
 
     function goBack() {
         const parent = parentPath(pathname);
-        if (previousPath() === parent) router.back();
-        else router.push(parent);
+        if (previousPath() === parent) {
+            router.back();
+        } else {
+            router.push(parent);
+        }
     }
 
     return (

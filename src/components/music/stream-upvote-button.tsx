@@ -46,7 +46,9 @@ export function StreamUpvoteButton({
     }
 
     function vote() {
-        if (pending) return;
+        if (pending) {
+            return;
+        }
         if (closed) {
             toast(closedMessage ?? t("votingClosed"));
             return;
@@ -59,7 +61,9 @@ export function StreamUpvoteButton({
         setCountAtVote(count);
         start(async () => {
             const result = await castVote(id);
-            if (result === "ok") return;
+            if (result === "ok") {
+                return;
+            }
             if (result === "already_voted") {
                 setCountAtVote(null);
                 toast(t("alreadyVoted"));

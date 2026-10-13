@@ -10,7 +10,9 @@ export type TranslateResult = { ok: true; text: string } | { ok: false; reason: 
 export async function translateForAdmin(english: string): Promise<TranslateResult> {
     await requireAdmin();
     const text = english.trim().slice(0, 4000);
-    if (!text) return { ok: false, reason: "Write the English text first." };
+    if (!text) {
+        return { ok: false, reason: "Write the English text first." };
+    }
     if (!translationEnabled()) {
         return {
             ok: false,

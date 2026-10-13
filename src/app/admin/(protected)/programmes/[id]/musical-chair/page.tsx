@@ -17,7 +17,9 @@ export default async function MusicalChairAdminPage(
 ) {
     const { id } = await props.params;
     const programme = await getProgrammeById(id);
-    if (programme?.type !== "musical_chair") notFound();
+    if (programme?.type !== "musical_chair") {
+        notFound();
+    }
 
     const [songs, library, requests, rounds, players] = await Promise.all([
         listSongs("musical_chair"),

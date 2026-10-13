@@ -86,8 +86,9 @@ export function FeedbackInbox({ items }: { items: Feedback[] }) {
                                 variant="ghost"
                                 disabled={pending}
                                 onClick={() => {
-                                    if (confirm("Delete this feedback?"))
+                                    if (confirm("Delete this feedback?")) {
                                         run(() => deleteFeedback(f.id), "Feedback deleted");
+                                    }
                                 }}
                             >
                                 <HugeiconsIcon icon={Delete02Icon} className="text-destructive" />

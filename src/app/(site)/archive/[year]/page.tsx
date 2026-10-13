@@ -21,14 +21,18 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 
 async function loadYear(param: string) {
     const year = Number(param);
-    if (!/^\d{4}$/.test(param) || !Number.isInteger(year)) return null;
+    if (!/^\d{4}$/.test(param) || !Number.isInteger(year)) {
+        return null;
+    }
     return getYearSnapshot(year);
 }
 
 export async function generateMetadata(props: PageProps<"/archive/[year]">) {
     const { year } = await props.params;
     const [t, snapshot] = await Promise.all([getTranslations("archive"), loadYear(year)]);
-    if (!snapshot) return {};
+    if (!snapshot) {
+        return {};
+    }
     return {
         title: t("yearTitle", { year }),
         description: t("yearDescription", { year }),
@@ -38,7 +42,9 @@ export async function generateMetadata(props: PageProps<"/archive/[year]">) {
 export default async function ArchiveYearPage(props: PageProps<"/archive/[year]">) {
     const { year: param } = await props.params;
     const snapshot = await loadYear(param);
-    if (!snapshot) notFound();
+    if (!snapshot) {
+        notFound();
+    }
 
     const [t, locale, format, editions] = await Promise.all([
         getTranslations("archive"),
@@ -59,8 +65,9 @@ export default async function ArchiveYearPage(props: PageProps<"/archive/[year]"
 
     const byProgramme = <T extends { programme_id: string }>(rows: T[]) => {
         const map = new Map<string, T[]>();
-        for (const row of rows)
+        for (const row of rows) {
             map.set(row.programme_id, [...(map.get(row.programme_id) ?? []), row]);
+        }
         return map;
     };
     const resultsBy = byProgramme(results);

@@ -2,7 +2,10 @@ import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { requestMusicalChairSong, upvoteMusicalChairSong } from "@/actions/public";
 import { CollapsibleSection } from "@/components/layout/collapsible-section";
-import { MusicalChairLeaderboard } from "@/components/programmes/musical-chair-leaderboard";
+import {
+    MusicalChairLeaderboard,
+    type LeaderboardBoard,
+} from "@/components/programmes/musical-chair-leaderboard";
 import { LiveMusicalChairScreen } from "@/components/programmes/live-musical-chair-screen";
 import { StreamRequestForm } from "@/components/music/stream-request-form";
 import { StreamUpvoteButton } from "@/components/music/stream-upvote-button";
@@ -14,10 +17,11 @@ import {
     musicalChairRequestsLeft,
     votedMusicalChairRequests,
 } from "@/lib/queries";
-import { MC_CATEGORIES } from "@/lib/musical-chair-categories";
-import { musicalChairStandings } from "@/lib/musical-chair-standings";
+import { liveMusicalChairCategory, musicalChairStandings } from "@/lib/musical-chair-standings";
 import { cn } from "@/lib/utils";
 import { getIpHash, peekVoterHash } from "@/lib/visitor";
+
+import { MC_CATEGORIES } from "@/constants";
 
 export async function MusicalChairPublic({
     programmeId,
@@ -38,20 +42,20 @@ export async function MusicalChairPublic({
         requests.map((r) => r.id),
     );
     // One leaderboard, switchable by category; categories without players are left out.
-    const boards = MC_CATEGORIES.map((category) => ({
-        category,
-        label: t(`categories.${category}`),
-        standings: musicalChairStandings(
-            players.filter((p) => p.category === category).map((p) => p.name),
-            rounds.filter((r) => r.category === category),
-        ),
-    })).filter((b) => b.standings.stillIn.length || b.standings.out.length);
-    // Live = the category the host played last; before any round, the first one with players.
-    const live =
-        rounds
-            .filter((r) => r.category)
-            .sort((a, b) => a.created_at.localeCompare(b.created_at))
-            .at(-1)?.category ?? boards[0]?.category;
+    const boards: LeaderboardBoard[] = [];
+    for (const category of MC_CATEGORIES) {
+        const names = players.filter((p) => p.category === category).map((p) => p.name);
+        const categoryRounds = rounds.filter((r) => r.category === category);
+        const standings = musicalChairStandings(names, categoryRounds);
+        const hasPlayers = standings.stillIn.length > 0 || standings.out.length > 0;
+        if (hasPlayers) {
+            boards.push({ category, label: t(`categories.${category}`), standings });
+        }
+    }
+    const live = liveMusicalChairCategory(
+        rounds,
+        boards.map((b) => b.category),
+    );
 
     return (
         <div className="space-y-10">

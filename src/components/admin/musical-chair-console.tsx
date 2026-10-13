@@ -42,30 +42,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { MusicalChairRequest, MusicalChairRound } from "@/lib/database.types";
 import {
-    MC_EVENT,
     musicalChairChannel,
     pickStartOffset,
     randomBetween,
     type MusicalChairState,
 } from "@/lib/musical-chair";
 import {
-    CATEGORY_LABEL,
     isAdult,
-    MC_CATEGORIES,
     type MusicalChairCategory,
     type MusicalChairPlayer,
 } from "@/lib/musical-chair-categories";
 import { playersStillIn } from "@/lib/musical-chair-standings";
 import { browserDb } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { CATEGORY_LABEL, MC_CATEGORIES, MC_EVENT } from "@/constants";
 
 const FADE_IN_MS = 300;
 const FADE_OUT_MS = 80;
 const OTHER = "__other__";
 
 function statusLabel(loading: boolean, phase: MusicalChairState["phase"]): string {
-    if (loading) return "Starting…";
-    if (phase === "playing") return "Music playing";
+    if (loading) {
+        return "Starting…";
+    }
+    if (phase === "playing") {
+        return "Music playing";
+    }
     return phase === "stopped" ? "STOP!" : "Ready";
 }
 
@@ -84,7 +86,9 @@ async function startFirstPlayable(
 ): Promise<Started | null> {
     for (let attempt = 0; attempt < tries; attempt++) {
         const song = nextSong();
-        if (!song) return null;
+        if (!song) {
+            return null;
+        }
         try {
             const voice = voiceFor(song);
             const result = await voice.start(
@@ -94,7 +98,9 @@ async function startFirstPlayable(
             );
             return { song, voice, offset: result.offset };
         } catch (e) {
-            if (signal.cancelled) return null;
+            if (signal.cancelled) {
+                return null;
+            }
             const reason = e instanceof Error ? e.message : "It couldn't be played.";
             toast.error(`“${song.title}” skipped. ${reason}`);
         }
@@ -226,7 +232,9 @@ export function MusicalChairConsole({
     }, [programmeId]);
 
     const broadcast = useCallback((state: Omit<MusicalChairState, "at">) => {
-        if (!channelReady.current) return;
+        if (!channelReady.current) {
+            return;
+        }
         void channelRef.current?.send({
             type: "broadcast",
             event: MC_EVENT,
@@ -239,7 +247,9 @@ export function MusicalChairConsole({
             if (!youtubeVoice.current && hostRef.current) {
                 youtubeVoice.current = createYouTubeVoice(hostRef.current);
             }
-            if (!youtubeVoice.current) throw new Error("The player isn't ready yet.");
+            if (!youtubeVoice.current) {
+                throw new Error("The player isn't ready yet.");
+            }
             return youtubeVoice.current;
         }
         audioVoice.current ??= createAudioVoice();
@@ -248,7 +258,9 @@ export function MusicalChairConsole({
 
     /** Shuffle bag: every song plays once before any repeats. */
     const drawSong = useCallback((): PoolSong | null => {
-        if (songs.length === 0) return null;
+        if (songs.length === 0) {
+            return null;
+        }
         if (bagRef.current.length === 0) {
             const copy = [...songs];
             for (let i = copy.length - 1; i > 0; i--) {
@@ -256,7 +268,9 @@ export function MusicalChairConsole({
                 [copy[i], copy[j]] = [copy[j], copy[i]];
             }
             // Avoid the same song twice in a row across bag refills.
-            if (copy.length > 1 && copy[0].id === lastIdRef.current) copy.push(copy.shift()!);
+            if (copy.length > 1 && copy[0].id === lastIdRef.current) {
+                copy.push(copy.shift()!);
+            }
             bagRef.current = copy;
         }
         return bagRef.current.pop() ?? null;
@@ -285,15 +299,23 @@ export function MusicalChairConsole({
             signal.cancelled = true;
             activeRef.current?.stop();
             youtubeVoice.current?.stop();
-            if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
-            if (tickRef.current) clearInterval(tickRef.current);
+            if (stopTimerRef.current) {
+                clearTimeout(stopTimerRef.current);
+            }
+            if (tickRef.current) {
+                clearInterval(tickRef.current);
+            }
         };
     }, []);
 
     const stopRound = useCallback(
         async (manual = false) => {
-            if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
-            if (tickRef.current) clearInterval(tickRef.current);
+            if (stopTimerRef.current) {
+                clearTimeout(stopTimerRef.current);
+            }
+            if (tickRef.current) {
+                clearInterval(tickRef.current);
+            }
             stopTimerRef.current = null;
             tickRef.current = null;
             const voice = activeRef.current;
@@ -305,13 +327,17 @@ export function MusicalChairConsole({
                 await voice.fadeTo(0, FADE_OUT_MS);
                 voice.stop();
             }
-            if (manual) toast("Music stopped");
+            if (manual) {
+                toast("Music stopped");
+            }
         },
         [broadcast],
     );
 
     const startRound = useCallback(async () => {
-        if (busyRef.current) return;
+        if (busyRef.current) {
+            return;
+        }
         if (songs.length === 0) {
             toast.error("Add at least one song to the musical chair pool first.");
             return;
@@ -319,7 +345,9 @@ export function MusicalChairConsole({
         busyRef.current = true;
         setLoading(true);
         try {
-            if (activeRef.current) await stopRound();
+            if (activeRef.current) {
+                await stopRound();
+            }
             const lo = Math.max(1, Math.min(minPlay, maxPlay));
             const hi = Math.max(lo, maxPlay);
             const signal = startSignal.current;
@@ -335,7 +363,9 @@ export function MusicalChairConsole({
                 hi,
                 signal,
             );
-            if (signal.cancelled) return;
+            if (signal.cancelled) {
+                return;
+            }
             if (!started) {
                 toast.error("None of the pool songs could be played.");
                 preloadNext();
@@ -399,8 +429,9 @@ export function MusicalChairConsole({
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
             const target = e.target as HTMLElement;
-            if (e.code !== "Space" || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(target.tagName))
+            if (e.code !== "Space" || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(target.tagName)) {
                 return;
+            }
             e.preventDefault();
             void startRound();
         }
@@ -600,7 +631,9 @@ export function MusicalChairConsole({
                         className="mt-3 flex flex-wrap items-start gap-2"
                         onSubmit={(e) => {
                             e.preventDefault();
-                            if (!roundId) return;
+                            if (!roundId) {
+                                return;
+                            }
                             startTransition(async () => {
                                 await setRoundEliminated(roundId, eliminated);
                                 toast.success("Saved. The leaderboard is updated.");
@@ -633,7 +666,9 @@ export function MusicalChairConsole({
                         className="mt-3 flex flex-wrap items-start gap-2"
                         onSubmit={(e) => {
                             e.preventDefault();
-                            if (!winnerValue.trim()) return;
+                            if (!winnerValue.trim()) {
+                                return;
+                            }
                             startTransition(async () => {
                                 const { completed } = await finishMusicalChair(
                                     programmeId,

@@ -50,8 +50,11 @@ export function StreamLibrary({
     const toggle = (id: string) =>
         setPicked((prev) => {
             const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
             return next;
         });
 
@@ -59,8 +62,11 @@ export function StreamLibrary({
         setPicked((prev) => {
             const next = new Set(prev);
             for (const s of selectable) {
-                if (allShownPicked) next.delete(s.id);
-                else next.add(s.id);
+                if (allShownPicked) {
+                    next.delete(s.id);
+                } else {
+                    next.add(s.id);
+                }
             }
             return next;
         });
@@ -73,8 +79,11 @@ export function StreamLibrary({
                 return;
             }
             setPicked(new Set());
-            if (!result.added) toast.info(`Those songs are already in the ${target}.`);
-            else toast.success(`Added ${result.added} song${result.added === 1 ? "" : "s"}`);
+            if (!result.added) {
+                toast.info(`Those songs are already in the ${target}.`);
+            } else {
+                toast.success(`Added ${result.added} song${result.added === 1 ? "" : "s"}`);
+            }
             router.refresh();
         });
 
