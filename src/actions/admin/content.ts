@@ -12,25 +12,13 @@ import { getCurrentYear, listMusicalChairPlayers } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
 import { bengaliOrTranslated } from "@/lib/translate";
 import { parseWhatsappInvite, parseYouTubeId, type ActionState } from "@/lib/validators";
-import { CATEGORY_LABEL, MC_CATEGORIES } from "@/constants";
-
-const CLOUDINARY_PREFIX = "https://res.cloudinary.com/";
+import { CATEGORY_LABEL, CLOUDINARY_PREFIX, MC_CATEGORIES, SONG_CATEGORIES } from "@/constants";
 
 /** A text field of a form; anything that isn't text (a file) counts as empty. */
 function text(formData: FormData, key: string): string {
     const value = formData.get(key);
     return typeof value === "string" ? value : "";
 }
-
-const CATEGORIES = [
-    "mahalaya",
-    "agomoni",
-    "dhunuchi",
-    "bhajan",
-    "modern",
-    "bollywood",
-    "other",
-] as const;
 
 // ---------------------------------------------------------------------------
 // Songs
@@ -44,7 +32,7 @@ const songDetailsSchema = z.object({
         .max(120)
         .optional()
         .transform((v) => v || null),
-    category: z.enum(CATEGORIES),
+    category: z.enum(SONG_CATEGORIES),
 });
 
 const youtubeSongSchema = songDetailsSchema.extend({
@@ -58,9 +46,13 @@ async function findPoolDuplicate(
     exceptId?: string,
 ): Promise<string | null> {
     let query = db().from("songs").select("title").eq("pool", pool).eq("youtube_id", youtubeId);
-    if (exceptId) query = query.neq("id", exceptId);
+    if (exceptId) {
+        query = query.neq("id", exceptId);
+    }
     const { data, error } = await query.limit(1).maybeSingle();
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     return data?.title ?? null;
 }
 
@@ -80,7 +72,9 @@ export async function addYouTubeSong(_prev: ActionState, formData: FormData): Pr
 
     const pool = formData.get("pool") === "musical_chair" ? "musical_chair" : "music_page";
     const duplicate = await findPoolDuplicate(pool, youtubeId);
-    if (duplicate) return { ok: false, code: duplicateMessage(duplicate), values: raw };
+    if (duplicate) {
+        return { ok: false, code: duplicateMessage(duplicate), values: raw };
+    }
 
     const { error } = await db()
         .from("songs")
@@ -110,8 +104,12 @@ export async function editSong(_prev: ActionState, formData: FormData): Promise<
         .select("id, source, pool, category")
         .eq("id", text(formData, "id"))
         .maybeSingle();
-    if (error) throw error;
-    if (!song) return { ok: false, code: "Song not found.", values: raw };
+    if (error) {
+        throw error;
+    }
+    if (!song) {
+        return { ok: false, code: "Song not found.", values: raw };
+    }
 
     const isYouTube = song.source === "youtube";
     const parsed = songDetailsSchema.safeParse({
@@ -130,16 +128,21 @@ export async function editSong(_prev: ActionState, formData: FormData): Promise<
     } = { title: parsed.data.title, artist: parsed.data.artist };
     if (isYouTube) {
         const youtubeId = parseYouTubeId(text(formData, "url"));
-        if (!youtubeId)
+        if (!youtubeId) {
             return { ok: false, code: "That doesn't look like a YouTube link.", values: raw };
+        }
         const duplicate = await findPoolDuplicate(song.pool, youtubeId, song.id);
-        if (duplicate) return { ok: false, code: duplicateMessage(duplicate), values: raw };
+        if (duplicate) {
+            return { ok: false, code: duplicateMessage(duplicate), values: raw };
+        }
         patch.category = parsed.data.category;
         patch.youtube_id = youtubeId;
     }
 
     const { error: updateError } = await supabase.from("songs").update(patch).eq("id", song.id);
-    if (updateError) throw updateError;
+    if (updateError) {
+        throw updateError;
+    }
     refresh();
     return { ok: true, code: "Song updated." };
 }

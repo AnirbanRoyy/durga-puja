@@ -17,10 +17,9 @@ import { useActionToast } from "@/components/admin/use-action-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { SONG_CATEGORIES } from "@/constants";
 import type { Song } from "@/lib/database.types";
 import { initialActionState } from "@/lib/validators";
-
-const CATEGORIES = ["mahalaya", "agomoni", "dhunuchi", "bhajan", "modern", "bollywood", "other"];
 
 export function AddYouTubeSongForm({
     pool = "music_page",
@@ -41,7 +40,7 @@ export function AddYouTubeSongForm({
             <div className="flex flex-wrap items-center gap-4">
                 <NativeSelect
                     name="category"
-                    options={CATEGORIES}
+                    options={SONG_CATEGORIES}
                     defaultValue={v.category ?? "agomoni"}
                     className="w-40"
                 />
@@ -126,7 +125,9 @@ function EditSongForm({ song, onDone }: Readonly<{ song: Song; onDone: () => voi
     const [state, action, pending] = useActionState(editSong, initialActionState);
     useActionToast(state);
     useEffect(() => {
-        if (state.ok) onDone();
+        if (state.ok) {
+            onDone();
+        }
     }, [state, onDone]);
     const v = state.ok ? {} : (state.values ?? {});
     const isYouTube = song.source === "youtube";
@@ -161,7 +162,7 @@ function EditSongForm({ song, onDone }: Readonly<{ song: Song; onDone: () => voi
                 {isYouTube ? (
                     <NativeSelect
                         name="category"
-                        options={CATEGORIES}
+                        options={SONG_CATEGORIES}
                         defaultValue={v.category ?? song.category}
                         aria-label="Category"
                         className="w-40"

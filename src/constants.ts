@@ -49,6 +49,23 @@ export const PROGRAMME_STATUSES: ProgrammeStatus[] = [
 export const DEFAULT_TEAM_MIN = 2;
 export const DEFAULT_TEAM_MAX = 4;
 
+// Songs
+export const SONG_CATEGORIES = [
+    "mahalaya",
+    "agomoni",
+    "dhunuchi",
+    "bhajan",
+    "modern",
+    "bollywood",
+    "other",
+] as const;
+
+/** Uploaded files (audio, images) must live on our Cloudinary account's CDN. */
+export const CLOUDINARY_PREFIX = "https://res.cloudinary.com/";
+
+/** Free-text inputs get the X clear button; numbers, dates, passwords and files don't. */
+export const CLEARABLE_INPUT_TYPES = new Set([undefined, "text", "search", "url", "email", "tel"]);
+
 // Pandal stream
 /** Songs one network address can add or re-request per year (upvotes don't count). */
 export const STREAM_REQUEST_LIMIT = 3;
