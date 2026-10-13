@@ -40,8 +40,7 @@ const CATEGORIES = [
 // Songs
 // ---------------------------------------------------------------------------
 
-const youtubeSongSchema = z.object({
-    url: z.string().trim().min(1, "Paste a YouTube link"),
+const songDetailsSchema = z.object({
     title: z.string().trim().min(1, "Title is required").max(160),
     artist: z
         .string()
@@ -51,6 +50,25 @@ const youtubeSongSchema = z.object({
         .transform((v) => v || null),
     category: z.enum(CATEGORIES),
 });
+
+const youtubeSongSchema = songDetailsSchema.extend({
+    url: z.string().trim().min(1, "Paste a YouTube link"),
+});
+
+/** The title of a song in the same library that already has this video, if any. */
+async function findPoolDuplicate(
+    pool: "music_page" | "musical_chair",
+    youtubeId: string,
+    exceptId?: string,
+): Promise<string | null> {
+    let query = db().from("songs").select("title").eq("pool", pool).eq("youtube_id", youtubeId);
+    if (exceptId) query = query.neq("id", exceptId);
+    const { data, error } = await query.limit(1).maybeSingle();
+    if (error) throw error;
+    return data?.title ?? null;
+}
+
+const duplicateMessage = (title: string) => `Already in this library as “${title}”.`;
 
 export async function addYouTubeSong(_prev: ActionState, formData: FormData): Promise<ActionState> {
     await requireAdmin();
@@ -64,6 +82,9 @@ export async function addYouTubeSong(_prev: ActionState, formData: FormData): Pr
         return { ok: false, code: "That doesn't look like a YouTube link.", values: raw };
 
     const pool = formData.get("pool") === "musical_chair" ? "musical_chair" : "music_page";
+    const duplicate = await findPoolDuplicate(pool, youtubeId);
+    if (duplicate) return { ok: false, code: duplicateMessage(duplicate), values: raw };
+
     const { error } = await db()
         .from("songs")
         .insert({
@@ -78,6 +99,50 @@ export async function addYouTubeSong(_prev: ActionState, formData: FormData): Pr
     if (error) throw error;
     refresh();
     return { ok: true, code: "Song added." };
+}
+
+/** Changes a song's title, artist and (YouTube only) category and link. */
+export async function editSong(_prev: ActionState, formData: FormData): Promise<ActionState> {
+    await requireAdmin();
+    const raw = Object.fromEntries(formData.entries()) as Record<string, string>;
+    const supabase = db();
+    const { data: song, error } = await supabase
+        .from("songs")
+        .select("id, source, pool, category")
+        .eq("id", text(formData, "id"))
+        .maybeSingle();
+    if (error) throw error;
+    if (!song) return { ok: false, code: "Song not found.", values: raw };
+
+    const isYouTube = song.source === "youtube";
+    const parsed = songDetailsSchema.safeParse({
+        ...raw,
+        category: isYouTube ? raw.category : song.category,
+    });
+    if (!parsed.success) {
+        return { ok: false, code: parsed.error.issues[0]?.message ?? "Invalid input", values: raw };
+    }
+
+    const patch: {
+        title: string;
+        artist: string | null;
+        category?: SongCategory;
+        youtube_id?: string;
+    } = { title: parsed.data.title, artist: parsed.data.artist };
+    if (isYouTube) {
+        const youtubeId = parseYouTubeId(text(formData, "url"));
+        if (!youtubeId)
+            return { ok: false, code: "That doesn't look like a YouTube link.", values: raw };
+        const duplicate = await findPoolDuplicate(song.pool, youtubeId, song.id);
+        if (duplicate) return { ok: false, code: duplicateMessage(duplicate), values: raw };
+        patch.category = parsed.data.category;
+        patch.youtube_id = youtubeId;
+    }
+
+    const { error: updateError } = await supabase.from("songs").update(patch).eq("id", song.id);
+    if (updateError) throw updateError;
+    refresh();
+    return { ok: true, code: "Song updated." };
 }
 
 export type UploadedAudio = {

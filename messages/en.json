@@ -127,6 +127,7 @@
         "dashami": "Dashami"
     },
     "forms": {
+        "clear": "Clear",
         "name": "Full name",
         "yourName": "Your name",
         "yourNameOptional": "Your name (optional)",

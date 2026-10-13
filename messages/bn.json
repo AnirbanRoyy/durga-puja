@@ -127,6 +127,7 @@
         "dashami": "দশমী"
     },
     "forms": {
+        "clear": "মুছুন",
         "name": "পুরো নাম",
         "yourName": "আপনার নাম",
         "yourNameOptional": "আপনার নাম (ঐচ্ছিক)",
