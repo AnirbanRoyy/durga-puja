@@ -1,8 +1,9 @@
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { Alpana } from "@/components/decor/alpana";
 import { PageHeader } from "@/components/layout/page-header";
-import { aboutContent, THIS_YEAR_DATES } from "@/content/about";
+import { aboutContent } from "@/content/about";
 import { getEventSettings } from "@/lib/queries";
+import { THIS_YEAR_DATES } from "@/constants";
 
 export async function generateMetadata() {
     const t = await getTranslations("about");

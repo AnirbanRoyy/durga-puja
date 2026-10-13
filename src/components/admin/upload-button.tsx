@@ -37,7 +37,9 @@ export function UploadButton({
 }) {
     function handleSuccess(results: CloudinaryUploadWidgetResults) {
         const info = results.info;
-        if (!info || typeof info === "string") return;
+        if (!info || typeof info === "string") {
+            return;
+        }
         Promise.resolve(
             onUploaded({
                 url: info.secure_url,

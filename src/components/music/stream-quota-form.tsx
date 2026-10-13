@@ -19,7 +19,9 @@ export function StreamQuotaForm({ status }: Readonly<{ status: Status }>) {
     useEffect(() => {
         try {
             const saved = localStorage.getItem("dp_stream_name");
-            if (saved && nameRef.current && !nameRef.current.value) nameRef.current.value = saved;
+            if (saved && nameRef.current && !nameRef.current.value) {
+                nameRef.current.value = saved;
+            }
         } catch {}
     }, []);
 

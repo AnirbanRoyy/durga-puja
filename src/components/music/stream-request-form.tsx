@@ -9,9 +9,7 @@ import { requestStreamSong } from "@/actions/public";
 import { Button } from "@/components/ui/button";
 import { FormAlert, Honeypot, TextField } from "@/components/forms/form-bits";
 import { initialActionState, type ActionState } from "@/lib/validators";
-
-/** Fired by a "Request again" button with the song's YouTube link. */
-export const STREAM_REREQUEST_EVENT = "stream:rerequest";
+import { STREAM_REREQUEST_EVENT } from "@/constants";
 
 // The form clears after each request; remembering the name makes "Request again" one tap.
 const NAME_KEY = "dp_stream_name";
@@ -26,7 +24,9 @@ function savedName(): string {
 
 function saveName(name: FormDataEntryValue | null) {
     try {
-        if (typeof name === "string" && name.trim()) localStorage.setItem(NAME_KEY, name.trim());
+        if (typeof name === "string" && name.trim()) {
+            localStorage.setItem(NAME_KEY, name.trim());
+        }
     } catch {}
 }
 
@@ -51,14 +51,21 @@ export function StreamRequestForm({
     useEffect(() => {
         const onRerequest = (event: Event) => {
             const form = formRef.current;
-            if (!form) return;
+            if (!form) {
+                return;
+            }
             const link = form.elements.namedItem("link") as HTMLInputElement;
             const name = form.elements.namedItem("name") as HTMLInputElement;
             link.value = (event as CustomEvent<string>).detail;
-            if (!name.value.trim()) name.value = savedName();
+            if (!name.value.trim()) {
+                name.value = savedName();
+            }
             form.scrollIntoView({ behavior: "smooth", block: "center" });
-            if (name.value.trim().length >= 2) form.requestSubmit();
-            else name.focus({ preventScroll: true });
+            if (name.value.trim().length >= 2) {
+                form.requestSubmit();
+            } else {
+                name.focus({ preventScroll: true });
+            }
         };
         window.addEventListener(STREAM_REREQUEST_EVENT, onRerequest);
         return () => window.removeEventListener(STREAM_REREQUEST_EVENT, onRerequest);

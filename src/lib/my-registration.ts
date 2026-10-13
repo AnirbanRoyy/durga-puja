@@ -55,7 +55,9 @@ export async function forgetRegistration(programmeId: string): Promise<void> {
 export async function getMyRegistration(programmeId: string): Promise<MyRegistration | null> {
     const raw = (await cookies()).get(cookieName(programmeId))?.value;
     const [registrationId, token] = raw?.split(".") ?? [];
-    if (!registrationId || !token) return null;
+    if (!registrationId || !token) {
+        return null;
+    }
 
     const { data: contact } = await db()
         .from("registration_contacts")
@@ -63,18 +65,24 @@ export async function getMyRegistration(programmeId: string): Promise<MyRegistra
         .eq("registration_id", registrationId)
         .eq("programme_id", programmeId)
         .maybeSingle();
-    if (!contact?.edit_token_hash) return null;
+    if (!contact?.edit_token_hash) {
+        return null;
+    }
 
     const given = Buffer.from(hashToken(token));
     const stored = Buffer.from(contact.edit_token_hash);
-    if (given.length !== stored.length || !timingSafeEqual(given, stored)) return null;
+    if (given.length !== stored.length || !timingSafeEqual(given, stored)) {
+        return null;
+    }
 
     const { data: registration } = await db()
         .from("registrations")
         .select("name, members")
         .eq("id", registrationId)
         .maybeSingle();
-    if (!registration) return null;
+    if (!registration) {
+        return null;
+    }
 
     return {
         registrationId,

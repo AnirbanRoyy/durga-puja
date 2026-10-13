@@ -40,7 +40,9 @@ export function StartEditionForm({
                 const ok = window.confirm(
                     `Start ${year}? The public site switches to ${year}, and registrations and voting for ${currentYear} close. ${currentYear} stays in the archive.`,
                 );
-                if (!ok) e.preventDefault();
+                if (!ok) {
+                    e.preventDefault();
+                }
             }}
             className="grid grid-cols-1 gap-4 sm:grid-cols-2"
         >
@@ -88,7 +90,9 @@ export function MakeCurrentButton({ year }: { year: number }) {
             variant="outline"
             disabled={pending}
             onClick={() => {
-                if (!window.confirm(`Make ${year} the year shown on the public site?`)) return;
+                if (!window.confirm(`Make ${year} the year shown on the public site?`)) {
+                    return;
+                }
                 startTransition(async () => {
                     try {
                         await makeEditionCurrent(year);

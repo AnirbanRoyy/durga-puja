@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { listEditions, listProgrammes } from "@/lib/queries";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL } from "@/constants";
 
 const STATIC: {
     path: string;

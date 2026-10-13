@@ -27,7 +27,9 @@ export async function generateMetadata(props: PageProps<"/programmes/[slug]/resu
 export default async function ResultDetailPage(props: PageProps<"/programmes/[slug]/results">) {
     const { slug } = await props.params;
     const programme = await getProgrammeBySlug(slug);
-    if (!programme) notFound();
+    if (!programme) {
+        notFound();
+    }
 
     const [t, locale] = await Promise.all([getTranslations("results"), getLocale()]);
     const title = pick(locale, programme.title_en, programme.title_bn);

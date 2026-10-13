@@ -9,8 +9,12 @@ type Phase =
     | { kind: "after" };
 
 function computePhase(start: number, end: number, now: number): Phase {
-    if (now >= end) return { kind: "after" };
-    if (now >= start) return { kind: "during" };
+    if (now >= end) {
+        return { kind: "after" };
+    }
+    if (now >= start) {
+        return { kind: "during" };
+    }
     const diff = Math.floor((start - now) / 1000);
     return {
         kind: "before",

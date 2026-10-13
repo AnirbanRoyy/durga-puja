@@ -21,8 +21,14 @@ import type {
     StreamRequest,
     StreamState,
 } from "@/lib/database.types";
-import { CACHE_VERSION, EDITIONS_TAG, PROGRAMMES_TAG, SETTINGS_TAG } from "@/lib/cache";
 import { db } from "@/lib/supabase/server";
+import {
+    CACHE_VERSION,
+    EDITIONS_TAG,
+    PROGRAMMES_TAG,
+    SETTINGS_TAG,
+    STREAM_REQUEST_LIMIT,
+} from "@/constants";
 
 export type EventSettings = {
     year: number;
@@ -90,7 +96,9 @@ const fetchSettingValue = unstable_cache(
             .select("value")
             .eq("key", key)
             .maybeSingle();
-        if (error) throw new Error(`Failed to load settings: ${error.message}`);
+        if (error) {
+            throw new Error(`Failed to load settings: ${error.message}`);
+        }
         return (data?.value as Record<string, unknown> | null) ?? null;
     },
     ["setting", CACHE_VERSION],
@@ -235,7 +243,9 @@ export async function listAllRegistrationsForAdmin(
 ): Promise<{ programmes: Programme[]; registrations: RegistrationWithPhone[] }> {
     const programmes = await listProgrammes(year);
     const ids = programmes.map((p) => p.id);
-    if (!ids.length) return { programmes, registrations: [] };
+    if (!ids.length) {
+        return { programmes, registrations: [] };
+    }
     const [registrations, contacts] = await Promise.all([
         db()
             .from("registrations")
@@ -277,7 +287,9 @@ export const countRegistrationsByProgramme = cache(async (): Promise<Map<string,
 
 export const listSongs = cache(async (pool: SongPool, includeInactive = false): Promise<Song[]> => {
     let query = db().from("songs").select("*").eq("pool", pool);
-    if (!includeInactive) query = query.eq("active", true);
+    if (!includeInactive) {
+        query = query.eq("active", true);
+    }
     return unwrap(
         await query
             .order("featured", { ascending: false })
@@ -289,7 +301,9 @@ export const listSongs = cache(async (pool: SongPool, includeInactive = false): 
 
 export const listSongRequests = cache(async (includeRejected = false): Promise<SongRequest[]> => {
     let query = db().from("song_requests").select("*");
-    if (!includeRejected) query = query.neq("status", "rejected");
+    if (!includeRejected) {
+        query = query.neq("status", "rejected");
+    }
     return unwrap(
         await query
             .order("request_count", { ascending: false })
@@ -346,7 +360,9 @@ export async function musicalChairRequestsLeft(
         p_programme_id: programmeId,
         p_ip_hash: ipHash,
     });
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     return Math.max(0, STREAM_REQUEST_LIMIT - (data ?? 0));
 }
 
@@ -375,7 +391,9 @@ export const listResults = cache(async (programmeId: string): Promise<Result[]> 
 /** Results for every programme of one year (defaults to the current year). */
 export const listAllResults = cache(async (year?: number): Promise<Result[]> => {
     const ids = (await listProgrammes(year)).map((p) => p.id);
-    if (!ids.length) return [];
+    if (!ids.length) {
+        return [];
+    }
     return unwrap(
         await db()
             .from("results")
@@ -391,7 +409,9 @@ export async function countVotes(programmeId: string): Promise<number> {
         .from("votes")
         .select("id", { count: "exact", head: true })
         .eq("programme_id", programmeId);
-    if (error) throw new Error(`Failed to count votes: ${error.message}`);
+    if (error) {
+        throw new Error(`Failed to count votes: ${error.message}`);
+    }
     return count ?? 0;
 }
 
@@ -409,7 +429,9 @@ export async function hasVoted(programmeId: string, voterHash: string): Promise<
         .eq("programme_id", programmeId)
         .eq("voter_hash", voterHash)
         .maybeSingle();
-    if (error) throw new Error(`Failed to check vote: ${error.message}`);
+    if (error) {
+        throw new Error(`Failed to check vote: ${error.message}`);
+    }
     return data?.drawing_id ?? null;
 }
 
@@ -419,13 +441,17 @@ async function votedRequests(
     voterHash: string | null,
     ids: string[],
 ): Promise<Set<string>> {
-    if (!voterHash || !ids.length) return new Set();
+    if (!voterHash || ids.length === 0) {
+        return new Set();
+    }
     const { data, error } = await db()
         .from(table)
         .select("request_id")
         .eq("voter_hash", voterHash)
         .in("request_id", ids);
-    if (error) throw new Error(`Failed to load votes: ${error.message}`);
+    if (error) {
+        throw new Error(`Failed to load votes: ${error.message}`);
+    }
     return new Set(data.map((v) => v.request_id));
 }
 
@@ -465,7 +491,9 @@ export const listEditionSummaries = cache(async (): Promise<EditionSummary[]> =>
         const counts = new Map<number, number>();
         for (const row of rows) {
             const year = yearOf.get(row.programme_id);
-            if (year !== undefined) counts.set(year, (counts.get(year) ?? 0) + 1);
+            if (year !== undefined) {
+                counts.set(year, (counts.get(year) ?? 0) + 1);
+            }
         }
         return counts;
     };
@@ -491,10 +519,14 @@ export type YearSnapshot = {
 /** Everything public about one year, for the archive. */
 export const getYearSnapshot = cache(async (year: number): Promise<YearSnapshot | null> => {
     const edition = await getEdition(year);
-    if (!edition) return null;
+    if (!edition) {
+        return null;
+    }
     const programmes = await listProgrammes(year);
     const ids = programmes.map((p) => p.id);
-    if (!ids.length) return { edition, programmes, registrations: [], results: [], drawings: [] };
+    if (!ids.length) {
+        return { edition, programmes, registrations: [], results: [], drawings: [] };
+    }
     const [registrations, results, drawings] = await Promise.all([
         db()
             .from("registrations")
@@ -565,9 +597,13 @@ export function quizLeaderboard(
 ): QuizTeamScore[] {
     const scores = new Map(teams.map((t) => [t.id, { ...t, points: 0, answered: 0 }]));
     for (const q of questions) {
-        if (q.state !== "revealed" || q.kind !== "team" || !q.team_id) continue;
+        if (q.state !== "revealed" || q.kind !== "team" || !q.team_id) {
+            continue;
+        }
         const entry = scores.get(q.team_id);
-        if (!entry) continue;
+        if (!entry) {
+            continue;
+        }
         entry.points += q.points_awarded ?? 0;
         entry.answered += 1;
     }
@@ -630,9 +666,6 @@ export type StreamBoard = {
     played: StreamRequest[];
 };
 
-/** Songs one network address can add or re-request per year (upvotes don't count). */
-export const STREAM_REQUEST_LIMIT = 3;
-
 /** The visitor's latest ask for more requests this year, or null. */
 export async function getQuotaRequestStatus(
     ipHash: string,
@@ -645,7 +678,9 @@ export async function getQuotaRequestStatus(
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     return data?.status ?? null;
 }
 
@@ -665,20 +700,28 @@ export async function listPendingQuotaRequests(): Promise<QuotaRequestForAdmin[]
         .eq("year", year)
         .eq("status", "pending")
         .order("created_at", { ascending: true });
-    if (error) throw error;
-    if (!asks.length) return [];
+    if (error) {
+        throw error;
+    }
+    if (!asks.length) {
+        return [];
+    }
 
     const { data: log, error: logError } = await db()
         .from("stream_request_log")
         .select("ip_hash, request_id")
         .eq("year", year)
         .in("ip_hash", [...new Set(asks.map((a) => a.ip_hash))]);
-    if (logError) throw logError;
+    if (logError) {
+        throw logError;
+    }
     const ids = [...new Set(log.flatMap((l) => (l.request_id ? [l.request_id] : [])))];
     const { data: songs, error: songsError } = ids.length
         ? await db().from("stream_requests").select("id, title").in("id", ids)
         : { data: [], error: null };
-    if (songsError) throw songsError;
+    if (songsError) {
+        throw songsError;
+    }
     const title = new Map(songs.map((s) => [s.id, s.title]));
 
     return asks.map((a) => ({
@@ -696,7 +739,9 @@ export async function streamRequestsLeft(ipHash: string, year?: number): Promise
         p_year: year ?? (await getCurrentYear()),
         p_ip_hash: ipHash,
     });
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     return Math.max(0, STREAM_REQUEST_LIMIT - (data ?? 0));
 }
 

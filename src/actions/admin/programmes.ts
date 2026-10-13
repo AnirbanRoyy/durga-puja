@@ -8,12 +8,12 @@ import { requireAdmin } from "@/lib/auth";
 import { invalidateCatalog } from "@/lib/cache";
 import type { PerformanceStatus, Programme } from "@/lib/database.types";
 import { istLocalToIso } from "@/lib/datetime";
-import { PROGRAMME_STATUSES, PROGRAMME_TYPES } from "@/lib/programme-meta";
 import { releaseKey } from "@/lib/device-lock";
 import { getCurrentYear } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
 import { fillBengali } from "@/lib/translate";
 import { fieldErrors, type ActionState } from "@/lib/validators";
+import { PROGRAMME_STATUSES, PROGRAMME_TYPES } from "@/constants";
 
 const text = (max: number) =>
     z
@@ -150,7 +150,9 @@ export async function saveProgramme(_prev: ActionState, formData: FormData): Pro
         throw error;
     }
     invalidateCatalog();
-    if (!id) redirect(`/admin/programmes/${data.id}`);
+    if (!id) {
+        redirect(`/admin/programmes/${data.id}`);
+    }
     refresh();
     return { ok: true, code: "Saved." };
 }
@@ -158,7 +160,9 @@ export async function saveProgramme(_prev: ActionState, formData: FormData): Pro
 export async function deleteProgramme(id: string) {
     await requireAdmin();
     const { error } = await db().from("programmes").delete().eq("id", id);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     invalidateCatalog();
     redirect("/admin/programmes");
 }
@@ -173,7 +177,9 @@ type QuickPatch = Partial<
 export async function patchProgramme(id: string, patch: QuickPatch) {
     await requireAdmin();
     const { error } = await db().from("programmes").update(patch).eq("id", id);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     invalidateCatalog();
     refresh();
 }
@@ -202,15 +208,20 @@ export async function shuffleLineup(
         .select("order_locked")
         .eq("id", programmeId)
         .single();
-    if (pErr) throw pErr;
-    if (programme.order_locked)
+    if (pErr) {
+        throw pErr;
+    }
+    if (programme.order_locked) {
         return { ok: false, message: "Order is locked. Unlock it to reshuffle." };
+    }
 
     const { data: regs, error } = await supabase
         .from("registrations")
         .select("id")
         .eq("programme_id", programmeId);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
 
     const order = secureShuffle(regs);
     await Promise.all(
@@ -220,7 +231,9 @@ export async function shuffleLineup(
                 .update({ sequence_no: i + 1, performance_status: "waiting" })
                 .eq("id", r.id)
                 .then(({ error: e }) => {
-                    if (e) throw e;
+                    if (e) {
+                        throw e;
+                    }
                 }),
         ),
     );
@@ -235,7 +248,9 @@ export async function setOrderLocked(programmeId: string, locked: boolean) {
         .from("programmes")
         .update({ order_locked: locked })
         .eq("id", programmeId);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     invalidateCatalog();
     refresh();
 }
@@ -249,7 +264,9 @@ export async function setPerformanceStatus(registrationId: string, status: Perfo
             .select("programme_id")
             .eq("id", registrationId)
             .single();
-        if (error) throw error;
+        if (error) {
+            throw error;
+        }
         // Only one performer on stage at a time.
         await supabase
             .from("registrations")
@@ -261,7 +278,9 @@ export async function setPerformanceStatus(registrationId: string, status: Perfo
         .from("registrations")
         .update({ performance_status: status })
         .eq("id", registrationId);
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     refresh();
 }
 
@@ -283,7 +302,9 @@ export async function callNext(programmeId: string) {
         .order("sequence_no", { ascending: true })
         .limit(1)
         .maybeSingle();
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     if (next) {
         await supabase
             .from("registrations")
@@ -301,7 +322,9 @@ export async function moveToEnd(registrationId: string) {
         .select("programme_id")
         .eq("id", registrationId)
         .single();
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
     const { data: last } = await supabase
         .from("registrations")
         .select("sequence_no")
@@ -324,8 +347,12 @@ export async function deleteRegistration(registrationId: string) {
         .eq("registration_id", registrationId)
         .maybeSingle();
     const { error } = await db().from("registrations").delete().eq("id", registrationId);
-    if (error) throw error;
-    if (contact?.claim_key) await releaseKey(contact.claim_key);
+    if (error) {
+        throw error;
+    }
+    if (contact?.claim_key) {
+        await releaseKey(contact.claim_key);
+    }
     refresh();
 }
 
@@ -360,10 +387,14 @@ export async function saveResults(
         .from("results")
         .delete()
         .eq("programme_id", programmeId);
-    if (delError) throw delError;
+    if (delError) {
+        throw delError;
+    }
     if (clean.length) {
         const { error } = await supabase.from("results").insert(clean);
-        if (error) throw error;
+        if (error) {
+            throw error;
+        }
     }
     if (markCompleted) {
         await supabase.from("programmes").update({ status: "completed" }).eq("id", programmeId);

@@ -40,9 +40,12 @@ function useRun() {
     const run = (action: () => Promise<QuizActionResult>, success?: string) =>
         start(async () => {
             const result = await action();
-            if (!result.ok) toast.error(result.message);
-            else {
-                if (success) toast.success(success);
+            if (!result.ok) {
+                toast.error(result.message);
+            } else {
+                if (success) {
+                    toast.success(success);
+                }
                 router.refresh();
             }
         });
@@ -597,8 +600,9 @@ function RoundCard({
                         variant="destructive"
                         disabled={pending}
                         onClick={() => {
-                            if (window.confirm(`Delete “${round.name_en}” and its questions?`))
+                            if (window.confirm(`Delete “${round.name_en}” and its questions?`)) {
                                 run(() => deleteRound(round.id), "Round deleted");
+                            }
                         }}
                     >
                         Delete
@@ -667,8 +671,9 @@ function QuestionRow({
                     variant="ghost"
                     disabled={pending}
                     onClick={() => {
-                        if (window.confirm("Delete this question?"))
+                        if (window.confirm("Delete this question?")) {
                             run(() => deleteQuestion(question.id), "Question deleted");
+                        }
                     }}
                 >
                     Delete

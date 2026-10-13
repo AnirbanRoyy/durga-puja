@@ -8,13 +8,19 @@ import { getAmbientSettings, getCurrentYear, listEditions } from "@/lib/queries"
  * same background sound. Anything that isn't a plain Cloudinary audio URL is left alone.
  */
 function lighterAudio(url: string | null): string | null {
-    if (!url) return null;
+    if (!url) {
+        return null;
+    }
     const marker = "res.cloudinary.com/";
     const at = url.indexOf("/video/upload/");
-    if (!url.includes(marker) || at === -1) return url;
+    if (!url.includes(marker) || at === -1) {
+        return url;
+    }
     const rest = url.slice(at + "/video/upload/".length);
     // Already has transformations (the next segment isn't a version like v123456).
-    if (!/^v\d+\//.test(rest)) return url;
+    if (!/^v\d+\//.test(rest)) {
+        return url;
+    }
     return `${url.slice(0, at)}/video/upload/br_96k/${rest}`;
 }
 

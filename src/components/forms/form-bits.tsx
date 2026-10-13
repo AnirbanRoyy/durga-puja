@@ -74,7 +74,9 @@ export function Honeypot() {
 export function FormAlert({ state, className }: { state: ActionState; className?: string }) {
     const errors = useTranslations("forms.errors");
     const success = useTranslations("forms.success");
-    if (!state.code || (state.code === "invalid" && state.errors)) return null;
+    if (!state.code || (state.code === "invalid" && state.errors)) {
+        return null;
+    }
     const ok = state.ok;
     const text = ok
         ? success.has(state.code)

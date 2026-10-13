@@ -12,7 +12,9 @@ export function LocaleToggle({ className }: { className?: string }) {
     const [pending, startTransition] = useTransition();
 
     function choose(next: "en" | "bn") {
-        if (next === locale) return;
+        if (next === locale) {
+            return;
+        }
         startTransition(async () => {
             await setLocale(next);
             router.refresh();

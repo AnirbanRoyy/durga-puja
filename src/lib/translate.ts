@@ -27,7 +27,9 @@ function withTimeout<T>(promise: Promise<T>): Promise<T> {
 /** A usable translation: non-empty and not just the English handed back. */
 function usable(english: string, result: string | null | undefined): string | null {
     const text = result?.trim();
-    if (!text || text.toLowerCase() === english.toLowerCase()) return null;
+    if (!text || text.toLowerCase() === english.toLowerCase()) {
+        return null;
+    }
     return text;
 }
 
@@ -44,18 +46,23 @@ async function viaMyMemory(text: string): Promise<string | null> {
     try {
         const params = new URLSearchParams({ q: text.slice(0, 500), langpair: "en|bn" });
         // An email raises MyMemory's free quota from 5,000 to 50,000 characters a day.
-        if (process.env.TRANSLATE_CONTACT_EMAIL)
+        if (process.env.TRANSLATE_CONTACT_EMAIL) {
             params.set("de", process.env.TRANSLATE_CONTACT_EMAIL);
+        }
         const response = await fetch(`https://api.mymemory.translated.net/get?${params}`, {
             signal: AbortSignal.timeout(TIMEOUT_MS),
             cache: "no-store",
         });
-        if (!response.ok) return null;
+        if (!response.ok) {
+            return null;
+        }
         const data = (await response.json()) as {
             responseStatus?: number | string;
             responseData?: { translatedText?: string };
         };
-        if (Number(data.responseStatus) !== 200) return null;
+        if (Number(data.responseStatus) !== 200) {
+            return null;
+        }
         return usable(text, data.responseData?.translatedText);
     } catch (error) {
         console.warn("translate: mymemory failed", (error as Error).message);
@@ -71,7 +78,9 @@ async function translateOne(text: string): Promise<string | null> {
 export async function toBengali(texts: (string | null | undefined)[]): Promise<(string | null)[]> {
     const cleaned = texts.map((x) => x?.trim() ?? "");
     const result: (string | null)[] = cleaned.map(() => null);
-    if (!translationEnabled()) return result;
+    if (!translationEnabled()) {
+        return result;
+    }
 
     const todo = cleaned.flatMap((text, i) => (text ? [i] : []));
     let next = 0;
@@ -91,7 +100,9 @@ export async function bengaliOrTranslated(
     bengali: string | null | undefined,
 ): Promise<string | null> {
     const typed = bengali?.trim();
-    if (typed) return typed;
+    if (typed) {
+        return typed;
+    }
     return (await toBengali([english]))[0];
 }
 

@@ -56,8 +56,11 @@ export function RegistrationsManager({
         startTransition(async () => {
             try {
                 const result = (await fn()) as { ok?: boolean; message?: string } | undefined;
-                if (result && result.ok === false) toast.error(result.message ?? "Failed");
-                else if (success) toast.success(success);
+                if (result && result.ok === false) {
+                    toast.error(result.message ?? "Failed");
+                } else if (success) {
+                    toast.success(success);
+                }
             } catch (e) {
                 toast.error(e instanceof Error ? e.message : "Something went wrong");
             }

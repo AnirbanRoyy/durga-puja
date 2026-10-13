@@ -32,8 +32,11 @@ export function DrawingGallery({
         startTransition(async () => {
             setOptimisticVote(drawing.id);
             const result = await castVote(drawing.id);
-            if (result === "ok") toast.success(t("voted", { name: drawing.child_name }));
-            else toast.error(t(`voteError.${result}`));
+            if (result === "ok") {
+                toast.success(t("voted", { name: drawing.child_name }));
+            } else {
+                toast.error(t(`voteError.${result}`));
+            }
         });
     }
 

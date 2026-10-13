@@ -5,6 +5,12 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
     ...nextVitals,
     ...nextTs,
+    {
+        rules: {
+            // Braces on every if/else/loop, even one-liners (see CLAUDE.md "Code style").
+            curly: ["error", "all"],
+        },
+    },
     // Override default ignores of eslint-config-next.
     globalIgnores([
         // Default ignores of eslint-config-next:

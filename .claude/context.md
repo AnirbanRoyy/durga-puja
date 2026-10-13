@@ -10,9 +10,10 @@ Next.js 16 App Router (not the Next you know: read `node_modules/next/dist/docs/
 
 ## Rules that bite
 
+- Code style (CLAUDE.md): braces on every `if`, constants in `src/constants.ts`, readable over compact.
 - DB is **shared with production**. Migrations are additive only (new functions/overloads, never change or drop what deployed code uses). Apply via Supabase MCP, mirror in `supabase/migrations/NNNN_*.sql` (latest 0012). Apply the migration **before** merging the PR that needs it (merging 0012 unapplied broke the musical chair page).
 - Writes use server actions + service-role `db()`. Anon can only read public tables. Phones live in `registration_contacts` (private).
-- Programme list cache: `unstable_cache`, bump `CACHE_VERSION` in `src/lib/cache.ts` when the Programme shape changes (now "v2").
+- Programme list cache: `unstable_cache`, bump `CACHE_VERSION` in `src/constants.ts` when the Programme shape changes (now "v2").
 - Admin area is English-only (nested `NextIntlClientProvider locale="en"`). Admin feedback = sonner toasts via `useActionToast` / `useAdminRun`.
 - Redis lock `user:<ip>:<programme>` is fail-open. Stream quota (3 per network) is in Postgres, not Redis. Local test traffic is IP `::1`.
 - Phone layouts: every `grid` needs a base `grid-cols-1` (or `minmax(0,1fr)`) before `sm:`/`lg:` columns, or one wide child stretches the page sideways. Check at 360px.

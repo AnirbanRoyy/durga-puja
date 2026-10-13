@@ -1,5 +1,6 @@
 import "server-only";
 import { updateTag } from "next/cache";
+import { EDITIONS_TAG, PROGRAMMES_TAG, SETTINGS_TAG } from "@/constants";
 
 /**
  * Server-side cache shared by every visitor, for the slow-changing lists only: programmes, years
@@ -7,13 +8,8 @@ import { updateTag } from "next/cache";
  * cached and always read the live database.
  * Cached data stays until an action that changes
  * it calls one of the invalidate functions below (the long expiry in queries.ts is only a safety
- * net for edits made outside the app). Keep CACHE_VERSION in sync when a cached shape changes.
+ * net for edits made outside the app). Keep CACHE_VERSION (src/constants.ts) in sync when a cached shape changes.
  */
-export const CACHE_VERSION = "v2";
-
-export const PROGRAMMES_TAG = "programmes";
-export const EDITIONS_TAG = "editions";
-export const SETTINGS_TAG = "settings";
 
 /** After anything that changes a programme or a year. Server actions only. */
 export function invalidateCatalog(): void {

@@ -11,7 +11,9 @@ export default async function DrawingsAdminPage(
 ) {
     const { id } = await props.params;
     const programme = await getProgrammeById(id);
-    if (!programme) notFound();
+    if (!programme) {
+        notFound();
+    }
     const [drawings, votes] = await Promise.all([listDrawings(id), countVotes(id)]);
 
     return (

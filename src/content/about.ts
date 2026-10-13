@@ -1,7 +1,5 @@
 import type { Locale } from "@/i18n/config";
-
-/** Placeholder paragraph: the page fills in this year's dates from the admin settings. */
-export const THIS_YEAR_DATES = "{{this-year-dates}}";
+import { THIS_YEAR_DATES } from "@/constants";
 
 export type AboutSection = {
     id: string;

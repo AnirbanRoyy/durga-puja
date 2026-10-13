@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { RepeatIcon } from "@hugeicons/core-free-icons";
-import { STREAM_REREQUEST_EVENT } from "@/components/music/stream-request-form";
 import { Button } from "@/components/ui/button";
+import { STREAM_REREQUEST_EVENT } from "@/constants";
 
 /** Sends a played song back through the request form (so it uses the same checks and limit). */
 export function StreamRerequestButton({

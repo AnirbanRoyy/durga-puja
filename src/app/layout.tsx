@@ -6,8 +6,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { Providers } from "@/components/layout/providers";
 import { getEventSettings } from "@/lib/queries";
-import { SITE_URL } from "@/lib/site";
 import "./globals.css";
+import { SITE_URL } from "@/constants";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"] });

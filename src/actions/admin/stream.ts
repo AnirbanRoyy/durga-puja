@@ -58,23 +58,31 @@ export async function addLibrarySongsToStream(
     songIds: string[],
 ): Promise<StreamActionResult & { added?: number }> {
     await requireAdmin();
-    if (!songIds.length) return { ok: false, message: "Pick at least one song." };
+    if (!songIds.length) {
+        return { ok: false, message: "Pick at least one song." };
+    }
     const { data: songs, error: songsError } = await db()
         .from("songs")
         .select("title, artist, youtube_id")
         .in("id", songIds)
         .eq("source", "youtube")
         .eq("active", true);
-    if (songsError) return { ok: false, message: songsError.message };
+    if (songsError) {
+        return { ok: false, message: songsError.message };
+    }
     const list = songs.flatMap((s) =>
         s.youtube_id ? [{ youtube_id: s.youtube_id, title: s.title, channel: s.artist }] : [],
     );
-    if (!list.length) return { ok: false, message: "None of those songs can be streamed." };
+    if (!list.length) {
+        return { ok: false, message: "None of those songs can be streamed." };
+    }
     const { data, error } = await db().rpc("add_stream_songs", {
         p_year: await getCurrentYear(),
         p_songs: list,
     });
-    if (error) return { ok: false, message: error.message };
+    if (error) {
+        return { ok: false, message: error.message };
+    }
     refresh();
     return { ok: true, added: data ?? 0 };
 }
@@ -83,7 +91,9 @@ export async function addLibrarySongsToStream(
 export async function removeStreamSong(id: string): Promise<StreamActionResult> {
     await requireAdmin();
     const { data, error } = await db().rpc("remove_stream_song", { p_request_id: id });
-    if (error) return { ok: false, message: error.message };
+    if (error) {
+        return { ok: false, message: error.message };
+    }
     if (data === "now_playing") {
         return { ok: false, message: "This song is playing now. Use Skip instead." };
     }

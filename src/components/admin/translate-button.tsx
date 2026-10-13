@@ -30,8 +30,11 @@ export function TranslateButton({
             onClick={() =>
                 start(async () => {
                     const result = await translateForAdmin(getEnglish());
-                    if (result.ok) onResult(result.text);
-                    else onError?.(result.reason);
+                    if (result.ok) {
+                        onResult(result.text);
+                    } else {
+                        onError?.(result.reason);
+                    }
                 })
             }
         >
@@ -55,7 +58,9 @@ export function FieldTranslateButton({ from, to }: { from: string; to: string })
                     toast.success("Bengali suggested. Please check it before saving.");
                     const el = document.getElementById(to) as
                         HTMLInputElement | HTMLTextAreaElement | null;
-                    if (!el) return;
+                    if (!el) {
+                        return;
+                    }
                     const proto =
                         el instanceof HTMLTextAreaElement ? HTMLTextAreaElement : HTMLInputElement;
                     Object.getOwnPropertyDescriptor(proto.prototype, "value")?.set?.call(

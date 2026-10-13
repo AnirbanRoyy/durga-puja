@@ -110,8 +110,9 @@ export function SongRequestsManager({ requests }: { requests: SongRequest[] }) {
                                 variant="ghost"
                                 disabled={pending}
                                 onClick={() => {
-                                    if (confirm("Delete this request?"))
+                                    if (confirm("Delete this request?")) {
                                         run(() => deleteSongRequest(r.id), "Request deleted");
+                                    }
                                 }}
                             >
                                 <HugeiconsIcon icon={Delete02Icon} className="text-destructive" />

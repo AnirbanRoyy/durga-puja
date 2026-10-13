@@ -8,7 +8,9 @@ export const metadata = { title: "Results" };
 export default async function ResultsAdminPage(props: PageProps<"/admin/programmes/[id]/results">) {
     const { id } = await props.params;
     const programme = await getProgrammeById(id);
-    if (!programme) notFound();
+    if (!programme) {
+        notFound();
+    }
     const [results, registrations] = await Promise.all([listResults(id), listRegistrations(id)]);
 
     return (

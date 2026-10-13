@@ -61,7 +61,9 @@ export function AddYouTubeSongForm({
 
 /** The small grey detail under a song title: the category, or the length of an MP3. */
 function songDetail(song: Song): string | null {
-    if (song.source === "youtube") return song.category;
+    if (song.source === "youtube") {
+        return song.category;
+    }
     return song.duration_sec ? `${Math.round(song.duration_sec)}s` : null;
 }
 
@@ -271,8 +273,9 @@ export function SongList({
                             variant="ghost"
                             disabled={pending}
                             onClick={() => {
-                                if (confirm(`Delete “${s.title}”?`))
+                                if (confirm(`Delete “${s.title}”?`)) {
                                     run(() => deleteSong(s.id), "Song deleted");
+                                }
                             }}
                         >
                             <HugeiconsIcon icon={Delete02Icon} className="text-destructive" />

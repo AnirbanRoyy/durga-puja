@@ -16,7 +16,9 @@ function groupByDay(programmes: Programme[], shashthi: string, dashami?: string)
     const dayByDate = new Map(pujaDayDates(shashthi, dashami).map((d) => [d.date, d.day]));
     const groups = new Map<string, Programme[]>();
     for (const p of programmes) {
-        if (!p.starts_at) continue;
+        if (!p.starts_at) {
+            continue;
+        }
         const key = istDateKey(p.starts_at);
         groups.set(key, [...(groups.get(key) ?? []), p]);
     }

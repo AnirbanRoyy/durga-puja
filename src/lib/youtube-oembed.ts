@@ -12,9 +12,13 @@ export async function fetchYouTubeInfo(videoId: string): Promise<YouTubeInfo | n
             `https://www.youtube.com/watch?v=${videoId}`,
         )}&format=json`;
         const response = await fetch(url, { signal: AbortSignal.timeout(6000), cache: "no-store" });
-        if (!response.ok) return null;
+        if (!response.ok) {
+            return null;
+        }
         const data = (await response.json()) as { title?: string; author_name?: string };
-        if (!data.title) return null;
+        if (!data.title) {
+            return null;
+        }
         return {
             title: data.title.slice(0, 160),
             channel: data.author_name?.slice(0, 120) ?? null,

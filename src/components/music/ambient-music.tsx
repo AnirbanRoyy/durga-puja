@@ -51,8 +51,11 @@ function afterPageLoad(fn: () => void, delayMs = 2000): () => void {
     const run = () => {
         timer = window.setTimeout(fn, delayMs);
     };
-    if (document.readyState === "complete") run();
-    else window.addEventListener("load", run, { once: true });
+    if (document.readyState === "complete") {
+        run();
+    } else {
+        window.addEventListener("load", run, { once: true });
+    }
     return () => {
         window.clearTimeout(timer);
         window.removeEventListener("load", run);
@@ -66,8 +69,11 @@ function fade(audio: HTMLAudioElement, to: number, ms: number): Promise<void> {
         const step = () => {
             const t = Math.min(1, (performance.now() - start) / ms);
             audio.volume = Math.min(1, Math.max(0, from + (to - from) * t));
-            if (t < 1) requestAnimationFrame(step);
-            else resolve();
+            if (t < 1) {
+                requestAnimationFrame(step);
+            } else {
+                resolve();
+            }
         };
         step();
     });
@@ -120,7 +126,9 @@ export function AmbientMusic({ src }: { src: string }) {
 
     const stop = useCallback(async () => {
         const audio = audioRef.current;
-        if (!audio || audio.paused) return;
+        if (!audio || audio.paused) {
+            return;
+        }
         await fade(audio, 0, FADE_MS / 2);
         audio.pause();
     }, []);
@@ -137,21 +145,32 @@ export function AmbientMusic({ src }: { src: string }) {
     // The track is large, so the automatic attempt waits until the page has finished loading and
     // never competes with the content the visitor came to see.
     useEffect(() => {
-        if (!ready || !wanted || youtubePlaying || audible || document.hidden) return;
+        if (!ready || !wanted || youtubePlaying || audible || document.hidden) {
+            return;
+        }
         let cancelled = false;
         const resume = () => {
             void start().then((ok) => {
-                if (ok) detach();
+                if (ok) {
+                    detach();
+                }
             });
         };
         const detach = () => {
-            for (const type of GESTURES) window.removeEventListener(type, resume);
+            for (const type of GESTURES) {
+                window.removeEventListener(type, resume);
+            }
         };
-        for (const type of GESTURES) window.addEventListener(type, resume);
+        for (const type of GESTURES) {
+            window.addEventListener(type, resume);
+        }
         const cancelAttempt = afterPageLoad(() => {
             void start().then((ok) => {
-                if (ok) detach();
-                else if (!cancelled) setBlocked(true);
+                if (ok) {
+                    detach();
+                } else if (!cancelled) {
+                    setBlocked(true);
+                }
             });
         });
         return () => {
@@ -163,14 +182,19 @@ export function AmbientMusic({ src }: { src: string }) {
 
     // Duck out of the way while a YouTube track is playing.
     useEffect(() => {
-        if (youtubePlaying) void stop();
+        if (youtubePlaying) {
+            void stop();
+        }
     }, [youtubePlaying, stop]);
 
     // Be polite when the tab is in the background.
     useEffect(() => {
         const onVisibility = () => {
-            if (document.hidden) void stop();
-            else if (wanted && !youtubePlaying) void start();
+            if (document.hidden) {
+                void stop();
+            } else if (wanted && !youtubePlaying) {
+                void start();
+            }
         };
         document.addEventListener("visibilitychange", onVisibility);
         return () => document.removeEventListener("visibilitychange", onVisibility);
@@ -186,7 +210,9 @@ export function AmbientMusic({ src }: { src: string }) {
         }
     }
 
-    if (!ready) return null;
+    if (!ready) {
+        return null;
+    }
 
     return (
         <>

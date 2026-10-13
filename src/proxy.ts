@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ADMIN_COOKIE, verifyAdminToken } from "@/lib/session-token";
+import { verifyAdminToken } from "@/lib/session-token";
+import { ADMIN_COOKIE } from "@/constants";
 
 const VISITOR_COOKIE = "dp_vid";
 

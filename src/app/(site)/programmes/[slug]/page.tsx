@@ -38,14 +38,18 @@ function registeredText(
     count: number,
     max: number | null,
 ): string {
-    if (!team) return t("registeredCount", { count });
+    if (!team) {
+        return t("registeredCount", { count });
+    }
     return max ? t("registeredTeamsOf", { count, max }) : t("registeredTeams", { count });
 }
 
 export default async function ProgrammePage(props: Readonly<PageProps<"/programmes/[slug]">>) {
     const { slug } = await props.params;
     const programme = await getProgrammeBySlug(slug);
-    if (!programme) notFound();
+    if (!programme) {
+        notFound();
+    }
 
     const [t, locale, format, registrations] = await Promise.all([
         getTranslations("programmes"),

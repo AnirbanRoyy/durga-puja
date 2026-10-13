@@ -7,21 +7,7 @@ import {
     SparklesIcon,
 } from "@hugeicons/core-free-icons";
 import type { Programme, ProgrammeStatus, ProgrammeType } from "@/lib/database.types";
-
-export const PROGRAMME_TYPES: ProgrammeType[] = [
-    "musical_chair",
-    "singing",
-    "dance",
-    "drawing",
-    "quiz",
-    "other",
-];
-export const PROGRAMME_STATUSES: ProgrammeStatus[] = [
-    "upcoming",
-    "ongoing",
-    "completed",
-    "cancelled",
-];
+import { DEFAULT_TEAM_MAX, DEFAULT_TEAM_MIN } from "@/constants";
 
 export const TYPE_ICON = {
     musical_chair: Chair01Icon,
@@ -36,7 +22,9 @@ export type ResultStatus = "pending" | "completed" | "cancelled";
 
 /** Results page groups upcoming and ongoing programmes as "pending". */
 export function resultStatus(status: ProgrammeStatus): ResultStatus {
-    if (status === "completed" || status === "cancelled") return status;
+    if (status === "completed" || status === "cancelled") {
+        return status;
+    }
     return "pending";
 }
 
@@ -45,15 +33,13 @@ export function isLineupType(type: ProgrammeType): boolean {
     return type === "singing" || type === "dance";
 }
 
-/** Sign-up size limits for team programmes (pairs are always exactly two). */
-export const DEFAULT_TEAM_MIN = 2;
-export const DEFAULT_TEAM_MAX = 4;
-
 export function teamLimits(p: Pick<Programme, "team_format" | "team_min_size" | "team_max_size">): {
     min: number;
     max: number;
 } {
-    if (p.team_format === "pair") return { min: 2, max: 2 };
+    if (p.team_format === "pair") {
+        return { min: 2, max: 2 };
+    }
     const min = p.team_min_size ?? DEFAULT_TEAM_MIN;
     const max = Math.max(min, p.team_max_size ?? DEFAULT_TEAM_MAX);
     return { min, max };

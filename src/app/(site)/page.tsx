@@ -18,8 +18,8 @@ import { Countdown } from "@/components/home/countdown";
 import { ProgrammeCard } from "@/components/programmes/programme-card";
 import { Timeline } from "@/components/programmes/timeline";
 import { pick } from "@/lib/localize";
-import { SITE_URL } from "@/lib/site";
 import { countRegistrationsByProgramme, getEventSettings, listProgrammes } from "@/lib/queries";
+import { SITE_URL } from "@/constants";
 
 export default async function HomePage() {
     const [t, locale, format, event, programmes, counts] = await Promise.all([

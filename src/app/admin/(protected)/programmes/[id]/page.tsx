@@ -19,7 +19,9 @@ export const metadata = { title: "Edit programme" };
 export default async function EditProgrammePage(props: PageProps<"/admin/programmes/[id]">) {
     const { id } = await props.params;
     const programme = await getProgrammeById(id);
-    if (!programme) notFound();
+    if (!programme) {
+        notFound();
+    }
 
     const tools = [
         { href: "registrations", label: "Registrations", icon: UserGroupIcon, show: true },
