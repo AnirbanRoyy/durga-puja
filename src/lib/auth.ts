@@ -5,6 +5,9 @@ import { serverEnv } from "@/lib/env";
 import { signAdminToken, verifyAdminToken } from "@/lib/session-token";
 import { ADMIN_COOKIE, ADMIN_SESSION_MAX_AGE } from "@/constants";
 
+// Authentication only (who is signed in). What they may do lives in `@/lib/permissions`.
+
+/** Checks the Super Admin password from the environment. */
 export function isCorrectPassword(input: string): boolean {
     // Hash both sides so the comparison is constant-time regardless of length.
     const a = createHash("sha256").update(input).digest();
@@ -12,9 +15,10 @@ export function isCorrectPassword(input: string): boolean {
     return timingSafeEqual(a, b);
 }
 
-export async function startAdminSession(): Promise<void> {
+/** Signs in "superadmin" or a user id. */
+export async function startAdminSession(subject: string): Promise<void> {
     const store = await cookies();
-    store.set(ADMIN_COOKIE, await signAdminToken(), {
+    store.set(ADMIN_COOKIE, await signAdminToken(subject), {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -27,13 +31,7 @@ export async function endAdminSession(): Promise<void> {
     (await cookies()).delete(ADMIN_COOKIE);
 }
 
-export async function isAdmin(): Promise<boolean> {
+/** The signed-in subject from the session cookie ("superadmin" or a user id), or null. */
+export async function readAdminSubject(): Promise<string | null> {
     return verifyAdminToken((await cookies()).get(ADMIN_COOKIE)?.value);
-}
-
-/** Call at the top of every admin server action and admin-only route handler. */
-export async function requireAdmin(): Promise<void> {
-    if (!(await isAdmin())) {
-        throw new Error("Unauthorized");
-    }
 }

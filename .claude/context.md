@@ -2,7 +2,7 @@
 
 Short map of what exists, so you don't have to re-read the code. Keep it terse. Update it after every implementation (see CLAUDE.md).
 
-Last updated: 2026-10-12 · Specs done: 0001, 0002, 0003, 0004 (0005+ not started)
+Last updated: 2026-10-16 · Specs done: 0001–0005 (0006+ not started)
 
 ## Stack
 
@@ -11,7 +11,8 @@ Next.js 16 App Router (not the Next you know: read `node_modules/next/dist/docs/
 ## Rules that bite
 
 - Code style (CLAUDE.md): braces on every `if`, constants in `src/constants.ts`, readable over compact.
-- DB is **shared with production**. Migrations are additive only (new functions/overloads, never change or drop what deployed code uses). Apply via Supabase MCP, mirror in `supabase/migrations/NNNN_*.sql` (latest 0012). Apply the migration **before** merging the PR that needs it (merging 0012 unapplied broke the musical chair page).
+- DB is **shared with production**. Migrations are additive only (new functions/overloads, never change or drop what deployed code uses). Apply via Supabase MCP, mirror in `supabase/migrations/NNNN_*.sql` (latest 0013). Apply the migration **before** merging the PR that needs it (merging 0012 unapplied broke the musical chair page).
+- **Access control**: every admin page and server action starts with `await checkPermission(action, target)` (`src/lib/permissions.ts`; target = `{ area }`, `{ programmeId }` or `{ rowOf: table, id }`), called outside any try/catch. It redirects to login or `/admin/no-access`. Rules are pure in `src/lib/access-rules.ts`; hide buttons with `useAdminCan()`. Users & roles pages use `checkSuperAdmin()`.
 - Writes use server actions + service-role `db()`. Anon can only read public tables. Phones live in `registration_contacts` (private).
 - Programme list cache: `unstable_cache`, bump `CACHE_VERSION` in `src/constants.ts` when the Programme shape changes (now "v2").
 - Admin area is English-only (nested `NextIntlClientProvider locale="en"`). Admin feedback = sonner toasts via `useActionToast` / `useAdminRun`.
@@ -35,6 +36,7 @@ Home, about, timeline, programmes (+ `[slug]` with registration), results, archi
 
 Dashboard, programmes (form, registrations, brain-games console, musical-chair console), **Registrations** (all programmes, filter/search, edit/delete any, team-aware), songs, song requests, **Stream** console, feedback, settings, years (editions). Back button on every page below the dashboard (`AdminTitle`).
 
+- **Access control** (spec 0005): personal logins (username + scrypt password) in `users`; `roles` → `permission_sets` (create/read/update/delete) → `permission_set_programmes` / `permission_set_areas`. Least privilege: no set = no access, Audience sees nothing. Super Admin = username `superadmin` + `ADMIN_PASSWORD` (not a DB row). **Users & roles** page (Super Admin only), no-access page, and a nav filtered to what the user can read.
 - **Songs page**: pencil button edits a song inline (`EditSongForm`, action `editSong`): title, artist, and for YouTube also category and link. A video can be in each library once (`findPoolDuplicate` in `addYouTubeSong`/`editSong`, matched by parsed YouTube ID); visitor stream/musical chair requests already dedupe in the DB.
 - **Admin add registration**: "Add registration" button on a programme's Registrations page (`adminCreateRegistration`, same form; ignores closed/full/device lock, no edit cookie).
 - **Musical chair console** (`musical-chair-console.tsx`): song pool = `songs` rows with `pool = musical_chair`, YouTube or MP3 (`round-player.ts` plays both; broken videos are skipped). Category picker on top (rounds, "Who's out", winner and Reset are per category); adults with no gender get Male/Female buttons, players with no age link to Registrations. Finish publishes that category's results (remark = category); programme completes when every category with players has a winner. Add from the library in bulk (`StreamLibrary` with `addSongs`/`target` props), add or reject visitor requests, "Who's out" and winner are dropdowns of registered players still in, Reset uses an AlertDialog.
@@ -62,5 +64,6 @@ Claude maintains this list: add items when you notice them, remove them when don
 - Musical chair rounds saved before 0012 have no category and no longer show in the leaderboards.
 - Results page shows one #1 per musical chair category; consider grouping results by remark.
 - Add a unique index on `songs (pool, youtube_id)` once existing duplicates are cleaned up (today the check is app-level only).
+- Access control: let users change their own password. Changing a password doesn't sign out sessions already open (disabling the user does). Consider an audit log of admin changes.
 - Delete leftover test registrations ("tt", "Test Team") from Brain Games.
 - Portfolio summary (`~/Documents/personal/portfolio/resources/durga-puja-project-summary.md`) is out of date.

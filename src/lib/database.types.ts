@@ -269,6 +269,63 @@ export type RateLimit = {
     count: number;
 };
 
+export type AdminArea =
+    | "all_programmes"
+    | "registrations"
+    | "stream"
+    | "songs"
+    | "song_requests"
+    | "feedback"
+    | "years"
+    | "settings";
+
+export type Role = {
+    id: string;
+    name: string;
+    description: string | null;
+    built_in: boolean;
+    created_at: string;
+};
+
+export type PermissionSet = {
+    id: string;
+    name: string;
+    can_create: boolean;
+    can_read: boolean;
+    can_update: boolean;
+    can_delete: boolean;
+    created_at: string;
+};
+
+export type AdminUser = {
+    id: string;
+    name: string;
+    username: string;
+    phone: string | null;
+    email: string | null;
+    password_hash: string;
+    role_id: string;
+    active: boolean;
+    created_at: string;
+    last_login_at: string | null;
+};
+
+/** What `admin_session()` returns for an active user. */
+export type AdminSessionRow = {
+    id: string;
+    name: string;
+    username: string;
+    role_name: string;
+    grants: {
+        create: boolean;
+        read: boolean;
+        update: boolean;
+        delete: boolean;
+        programme_ids: string[];
+        areas: AdminArea[];
+    }[];
+};
+
 type Table<Row, Required extends keyof Row> = {
     Row: Row;
     Insert: Partial<Row> & Pick<Row, Required>;
@@ -321,6 +378,21 @@ export type Database = {
             quiz_rounds: Table<QuizRound, "programme_id" | "round_no" | "name_en">;
             quiz_questions: Table<QuizQuestion, "round_id" | "programme_id" | "question_en">;
             quiz_answers: Table<QuizAnswer, "question_id" | "answer_en">;
+            roles: Table<Role, "name">;
+            permission_sets: Table<PermissionSet, "name">;
+            role_permission_sets: Table<
+                { role_id: string; permission_set_id: string },
+                "role_id" | "permission_set_id"
+            >;
+            permission_set_programmes: Table<
+                { permission_set_id: string; programme_id: string },
+                "permission_set_id" | "programme_id"
+            >;
+            permission_set_areas: Table<
+                { permission_set_id: string; area: AdminArea },
+                "permission_set_id" | "area"
+            >;
+            users: Table<AdminUser, "name" | "username" | "password_hash" | "role_id">;
         };
         Views: Record<never, never>;
         Functions: {
@@ -398,6 +470,24 @@ export type Database = {
             approve_stream_quota_reset: { Args: { p_request_id: string }; Returns: undefined };
             reject_stream_quota_reset: { Args: { p_request_id: string }; Returns: undefined };
             stream_requests_used: { Args: { p_year: number; p_ip_hash: string }; Returns: number };
+            admin_session: { Args: { p_user_id: string }; Returns: AdminSessionRow | null };
+            save_permission_set: {
+                Args: {
+                    p_id: string | null;
+                    p_name: string;
+                    p_create: boolean;
+                    p_read: boolean;
+                    p_update: boolean;
+                    p_delete: boolean;
+                    p_programme_ids: string[];
+                    p_areas: AdminArea[];
+                };
+                Returns: string;
+            };
+            set_role_permission_sets: {
+                Args: { p_role_id: string; p_permission_set_ids: string[] };
+                Returns: undefined;
+            };
             upvote_stream_request: {
                 Args: { p_request_id: string; p_voter_hash: string };
                 Returns: "ok" | "already_voted" | "closed" | "not_found";

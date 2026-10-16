@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { checkPermission } from "@/lib/permissions";
 import { invalidateCatalog, invalidateSettings } from "@/lib/cache";
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
 import { istLocalToIso } from "@/lib/datetime";
@@ -59,7 +59,7 @@ async function findPoolDuplicate(
 const duplicateMessage = (title: string) => `Already in this library as “${title}”.`;
 
 export async function addYouTubeSong(_prev: ActionState, formData: FormData): Promise<ActionState> {
-    await requireAdmin();
+    await checkPermission("create", { area: "songs" });
     const raw = Object.fromEntries(formData.entries()) as Record<string, string>;
     const parsed = youtubeSongSchema.safeParse(raw);
     if (!parsed.success) {
@@ -96,7 +96,7 @@ export async function addYouTubeSong(_prev: ActionState, formData: FormData): Pr
 
 /** Changes a song's title, artist and (YouTube only) category and link. */
 export async function editSong(_prev: ActionState, formData: FormData): Promise<ActionState> {
-    await requireAdmin();
+    await checkPermission("update", { area: "songs" });
     const raw = Object.fromEntries(formData.entries()) as Record<string, string>;
     const supabase = db();
     const { data: song, error } = await supabase
@@ -157,7 +157,10 @@ export type UploadedAudio = {
 };
 
 export async function addMusicalChairSong(input: UploadedAudio) {
-    await requireAdmin();
+    await checkPermission("create", { area: "songs" });
+    if (input.requestId) {
+        await checkPermission("update", { area: "song_requests" });
+    }
     const title = input.title.trim().slice(0, 160);
     if (!title || !input.audioUrl.startsWith(CLOUDINARY_PREFIX)) {
         throw new Error("Invalid upload");
@@ -191,9 +194,10 @@ export async function addMusicalChairSong(input: UploadedAudio) {
 
 /** Puts YouTube songs from the music library into the musical chair pool (skips ones already there). */
 export async function addSongsToMusicalChairPool(
+    programmeId: string,
     songIds: string[],
 ): Promise<{ ok: true; added: number } | { ok: false; message: string }> {
-    await requireAdmin();
+    await checkPermission("create", { programmeId });
     if (!songIds.length) {
         return { ok: false, message: "Pick at least one song." };
     }
@@ -238,7 +242,7 @@ export async function addSongsToMusicalChairPool(
 
 /** Adds a visitor's requested YouTube song to the musical chair pool. */
 export async function addMusicalChairRequestToPool(requestId: string) {
-    await requireAdmin();
+    await checkPermission("create", { rowOf: "musical_chair_requests", id: requestId });
     const supabase = db();
     const { data: request, error } = await supabase
         .from("musical_chair_requests")
@@ -289,7 +293,7 @@ export async function addMusicalChairRequestToPool(requestId: string) {
 }
 
 export async function rejectMusicalChairRequest(requestId: string) {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "musical_chair_requests", id: requestId });
     const { error } = await db()
         .from("musical_chair_requests")
         .update({ status: "rejected" })
@@ -310,7 +314,7 @@ export async function updateSong(
         artist?: string | null;
     },
 ) {
-    await requireAdmin();
+    await checkPermission("update", { area: "songs" });
     const supabase = db();
     if (patch.featured) {
         // Only one featured track at a time.
@@ -324,7 +328,7 @@ export async function updateSong(
 }
 
 export async function deleteSong(id: string) {
-    await requireAdmin();
+    await checkPermission("delete", { area: "songs" });
     const supabase = db();
     const { data: song, error } = await supabase
         .from("songs")
@@ -341,8 +345,26 @@ export async function deleteSong(id: string) {
     refresh();
 }
 
+/**
+ * The musical chair console's "Remove" on a YouTube song in the game's pool. Allowed with delete on
+ * the programme (no Songs access needed); MP3s and music page songs are only removed on Songs.
+ */
+export async function removeFromMusicalChairPool(programmeId: string, songId: string) {
+    await checkPermission("delete", { programmeId });
+    const { error } = await db()
+        .from("songs")
+        .delete()
+        .eq("id", songId)
+        .eq("pool", "musical_chair")
+        .eq("source", "youtube");
+    if (error) {
+        throw error;
+    }
+    refresh();
+}
+
 export async function setSongRequestStatus(id: string, status: SongRequestStatus) {
-    await requireAdmin();
+    await checkPermission("update", { area: "song_requests" });
     const { error } = await db().from("song_requests").update({ status }).eq("id", id);
     if (error) {
         throw error;
@@ -351,7 +373,7 @@ export async function setSongRequestStatus(id: string, status: SongRequestStatus
 }
 
 export async function deleteSongRequest(id: string) {
-    await requireAdmin();
+    await checkPermission("delete", { area: "song_requests" });
     const { error } = await db().from("song_requests").delete().eq("id", id);
     if (error) {
         throw error;
@@ -372,7 +394,7 @@ export type UploadedImage = {
 };
 
 export async function addDrawing(programmeId: string, image: UploadedImage) {
-    await requireAdmin();
+    await checkPermission("create", { programmeId });
     if (!image.imageUrl.startsWith(CLOUDINARY_PREFIX)) {
         throw new Error("Invalid upload");
     }
@@ -400,7 +422,7 @@ export async function updateDrawing(
     id: string,
     patch: { child_name: string; age: number | null; title: string | null },
 ) {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "drawings", id });
     const name = patch.child_name.trim().slice(0, 80);
     if (!name) {
         throw new Error("Name is required");
@@ -420,7 +442,7 @@ export async function updateDrawing(
 }
 
 export async function deleteDrawing(id: string) {
-    await requireAdmin();
+    await checkPermission("delete", { rowOf: "drawings", id });
     const { data, error } = await db()
         .from("drawings")
         .delete()
@@ -438,7 +460,7 @@ export async function deleteDrawing(id: string) {
 
 /** Closes voting, writes the top 10 by votes to results and completes the programme. */
 export async function publishDrawingResults(programmeId: string) {
-    await requireAdmin();
+    await checkPermission("update", { programmeId });
     const supabase = db();
     await supabase.from("programmes").update({ voting_open: false }).eq("id", programmeId);
     const { data: drawings, error } = await supabase
@@ -487,7 +509,7 @@ export async function recordRound(
     category: MusicalChairCategory,
     round: { songId: string | null; songTitle: string; startOffset: number; playDuration: number },
 ): Promise<{ id: string; roundNo: number }> {
-    await requireAdmin();
+    await checkPermission("update", { programmeId });
     const cat = categorySchema.parse(category);
     const supabase = db();
     const { data: last } = await supabase
@@ -519,7 +541,7 @@ export async function recordRound(
 }
 
 export async function setRoundEliminated(roundId: string, name: string) {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "musical_chair_rounds", id: roundId });
     const { error } = await db()
         .from("musical_chair_rounds")
         .update({ eliminated_name: name.trim().slice(0, 80) || null })
@@ -531,7 +553,7 @@ export async function setRoundEliminated(roundId: string, name: string) {
 }
 
 export async function resetRounds(programmeId: string, category: MusicalChairCategory) {
-    await requireAdmin();
+    await checkPermission("delete", { programmeId });
     const { error } = await db()
         .from("musical_chair_rounds")
         .delete()
@@ -545,7 +567,7 @@ export async function resetRounds(programmeId: string, category: MusicalChairCat
 
 /** For adults who registered before gender was asked: puts them in the men's or women's game. */
 export async function setMusicalChairGender(registrationId: string, gender: Gender) {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "registrations", id: registrationId });
     const { error } = await db()
         .from("registration_contacts")
         .update({ gender: z.enum(["male", "female"]).parse(gender) })
@@ -566,7 +588,7 @@ export async function finishMusicalChair(
     category: MusicalChairCategory,
     winner: string,
 ) {
-    await requireAdmin();
+    await checkPermission("update", { programmeId });
     const cat = categorySchema.parse(category);
     const label = CATEGORY_LABEL[cat];
     const supabase = db();
@@ -621,7 +643,7 @@ export async function finishMusicalChair(
 // ---------------------------------------------------------------------------
 
 export async function setFeedbackStatus(id: string, status: FeedbackStatus) {
-    await requireAdmin();
+    await checkPermission("update", { area: "feedback" });
     const { error } = await db().from("feedback").update({ status }).eq("id", id);
     if (error) {
         throw error;
@@ -630,7 +652,7 @@ export async function setFeedbackStatus(id: string, status: FeedbackStatus) {
 }
 
 export async function deleteFeedback(id: string) {
-    await requireAdmin();
+    await checkPermission("delete", { area: "feedback" });
     const { error } = await db().from("feedback").delete().eq("id", id);
     if (error) {
         throw error;
@@ -656,7 +678,7 @@ export async function saveEventSettings(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    await requireAdmin();
+    await checkPermission("update", { area: "settings" });
     const get = (k: string) => text(formData, k).trim();
     const mahalaya = istLocalToIso(get("mahalaya"));
     const shashthi = istLocalToIso(get("shashthi"));
@@ -690,7 +712,7 @@ export async function saveEventSettings(
 
 /** Starts a new year: it becomes current, last year's sign-ups and voting close. */
 export async function startEdition(_prev: ActionState, formData: FormData): Promise<ActionState> {
-    await requireAdmin();
+    await checkPermission("create", { area: "years" });
     const get = (k: string) => text(formData, k).trim();
     const year = Number(get("year"));
     const mahalaya = istLocalToIso(get("mahalaya"));
@@ -729,7 +751,7 @@ export async function startEdition(_prev: ActionState, formData: FormData): Prom
 
 /** Switch which year the public site treats as "this year". */
 export async function makeEditionCurrent(year: number) {
-    await requireAdmin();
+    await checkPermission("update", { area: "years" });
     const { error } = await db().rpc("set_current_edition", { p_year: year });
     if (error) {
         throw error;
@@ -742,7 +764,7 @@ export async function saveDonationSettings(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    await requireAdmin();
+    await checkPermission("update", { area: "settings" });
     const get = (k: string) => text(formData, k).trim() || null;
     const upi = get("upi_id");
     if (upi && !/^[\w.-]{2,256}@[a-zA-Z]\w{2,64}$/.test(upi)) {
@@ -767,7 +789,7 @@ export async function saveAmbientSettings(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    await requireAdmin();
+    await checkPermission("update", { area: "settings" });
     const url = text(formData, "audio_url").trim() || null;
     if (url && !url.startsWith(CLOUDINARY_PREFIX)) {
         return { ok: false, code: "Audio must be uploaded through the button." };
@@ -781,7 +803,7 @@ export async function saveWhatsappSettings(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    await requireAdmin();
+    await checkPermission("update", { area: "settings" });
     const rawInvite = text(formData, "invite_url").trim();
     const invite = rawInvite ? parseWhatsappInvite(rawInvite) : null;
     if (rawInvite && !invite) {

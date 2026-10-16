@@ -4,28 +4,35 @@ import { PlusSignIcon } from "@hugeicons/core-free-icons";
 import { AdminTitle } from "@/components/admin/admin-bits";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { can, canReadProgramme } from "@/lib/access-rules";
 import { formatIst } from "@/lib/datetime";
+import { checkCanReadSomeProgramme } from "@/lib/permissions";
 import { countRegistrationsByProgramme, listProgrammes } from "@/lib/queries";
 
 export const metadata = { title: "Programmes" };
 
 export default async function AdminProgrammesPage() {
-    const [programmes, counts] = await Promise.all([
+    const { session, readable } = await checkCanReadSomeProgramme();
+    const [allProgrammes, counts] = await Promise.all([
         listProgrammes(),
         countRegistrationsByProgramme(),
     ]);
+    const programmes = allProgrammes.filter((p) => canReadProgramme(readable, p.id));
+    const canCreate = can(session, "create", { area: "all_programmes" });
     return (
         <>
             <AdminTitle
                 title="Programmes"
                 description="Create, schedule and run every event."
                 actions={
-                    <Button asChild>
-                        <Link href="/admin/programmes/new">
-                            <HugeiconsIcon icon={PlusSignIcon} data-icon="inline-start" />
-                            New programme
-                        </Link>
-                    </Button>
+                    canCreate && (
+                        <Button asChild>
+                            <Link href="/admin/programmes/new">
+                                <HugeiconsIcon icon={PlusSignIcon} data-icon="inline-start" />
+                                New programme
+                            </Link>
+                        </Button>
+                    )
                 }
             />
             <div className="overflow-hidden rounded-2xl border bg-card">

@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { AdminPermissions } from "@/components/admin/admin-permissions";
+import { permissionFlags } from "@/lib/access-rules";
+import { checkPermission } from "@/lib/permissions";
 import { AdminCard, AdminTitle } from "@/components/admin/admin-bits";
 import { MakeCurrentButton, StartEditionForm } from "@/components/admin/edition-forms";
 import { Badge } from "@/components/ui/badge";
@@ -8,11 +11,14 @@ import { getEventSettings, listEditionSummaries } from "@/lib/queries";
 export const metadata = { title: "Years" };
 
 export default async function YearsPage() {
+    const target = { area: "years" } as const;
+    const session = await checkPermission("read", target);
+    const can = permissionFlags(session, target);
     const [current, editions] = await Promise.all([getEventSettings(), listEditionSummaries()]);
     const nextYear = Math.max(current.year, ...editions.map((e) => e.year)) + 1;
 
     return (
-        <>
+        <AdminPermissions flags={can}>
             <AdminTitle
                 title="Years"
                 description={`The public site shows ${current.year}. Earlier years stay viewable in the archive.`}
@@ -44,7 +50,7 @@ export default async function YearsPage() {
                                     >
                                         View
                                     </Link>
-                                    {!edition.is_current && (
+                                    {!edition.is_current && can.update && (
                                         <MakeCurrentButton year={edition.year} />
                                     )}
                                 </span>
@@ -52,18 +58,20 @@ export default async function YearsPage() {
                         ))}
                     </ul>
                 </AdminCard>
-                <AdminCard title={`Start ${nextYear}`}>
-                    <StartEditionForm
-                        currentYear={current.year}
-                        defaults={{
-                            year: nextYear,
-                            name_en: current.name_en,
-                            name_bn: current.name_bn,
-                            venue: current.venue,
-                        }}
-                    />
-                </AdminCard>
+                {can.create && (
+                    <AdminCard title={`Start ${nextYear}`}>
+                        <StartEditionForm
+                            currentYear={current.year}
+                            defaults={{
+                                year: nextYear,
+                                name_en: current.name_en,
+                                name_bn: current.name_bn,
+                                venue: current.venue,
+                            }}
+                        />
+                    </AdminCard>
+                )}
             </div>
-        </>
+        </AdminPermissions>
     );
 }

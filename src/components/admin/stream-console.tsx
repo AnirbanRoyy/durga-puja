@@ -17,6 +17,7 @@ import {
     type StreamActionResult,
 } from "@/actions/admin/stream";
 import { AdminCard } from "@/components/admin/admin-bits";
+import { useAdminCan } from "@/components/admin/admin-permissions";
 import { StreamLibrary, type LibrarySong } from "@/components/admin/stream-library";
 import {
     AlertDialog,
@@ -79,6 +80,10 @@ export function StreamConsole({
     library: LibrarySong[];
 }>) {
     const router = useRouter();
+    const can = useAdminCan();
+    // Playing, skipping and approving change the stream: without update the console is view-only
+    // and doesn't play sound (so a viewer's open tab never advances the playlist).
+    const readOnly = !can.update;
     const listedIds = new Set(
         [...queue, ...(nowPlaying ? [nowPlaying] : [])].map((s) => s.youtube_id),
     );
@@ -129,7 +134,7 @@ export function StreamConsole({
     }, [router]);
 
     // Keep the player in step with the server's "now playing" song.
-    const videoId = isStreaming ? (nowPlaying?.youtube_id ?? null) : null;
+    const videoId = isStreaming && !readOnly ? (nowPlaying?.youtube_id ?? null) : null;
     useEffect(() => {
         advancing.current = false;
         let cancelled = false;
@@ -216,7 +221,7 @@ export function StreamConsole({
                             <Button
                                 size="lg"
                                 variant="destructive"
-                                disabled={busy}
+                                disabled={busy || readOnly}
                                 onClick={() => run(() => stopStream(), "Streaming stopped")}
                             >
                                 ■ Stop streaming
@@ -224,7 +229,7 @@ export function StreamConsole({
                         ) : (
                             <Button
                                 size="lg"
-                                disabled={busy}
+                                disabled={busy || readOnly}
                                 onClick={() => run(() => startStream(), "Streaming started")}
                             >
                                 ▶ Start streaming
@@ -235,7 +240,7 @@ export function StreamConsole({
                                 <Button
                                     size="lg"
                                     variant="outline"
-                                    disabled={busy || !nowPlaying}
+                                    disabled={busy || readOnly || !nowPlaying}
                                     onClick={advance}
                                 >
                                     Skip ⏭
@@ -319,7 +324,7 @@ export function StreamConsole({
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        disabled={busy}
+                                        disabled={busy || readOnly}
                                         onClick={() =>
                                             run(() => setStreamUpNext(song.id), "Set as up next")
                                         }
@@ -327,44 +332,46 @@ export function StreamConsole({
                                         Play next
                                     </Button>
                                 )}
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            disabled={busy}
-                                            className="text-destructive"
-                                        >
-                                            Remove
-                                            <span className="sr-only"> {song.title}</span>
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>
-                                                Remove “{song.title}” from the playlist?
-                                            </AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                It won’t be played. A song that already played stays
-                                                in “Played earlier”.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Keep it</AlertDialogCancel>
-                                            <AlertDialogAction
-                                                variant="destructive"
-                                                onClick={() =>
-                                                    run(
-                                                        () => removeStreamSong(song.id),
-                                                        "Removed from playlist",
-                                                    )
-                                                }
+                                {can.delete && (
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                disabled={busy || readOnly}
+                                                className="text-destructive"
                                             >
                                                 Remove
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                                <span className="sr-only"> {song.title}</span>
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>
+                                                    Remove “{song.title}” from the playlist?
+                                                </AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    It won’t be played. A song that already played
+                                                    stays in “Played earlier”.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Keep it</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    variant="destructive"
+                                                    onClick={() =>
+                                                        run(
+                                                            () => removeStreamSong(song.id),
+                                                            "Removed from playlist",
+                                                        )
+                                                    }
+                                                >
+                                                    Remove
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                )}
                             </Row>
                         ))}
                         {!queue.length && (
@@ -376,11 +383,13 @@ export function StreamConsole({
                 </AdminCard>
             </div>
 
-            <StreamLibrary
-                songs={library}
-                inPlaylist={listedIds}
-                playingId={nowPlaying?.youtube_id ?? null}
-            />
+            {can.create && (
+                <StreamLibrary
+                    songs={library}
+                    inPlaylist={listedIds}
+                    playingId={nowPlaying?.youtube_id ?? null}
+                />
+            )}
 
             {quotaRequests.length > 0 && (
                 <AdminCard title={`Visitors asking for more requests (${quotaRequests.length})`}>
@@ -400,7 +409,7 @@ export function StreamConsole({
                                 <div className="flex gap-1.5">
                                     <Button
                                         size="sm"
-                                        disabled={busy}
+                                        disabled={busy || readOnly}
                                         onClick={() =>
                                             run(() => approveQuotaReset(ask.id), "Reset approved")
                                         }
@@ -410,7 +419,7 @@ export function StreamConsole({
                                     <Button
                                         size="sm"
                                         variant="ghost"
-                                        disabled={busy}
+                                        disabled={busy || readOnly}
                                         onClick={() =>
                                             run(() => rejectQuotaReset(ask.id), "Rejected")
                                         }
@@ -431,7 +440,7 @@ export function StreamConsole({
                             <div className="flex gap-1.5">
                                 <Button
                                     size="sm"
-                                    disabled={busy}
+                                    disabled={busy || readOnly}
                                     onClick={() =>
                                         run(() => approveStreamRequest(song.id), "Approved")
                                     }
@@ -441,7 +450,7 @@ export function StreamConsole({
                                 <Button
                                     size="sm"
                                     variant="ghost"
-                                    disabled={busy}
+                                    disabled={busy || readOnly}
                                     onClick={() =>
                                         run(() => rejectStreamRequest(song.id), "Rejected")
                                     }

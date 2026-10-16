@@ -74,6 +74,43 @@ export const STREAM_REQUEST_LIMIT = 3;
 export const ADMIN_COOKIE = "dp_admin";
 export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
+// Access control
+/** Reserved username of the Super Admin, who signs in with the password from the environment. */
+export const SUPER_ADMIN_USERNAME = "superadmin";
+export const SUPER_ADMIN_ROLE_NAME = "Super Admin";
+/** Built-in role names in the `roles` table. */
+export const SUPER_ADMIN_ROLE = "super-admin";
+export const AUDIENCE_ROLE = "audience";
+export const PERMISSION_ACTIONS = ["create", "read", "update", "delete"] as const;
+/** Parts of the admin portal that aren't a single programme. Mirrors the check in migration 0013. */
+export const ADMIN_AREAS = [
+    "all_programmes",
+    "registrations",
+    "stream",
+    "songs",
+    "song_requests",
+    "feedback",
+    "years",
+    "settings",
+] as const;
+export const ADMIN_AREA_LABEL: Record<(typeof ADMIN_AREAS)[number], string> = {
+    all_programmes: "All programmes",
+    registrations: "Registrations (all programmes page)",
+    stream: "Pandal stream",
+    songs: "Songs",
+    song_requests: "Song requests",
+    feedback: "Feedback",
+    years: "Years",
+    settings: "Settings",
+};
+export const ADMIN_LOGIN_PATH = "/admin/login";
+export const NO_ACCESS_PATH = "/admin/no-access";
+/** Request header the proxy sets so server code knows which admin page was asked for. */
+export const PATHNAME_HEADER = "x-pathname";
+export const USERNAME_PATTERN = /^[a-z0-9._-]{3,32}$/;
+export const MIN_PASSWORD_LENGTH = 8;
+export const PERMISSION_DENIED_MESSAGE = "You don't have permission to do that.";
+
 // Site
 /** Canonical origin used for metadata, sitemap and structured data. Set NEXT_PUBLIC_SITE_URL in production. */
 export const SITE_URL = (
