@@ -1,6 +1,6 @@
 # 0005: Admin access control (users, roles, permission sets)
 
-- **Status:** draft
+- **Status:** approved
 - **Date:** 2026-10-16
 - **Branch:** feature/add-access-control
 
