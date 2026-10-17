@@ -4,6 +4,7 @@ import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Delete02Icon, Link01Icon } from "@hugeicons/core-free-icons";
 import { deleteSongRequest, setSongRequestStatus } from "@/actions/admin/content";
+import { useAdminCan } from "@/components/admin/admin-permissions";
 import { MusicalChairUploader } from "@/components/admin/songs-manager";
 import { useAdminRun } from "@/components/admin/use-admin-run";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils";
 const FILTERS = ["pending", "added", "rejected", "all"] as const;
 
 export function SongRequestsManager({ requests }: { requests: SongRequest[] }) {
+    const can = useAdminCan();
     const [filter, setFilter] = useState<(typeof FILTERS)[number]>("pending");
     const [openId, setOpenId] = useState<string | null>(null);
     const { pending, run } = useAdminRun();
@@ -79,7 +81,7 @@ export function SongRequestsManager({ requests }: { requests: SongRequest[] }) {
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    disabled={pending}
+                                    disabled={pending || !can.update}
                                     onClick={() =>
                                         run(
                                             () => setSongRequestStatus(r.id, "rejected"),
@@ -94,7 +96,7 @@ export function SongRequestsManager({ requests }: { requests: SongRequest[] }) {
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    disabled={pending}
+                                    disabled={pending || !can.update}
                                     onClick={() =>
                                         run(
                                             () => setSongRequestStatus(r.id, "pending"),
@@ -108,7 +110,7 @@ export function SongRequestsManager({ requests }: { requests: SongRequest[] }) {
                             <Button
                                 size="icon-sm"
                                 variant="ghost"
-                                disabled={pending}
+                                disabled={pending || !can.delete}
                                 onClick={() => {
                                     if (confirm("Delete this request?")) {
                                         run(() => deleteSongRequest(r.id), "Request deleted");
@@ -120,7 +122,9 @@ export function SongRequestsManager({ requests }: { requests: SongRequest[] }) {
                         </div>
                         {openId === r.id && (
                             <div className="mt-4 border-t pt-4">
-                                <MusicalChairUploader requestId={r.id} defaultTitle={r.title} />
+                                {can.update && (
+                                    <MusicalChairUploader requestId={r.id} defaultTitle={r.title} />
+                                )}
                             </div>
                         )}
                     </li>

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { AdminCard, AdminTitle, Stat } from "@/components/admin/admin-bits";
 import { Badge } from "@/components/ui/badge";
+import { can, canReadProgramme, readableProgrammeIds } from "@/lib/access-rules";
 import { formatIst } from "@/lib/datetime";
+import { checkSignedIn } from "@/lib/permissions";
 import {
     countRegistrationsByProgramme,
     listFeedback,
@@ -10,15 +12,23 @@ import {
 } from "@/lib/queries";
 
 export default async function AdminDashboard() {
-    const [programmes, counts, requests, feedback] = await Promise.all([
+    const session = await checkSignedIn();
+    const readable = readableProgrammeIds(session);
+    const canSeeRequests = can(session, "read", { area: "song_requests" });
+    const canSeeFeedback = can(session, "read", { area: "feedback" });
+
+    // Only load what this user may see.
+    const [allProgrammes, counts, requests, feedback] = await Promise.all([
         listProgrammes(),
         countRegistrationsByProgramme(),
-        listSongRequests(),
-        listFeedback(),
+        canSeeRequests ? listSongRequests() : Promise.resolve([]),
+        canSeeFeedback ? listFeedback() : Promise.resolve([]),
     ]);
-    const totalRegistrations = [...counts.values()].reduce((a, b) => a + b, 0);
+    const programmes = allProgrammes.filter((p) => canReadProgramme(readable, p.id));
+    const totalRegistrations = programmes.reduce((sum, p) => sum + (counts.get(p.id) ?? 0), 0);
     const pendingRequests = requests.filter((r) => r.status === "pending");
     const newFeedback = feedback.filter((f) => f.status === "new");
+    const showSideColumn = canSeeRequests || canSeeFeedback;
 
     return (
         <>
@@ -33,12 +43,17 @@ export default async function AdminDashboard() {
                     hint={`${programmes.filter((p) => p.status === "completed").length} completed`}
                 />
                 <Stat label="Registrations" value={totalRegistrations} />
-                <Stat label="Song requests waiting" value={pendingRequests.length} />
-                <Stat label="New feedback" value={newFeedback.length} />
+                {canSeeRequests && (
+                    <Stat label="Song requests waiting" value={pendingRequests.length} />
+                )}
+                {canSeeFeedback && <Stat label="New feedback" value={newFeedback.length} />}
             </div>
 
             <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <AdminCard title="Programmes">
+                    {programmes.length === 0 && (
+                        <p className="text-sm text-muted-foreground">No programmes for you.</p>
+                    )}
                     <ul className="divide-y">
                         {programmes.map((p) => (
                             <li key={p.id}>
@@ -59,54 +74,64 @@ export default async function AdminDashboard() {
                     </ul>
                 </AdminCard>
 
-                <div className="space-y-6">
-                    <AdminCard title="Song requests">
-                        {pendingRequests.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">Nothing waiting.</p>
-                        ) : (
-                            <ul className="space-y-2 text-sm">
-                                {pendingRequests.slice(0, 5).map((r) => (
-                                    <li key={r.id} className="flex justify-between gap-3">
-                                        <span className="truncate">{r.title}</span>
-                                        <span className="text-muted-foreground">
-                                            ×{r.request_count}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
+                {showSideColumn && (
+                    <div className="space-y-6">
+                        {canSeeRequests && (
+                            <AdminCard title="Song requests">
+                                {pendingRequests.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        Nothing waiting.
+                                    </p>
+                                ) : (
+                                    <ul className="space-y-2 text-sm">
+                                        {pendingRequests.slice(0, 5).map((r) => (
+                                            <li key={r.id} className="flex justify-between gap-3">
+                                                <span className="truncate">{r.title}</span>
+                                                <span className="text-muted-foreground">
+                                                    ×{r.request_count}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                <Link
+                                    href="/admin/song-requests"
+                                    className="mt-3 inline-block text-sm font-semibold text-primary"
+                                >
+                                    Review requests →
+                                </Link>
+                            </AdminCard>
                         )}
-                        <Link
-                            href="/admin/song-requests"
-                            className="mt-3 inline-block text-sm font-semibold text-primary"
-                        >
-                            Review requests →
-                        </Link>
-                    </AdminCard>
 
-                    <AdminCard title="Latest feedback">
-                        {newFeedback.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">No new feedback.</p>
-                        ) : (
-                            <ul className="space-y-3 text-sm">
-                                {newFeedback.slice(0, 3).map((f) => (
-                                    <li key={f.id}>
-                                        <Badge variant="outline">{f.kind}</Badge>
-                                        <p className="mt-1 line-clamp-2">{f.message}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {formatIst(f.created_at)}
-                                        </p>
-                                    </li>
-                                ))}
-                            </ul>
+                        {canSeeFeedback && (
+                            <AdminCard title="Latest feedback">
+                                {newFeedback.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        No new feedback.
+                                    </p>
+                                ) : (
+                                    <ul className="space-y-3 text-sm">
+                                        {newFeedback.slice(0, 3).map((f) => (
+                                            <li key={f.id}>
+                                                <Badge variant="outline">{f.kind}</Badge>
+                                                <p className="mt-1 line-clamp-2">{f.message}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {formatIst(f.created_at)}
+                                                </p>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                <Link
+                                    href="/admin/feedback"
+                                    className="mt-3 inline-block text-sm font-semibold text-primary"
+                                >
+                                    Open inbox →
+                                </Link>
+                            </AdminCard>
                         )}
-                        <Link
-                            href="/admin/feedback"
-                            className="mt-3 inline-block text-sm font-semibold text-primary"
-                        >
-                            Open inbox →
-                        </Link>
-                    </AdminCard>
-                </div>
+                    </div>
+                )}
             </div>
         </>
     );

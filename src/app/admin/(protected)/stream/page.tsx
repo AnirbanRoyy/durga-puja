@@ -1,3 +1,6 @@
+import { AdminPermissions } from "@/components/admin/admin-permissions";
+import { permissionFlags } from "@/lib/access-rules";
+import { checkPermission } from "@/lib/permissions";
 import { AdminTitle } from "@/components/admin/admin-bits";
 import { StreamConsole } from "@/components/admin/stream-console";
 import { getStreamBoard, listPendingQuotaRequests, listSongs } from "@/lib/queries";
@@ -5,6 +8,9 @@ import { getStreamBoard, listPendingQuotaRequests, listSongs } from "@/lib/queri
 export const metadata = { title: "Pandal stream" };
 
 export default async function StreamAdminPage() {
+    const target = { area: "stream" } as const;
+    const session = await checkPermission("read", target);
+    const can = permissionFlags(session, target);
     const [board, quotaRequests, songs] = await Promise.all([
         getStreamBoard(),
         listPendingQuotaRequests(),
@@ -16,7 +22,7 @@ export default async function StreamAdminPage() {
             : [],
     );
     return (
-        <>
+        <AdminPermissions flags={can}>
             <AdminTitle
                 title="Pandal stream"
                 description="Approve the songs visitors request, then stream them to the pandal speaker."
@@ -30,6 +36,6 @@ export default async function StreamAdminPage() {
                 quotaRequests={quotaRequests}
                 library={library}
             />
-        </>
+        </AdminPermissions>
     );
 }

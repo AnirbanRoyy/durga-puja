@@ -18,6 +18,7 @@ import {
     setPerformanceStatus,
     shuffleLineup,
 } from "@/actions/admin/programmes";
+import { useAdminCan } from "@/components/admin/admin-permissions";
 import {
     AddRegistrationButton,
     DeleteRegistrationButton,
@@ -52,6 +53,8 @@ export function RegistrationsManager({
     registrations: RegistrationWithPhone[];
 }) {
     const [pending, startTransition] = useTransition();
+    // Running the line-up (draw, lock, call, statuses) changes the programme: needs update.
+    const readOnly = !useAdminCan().update;
     const run = (fn: () => Promise<unknown>, success?: string) =>
         startTransition(async () => {
             try {
@@ -112,7 +115,7 @@ export function RegistrationsManager({
                 {lineup && (
                     <>
                         <Button
-                            disabled={pending || locked || registrations.length === 0}
+                            disabled={pending || readOnly || locked || registrations.length === 0}
                             onClick={() =>
                                 run(
                                     () => shuffleLineup(programmeId),
@@ -125,7 +128,7 @@ export function RegistrationsManager({
                         </Button>
                         <Button
                             variant="outline"
-                            disabled={pending || !drawn}
+                            disabled={pending || readOnly || !drawn}
                             onClick={() =>
                                 run(
                                     () => setOrderLocked(programmeId, !locked),
@@ -166,7 +169,7 @@ export function RegistrationsManager({
                         </div>
                         <Button
                             size="lg"
-                            disabled={pending || (!nextUp && !onStage)}
+                            disabled={pending || readOnly || (!nextUp && !onStage)}
                             onClick={() =>
                                 run(
                                     () => callNext(programmeId),
@@ -248,7 +251,7 @@ export function RegistrationsManager({
                                     <td className="px-4 py-3">
                                         <select
                                             value={r.performance_status}
-                                            disabled={pending}
+                                            disabled={pending || readOnly}
                                             onChange={(e) =>
                                                 run(
                                                     () =>
@@ -275,7 +278,7 @@ export function RegistrationsManager({
                                                 size="icon-sm"
                                                 variant="ghost"
                                                 title="Move to end of line"
-                                                disabled={pending}
+                                                disabled={pending || readOnly}
                                                 onClick={() =>
                                                     run(() => moveToEnd(r.id), "Moved to end")
                                                 }

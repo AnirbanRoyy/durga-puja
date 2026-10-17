@@ -4,7 +4,7 @@ import { randomInt } from "node:crypto";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { checkPermission } from "@/lib/permissions";
 import { invalidateCatalog } from "@/lib/cache";
 import type { PerformanceStatus, Programme } from "@/lib/database.types";
 import { istLocalToIso } from "@/lib/datetime";
@@ -91,7 +91,12 @@ function slugify(value: string): string {
 }
 
 export async function saveProgramme(_prev: ActionState, formData: FormData): Promise<ActionState> {
-    await requireAdmin();
+    const existingId = String(formData.get("id") ?? "");
+    if (existingId) {
+        await checkPermission("update", { programmeId: existingId });
+    } else {
+        await checkPermission("create", { area: "all_programmes" });
+    }
     const raw = Object.fromEntries(
         [...formData.entries()].filter(([, v]) => typeof v === "string"),
     ) as Record<string, string>;
@@ -158,7 +163,7 @@ export async function saveProgramme(_prev: ActionState, formData: FormData): Pro
 }
 
 export async function deleteProgramme(id: string) {
-    await requireAdmin();
+    await checkPermission("delete", { programmeId: id });
     const { error } = await db().from("programmes").delete().eq("id", id);
     if (error) {
         throw error;
@@ -175,7 +180,7 @@ type QuickPatch = Partial<
 >;
 
 export async function patchProgramme(id: string, patch: QuickPatch) {
-    await requireAdmin();
+    await checkPermission("update", { programmeId: id });
     const { error } = await db().from("programmes").update(patch).eq("id", id);
     if (error) {
         throw error;
@@ -201,7 +206,7 @@ function secureShuffle<T>(items: T[]): T[] {
 export async function shuffleLineup(
     programmeId: string,
 ): Promise<{ ok: boolean; message?: string }> {
-    await requireAdmin();
+    await checkPermission("update", { programmeId });
     const supabase = db();
     const { data: programme, error: pErr } = await supabase
         .from("programmes")
@@ -243,7 +248,7 @@ export async function shuffleLineup(
 }
 
 export async function setOrderLocked(programmeId: string, locked: boolean) {
-    await requireAdmin();
+    await checkPermission("update", { programmeId });
     const { error } = await db()
         .from("programmes")
         .update({ order_locked: locked })
@@ -256,7 +261,7 @@ export async function setOrderLocked(programmeId: string, locked: boolean) {
 }
 
 export async function setPerformanceStatus(registrationId: string, status: PerformanceStatus) {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "registrations", id: registrationId });
     const supabase = db();
     if (status === "on_stage") {
         const { data: reg, error } = await supabase
@@ -286,7 +291,7 @@ export async function setPerformanceStatus(registrationId: string, status: Perfo
 
 /** Marks whoever is on stage as done and calls the next waiting performer. */
 export async function callNext(programmeId: string) {
-    await requireAdmin();
+    await checkPermission("update", { programmeId });
     const supabase = db();
     await supabase
         .from("registrations")
@@ -315,7 +320,7 @@ export async function callNext(programmeId: string) {
 }
 
 export async function moveToEnd(registrationId: string) {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "registrations", id: registrationId });
     const supabase = db();
     const { data: reg, error } = await supabase
         .from("registrations")
@@ -340,7 +345,7 @@ export async function moveToEnd(registrationId: string) {
 }
 
 export async function deleteRegistration(registrationId: string) {
-    await requireAdmin();
+    await checkPermission("delete", { rowOf: "registrations", id: registrationId });
     const { data: contact } = await db()
         .from("registration_contacts")
         .select("claim_key")
@@ -372,7 +377,7 @@ export async function saveResults(
     entries: ResultInput[],
     markCompleted: boolean,
 ) {
-    await requireAdmin();
+    await checkPermission("update", { programmeId });
     const clean = entries
         .map((e) => ({
             programme_id: programmeId,

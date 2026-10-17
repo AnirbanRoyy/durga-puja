@@ -10,15 +10,16 @@ import { Award01Icon, Chair01Icon, PlayIcon, StopIcon } from "@hugeicons/core-fr
 import {
     addMusicalChairRequestToPool,
     addSongsToMusicalChairPool,
-    deleteSong,
     finishMusicalChair,
     recordRound,
     rejectMusicalChairRequest,
+    removeFromMusicalChairPool,
     resetRounds,
     setMusicalChairGender,
     setRoundEliminated,
 } from "@/actions/admin/content";
 import { AdminCard } from "@/components/admin/admin-bits";
+import { useAdminCan } from "@/components/admin/admin-permissions";
 import {
     createAudioVoice,
     createYouTubeVoice,
@@ -198,6 +199,9 @@ export function MusicalChairConsole({
     const [winner, setWinner] = useState("");
     const [loading, setLoading] = useState(false);
     const [pending, startTransition] = useTransition();
+    const can = useAdminCan();
+    // Running the game changes the programme: without update the console is view-only.
+    const readOnly = !can.update;
 
     const bagRef = useRef<PoolSong[]>([]);
     const nextRef = useRef<PoolSong | null>(null);
@@ -432,12 +436,15 @@ export function MusicalChairConsole({
             if (e.code !== "Space" || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(target.tagName)) {
                 return;
             }
+            if (readOnly) {
+                return;
+            }
             e.preventDefault();
             void startRound();
         }
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [startRound]);
+    }, [startRound, readOnly]);
 
     const playing = phase === "playing";
 
@@ -510,7 +517,7 @@ export function MusicalChairConsole({
                                                     key={g}
                                                     size="xs"
                                                     variant="outline"
-                                                    disabled={pending}
+                                                    disabled={pending || readOnly}
                                                     onClick={() =>
                                                         startTransition(async () => {
                                                             await setMusicalChairGender(
@@ -587,7 +594,7 @@ export function MusicalChairConsole({
                     <Button
                         size="lg"
                         onClick={() => void startRound()}
-                        disabled={pending || loading || songs.length === 0}
+                        disabled={pending || readOnly || loading || songs.length === 0}
                         className="h-14 flex-1 rounded-2xl text-lg"
                     >
                         <HugeiconsIcon
@@ -645,9 +652,9 @@ export function MusicalChairConsole({
                             value={eliminated}
                             onChange={setEliminated}
                             placeholder="Choose the player who lost the chair"
-                            disabled={!roundId}
+                            disabled={!roundId || readOnly}
                         />
-                        <Button type="submit" disabled={!roundId || pending}>
+                        <Button type="submit" disabled={!roundId || pending || readOnly}>
                             Save
                         </Button>
                     </form>
@@ -692,7 +699,7 @@ export function MusicalChairConsole({
                         <Button
                             type="submit"
                             variant="secondary"
-                            disabled={pending || !winnerValue.trim()}
+                            disabled={pending || readOnly || !winnerValue.trim()}
                         >
                             <HugeiconsIcon icon={Award01Icon} data-icon="inline-start" />
                             Publish
@@ -759,7 +766,7 @@ export function MusicalChairConsole({
                                     <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs">
                                         {s.kind === "youtube" ? "YouTube" : "MP3"}
                                     </span>
-                                    {s.kind === "youtube" && (
+                                    {s.kind === "youtube" && can.delete && (
                                         <Button
                                             size="xs"
                                             variant="ghost"
@@ -767,7 +774,10 @@ export function MusicalChairConsole({
                                             aria-label={`Remove ${s.title} from the pool`}
                                             onClick={() =>
                                                 startTransition(async () => {
-                                                    await deleteSong(s.id);
+                                                    await removeFromMusicalChairPool(
+                                                        programmeId,
+                                                        s.id,
+                                                    );
                                                     toast.success("Removed from the pool");
                                                 })
                                             }
@@ -781,13 +791,15 @@ export function MusicalChairConsole({
                     )}
                 </div>
 
-                <StreamLibrary
-                    songs={library}
-                    inPlaylist={poolYouTube}
-                    playingId={null}
-                    addSongs={addSongsToMusicalChairPool}
-                    target="pool"
-                />
+                {can.create && (
+                    <StreamLibrary
+                        songs={library}
+                        inPlaylist={poolYouTube}
+                        playingId={null}
+                        addSongs={(songIds) => addSongsToMusicalChairPool(programmeId, songIds)}
+                        target="pool"
+                    />
+                )}
 
                 <AdminCard title={`Visitor requests (${pendingRequests} waiting)`}>
                     {requests.length === 0 ? (
@@ -818,7 +830,7 @@ export function MusicalChairConsole({
                                             <div className="mt-1.5 flex flex-wrap gap-2">
                                                 <Button
                                                     size="xs"
-                                                    disabled={pending}
+                                                    disabled={pending || !can.create}
                                                     onClick={() =>
                                                         startTransition(async () => {
                                                             await addMusicalChairRequestToPool(
@@ -834,7 +846,7 @@ export function MusicalChairConsole({
                                                 <Button
                                                     size="xs"
                                                     variant="ghost"
-                                                    disabled={pending}
+                                                    disabled={pending || readOnly}
                                                     onClick={() =>
                                                         startTransition(async () => {
                                                             await rejectMusicalChairRequest(r.id);
@@ -865,7 +877,7 @@ export function MusicalChairConsole({
                                 <Button
                                     size="xs"
                                     variant="ghost"
-                                    disabled={pending || roundNo === 0}
+                                    disabled={pending || !can.delete || roundNo === 0}
                                 >
                                     Reset
                                 </Button>

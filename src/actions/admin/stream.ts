@@ -1,7 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { requireAdmin } from "@/lib/auth";
+import { checkPermission } from "@/lib/permissions";
 import { getCurrentYear } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
 
@@ -10,7 +10,7 @@ export type StreamActionResult = { ok: true } | { ok: false; message: string };
 async function run(
     call: (year: number) => PromiseLike<{ error: { message: string } | null }>,
 ): Promise<StreamActionResult> {
-    await requireAdmin();
+    await checkPermission("update", { area: "stream" });
     const { error } = await call(await getCurrentYear());
     if (error) {
         return {
@@ -57,7 +57,7 @@ export async function advanceStream() {
 export async function addLibrarySongsToStream(
     songIds: string[],
 ): Promise<StreamActionResult & { added?: number }> {
-    await requireAdmin();
+    await checkPermission("create", { area: "stream" });
     if (!songIds.length) {
         return { ok: false, message: "Pick at least one song." };
     }
@@ -89,7 +89,7 @@ export async function addLibrarySongsToStream(
 
 /** Takes a waiting song out of the playlist (the song playing now has to be skipped instead). */
 export async function removeStreamSong(id: string): Promise<StreamActionResult> {
-    await requireAdmin();
+    await checkPermission("delete", { area: "stream" });
     const { data, error } = await db().rpc("remove_stream_song", { p_request_id: id });
     if (error) {
         return { ok: false, message: error.message };

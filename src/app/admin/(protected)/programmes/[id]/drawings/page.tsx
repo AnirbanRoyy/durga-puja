@@ -1,4 +1,7 @@
 import { notFound } from "next/navigation";
+import { AdminPermissions } from "@/components/admin/admin-permissions";
+import { permissionFlags } from "@/lib/access-rules";
+import { checkPermission } from "@/lib/permissions";
 import { AdminTitle } from "@/components/admin/admin-bits";
 import { DrawingsManager } from "@/components/admin/drawings-manager";
 import { LiveRefresh } from "@/components/realtime/live-refresh";
@@ -10,6 +13,9 @@ export default async function DrawingsAdminPage(
     props: PageProps<"/admin/programmes/[id]/drawings">,
 ) {
     const { id } = await props.params;
+    const target = { programmeId: id };
+    const session = await checkPermission("read", target);
+    const can = permissionFlags(session, target);
     const programme = await getProgrammeById(id);
     if (!programme) {
         notFound();
@@ -17,7 +23,7 @@ export default async function DrawingsAdminPage(
     const [drawings, votes] = await Promise.all([listDrawings(id), countVotes(id)]);
 
     return (
-        <>
+        <AdminPermissions flags={can}>
             <LiveRefresh tables={["drawings"]} filter={`programme_id=eq.${id}`} />
             <AdminTitle
                 title="Drawings & voting"
@@ -28,6 +34,6 @@ export default async function DrawingsAdminPage(
                 drawings={drawings}
                 votingOpen={programme.voting_open}
             />
-        </>
+        </AdminPermissions>
     );
 }

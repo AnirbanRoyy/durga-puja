@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Delete02Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { saveResults } from "@/actions/admin/programmes";
+import { useAdminCan } from "@/components/admin/admin-permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -21,6 +22,7 @@ export function ResultsEditor({
     initial: Entry[];
     names: string[];
 }) {
+    const can = useAdminCan();
     const [entries, setEntries] = useState<Entry[]>(
         initial.length
             ? initial
@@ -113,11 +115,15 @@ export function ResultsEditor({
                 Add row
             </Button>
             <div className="flex flex-wrap gap-2 border-t pt-4">
-                <Button disabled={pending} onClick={() => save(false)}>
+                <Button disabled={pending || !can.update} onClick={() => save(false)}>
                     Save results
                 </Button>
                 {!completed && (
-                    <Button variant="secondary" disabled={pending} onClick={() => save(true)}>
+                    <Button
+                        variant="secondary"
+                        disabled={pending || !can.update}
+                        onClick={() => save(true)}
+                    >
                         Save & mark completed
                     </Button>
                 )}

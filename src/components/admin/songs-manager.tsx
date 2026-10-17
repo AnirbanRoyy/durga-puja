@@ -11,6 +11,7 @@ import {
     editSong,
     updateSong,
 } from "@/actions/admin/content";
+import { useAdminCan } from "@/components/admin/admin-permissions";
 import { NativeSelect } from "@/components/admin/native-select";
 import { UploadButton } from "@/components/admin/upload-button";
 import { useActionToast } from "@/components/admin/use-action-toast";
@@ -194,6 +195,7 @@ export function SongList({
 }>) {
     const [pending, startTransition] = useTransition();
     const [editingId, setEditingId] = useState<string | null>(null);
+    const can = useAdminCan();
     const stopEditing = useCallback(() => setEditingId(null), []);
     const run = (fn: () => Promise<unknown>, success: string) =>
         startTransition(async () => {
@@ -224,18 +226,20 @@ export function SongList({
                                 {[s.artist, songDetail(s)].filter(Boolean).join(" · ")}
                             </p>
                         </div>
-                        <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            title="Edit song"
-                            aria-label={`Edit “${s.title}”`}
-                            aria-expanded={editingId === s.id}
-                            disabled={pending}
-                            onClick={() => setEditingId(editingId === s.id ? null : s.id)}
-                        >
-                            <HugeiconsIcon icon={PencilEdit02Icon} />
-                        </Button>
-                        {allowFeature && (
+                        {can.update && (
+                            <Button
+                                size="icon-sm"
+                                variant="ghost"
+                                title="Edit song"
+                                aria-label={`Edit “${s.title}”`}
+                                aria-expanded={editingId === s.id}
+                                disabled={pending}
+                                onClick={() => setEditingId(editingId === s.id ? null : s.id)}
+                            >
+                                <HugeiconsIcon icon={PencilEdit02Icon} />
+                            </Button>
+                        )}
+                        {allowFeature && can.update && (
                             <Button
                                 size="icon-sm"
                                 variant="ghost"
@@ -257,7 +261,7 @@ export function SongList({
                         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Switch
                                 checked={s.active}
-                                disabled={pending}
+                                disabled={pending || !can.update}
                                 onCheckedChange={(active) =>
                                     run(
                                         () => updateSong(s.id, { active }),
@@ -269,18 +273,20 @@ export function SongList({
                             />
                             Active
                         </label>
-                        <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            disabled={pending}
-                            onClick={() => {
-                                if (confirm(`Delete “${s.title}”?`)) {
-                                    run(() => deleteSong(s.id), "Song deleted");
-                                }
-                            }}
-                        >
-                            <HugeiconsIcon icon={Delete02Icon} className="text-destructive" />
-                        </Button>
+                        {can.delete && (
+                            <Button
+                                size="icon-sm"
+                                variant="ghost"
+                                disabled={pending}
+                                onClick={() => {
+                                    if (confirm(`Delete “${s.title}”?`)) {
+                                        run(() => deleteSong(s.id), "Song deleted");
+                                    }
+                                }}
+                            >
+                                <HugeiconsIcon icon={Delete02Icon} className="text-destructive" />
+                            </Button>
+                        )}
                     </div>
                     {editingId === s.id && <EditSongForm song={s} onDone={stopEditing} />}
                 </li>

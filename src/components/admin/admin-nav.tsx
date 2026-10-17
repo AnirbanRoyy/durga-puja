@@ -13,6 +13,7 @@ import {
     PlayListIcon,
     UserGroupIcon,
     Settings01Icon,
+    Shield01Icon,
     VolumeHighIcon,
     StarIcon,
 } from "@hugeicons/core-free-icons";
@@ -31,21 +32,35 @@ const LINKS = [
     { href: "/admin/feedback", label: "Feedback", icon: Message01Icon },
     { href: "/admin/years", label: "Years", icon: Calendar03Icon },
     { href: "/admin/settings", label: "Settings", icon: Settings01Icon },
+    { href: "/admin/users", label: "Users & roles", icon: Shield01Icon },
 ];
 
-export function AdminNav() {
+export function AdminNav({
+    visiblePages,
+    userName,
+    roleName,
+}: Readonly<{
+    /** Pages the signed-in user may open (computed on the server). */
+    visiblePages: string[];
+    userName: string;
+    roleName: string;
+}>) {
     const pathname = usePathname();
+    const links = LINKS.filter((link) => visiblePages.includes(link.href));
     return (
         <aside className="border-b bg-card lg:sticky lg:top-0 lg:h-screen lg:w-60 lg:shrink-0 lg:border-r lg:border-b-0">
             <div className="flex items-center gap-2.5 px-4 py-4">
                 <BrandMark />
                 <span className="font-heading font-semibold">Puja Admin</span>
+                <span className="min-w-0 truncate text-xs text-muted-foreground lg:hidden">
+                    {userName} · {roleName}
+                </span>
                 <div className="ml-auto lg:hidden">
                     <ThemeToggle />
                 </div>
             </div>
             <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:overflow-visible">
-                {LINKS.map((link) => {
+                {links.map((link) => {
                     const active =
                         link.href === "/admin"
                             ? pathname === "/admin"
@@ -72,7 +87,12 @@ export function AdminNav() {
                     <HugeiconsIcon icon={ArrowUpRight01Icon} className="size-4.5" />
                     View site
                 </Link>
-                <form action={logout} className="lg:mt-auto">
+                <p className="hidden min-w-0 px-3 pt-2 text-xs text-muted-foreground lg:mt-auto lg:block">
+                    Signed in as <span className="font-medium text-foreground">{userName}</span>
+                    <br />
+                    {roleName}
+                </p>
+                <form action={logout}>
                     <button
                         type="submit"
                         className="flex w-full shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted"
