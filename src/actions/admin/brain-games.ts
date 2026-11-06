@@ -1,7 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { requireAdmin } from "@/lib/auth";
+import { checkPermission } from "@/lib/permissions";
 import { getQuizAdmin, quizLeaderboard } from "@/lib/queries";
 import { db } from "@/lib/supabase/server";
 import { fillBengali } from "@/lib/translate";
@@ -43,7 +43,11 @@ export type RoundInput = {
 };
 
 export async function saveRound(input: RoundInput): Promise<QuizActionResult> {
-    await requireAdmin();
+    if (input.id) {
+        await checkPermission("update", { rowOf: "quiz_rounds", id: input.id });
+    } else {
+        await checkPermission("create", { programmeId: input.programmeId });
+    }
     const name_en = clean(input.name_en, 80);
     if (!name_en) {
         return fail("Give the round a name.");
@@ -83,7 +87,7 @@ export async function saveRound(input: RoundInput): Promise<QuizActionResult> {
 }
 
 export async function deleteRound(id: string): Promise<QuizActionResult> {
-    await requireAdmin();
+    await checkPermission("delete", { rowOf: "quiz_rounds", id });
     const { error } = await db().from("quiz_rounds").delete().eq("id", id);
     if (error) {
         return fail(describe(error));
@@ -104,7 +108,12 @@ export type QuestionInput = {
 };
 
 export async function saveQuestion(input: QuestionInput): Promise<QuizActionResult> {
-    await requireAdmin();
+    if (input.id) {
+        await checkPermission("update", { rowOf: "quiz_questions", id: input.id });
+    } else {
+        await checkPermission("create", { programmeId: input.programmeId });
+        await checkPermission("create", { rowOf: "quiz_rounds", id: input.roundId });
+    }
     const question_en = clean(input.question_en, 400);
     const answer_en = clean(input.answer_en, 200);
     if (!question_en || !answer_en) {
@@ -161,7 +170,7 @@ export async function saveQuestion(input: QuestionInput): Promise<QuizActionResu
 }
 
 export async function deleteQuestion(id: string): Promise<QuizActionResult> {
-    await requireAdmin();
+    await checkPermission("delete", { rowOf: "quiz_questions", id });
     const { error } = await db().from("quiz_questions").delete().eq("id", id);
     if (error) {
         return fail(describe(error));
@@ -179,7 +188,7 @@ export async function askQuestion(
     questionId: string,
     teamId: string | null,
 ): Promise<QuizActionResult> {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "quiz_questions", id: questionId });
     const { error } = await db().rpc("ask_quiz_question", {
         p_question_id: questionId,
         p_team_id: teamId,
@@ -204,7 +213,7 @@ const PICK_MESSAGES = {
  * and puts it on everyone's screen.
  */
 export async function askRandomTeamQuestion(roundId: string): Promise<QuizActionResult> {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "quiz_rounds", id: roundId });
     const { data, error } = await db().rpc("ask_random_team_question", { p_round_id: roundId });
     if (error) {
         return fail(describe(error));
@@ -218,7 +227,7 @@ export async function askRandomTeamQuestion(roundId: string): Promise<QuizAction
 
 /** Takes the question off screen without scoring it; its team can be picked again. */
 export async function hideQuestion(questionId: string): Promise<QuizActionResult> {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "quiz_questions", id: questionId });
     const { error } = await db().rpc("hide_quiz_question", { p_question_id: questionId });
     if (error) {
         return fail(describe(error));
@@ -236,7 +245,7 @@ export async function markQuestion(
     outcome: "correct" | "wrong" | "reveal",
     pointsOverride?: number | null,
 ): Promise<QuizActionResult> {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "quiz_questions", id: questionId });
     const supabase = db();
     let awarded: number | null = null;
     if (outcome !== "reveal") {
@@ -268,7 +277,7 @@ export async function markQuestion(
 }
 
 export async function undoQuestion(questionId: string): Promise<QuizActionResult> {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "quiz_questions", id: questionId });
     const { error } = await db().rpc("undo_quiz_question", { p_question_id: questionId });
     if (error) {
         return fail(describe(error));
@@ -281,7 +290,7 @@ export async function setRoundStatus(
     roundId: string,
     status: "upcoming" | "live" | "done",
 ): Promise<QuizActionResult> {
-    await requireAdmin();
+    await checkPermission("update", { rowOf: "quiz_rounds", id: roundId });
     const { error } = await db().from("quiz_rounds").update({ status }).eq("id", roundId);
     if (error) {
         return fail(describe(error));
@@ -292,7 +301,7 @@ export async function setRoundStatus(
 
 /** Writes the top three teams into the programme's results (shown on Results and in the archive). */
 export async function saveLeaderboardToResults(programmeId: string): Promise<QuizActionResult> {
-    await requireAdmin();
+    await checkPermission("update", { programmeId });
     const { questions, teams } = await getQuizAdmin(programmeId);
     const top = quizLeaderboard(teams, questions)
         .filter((t) => t.answered > 0)

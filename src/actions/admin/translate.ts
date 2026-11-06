@@ -1,6 +1,6 @@
 "use server";
 
-import { requireAdmin } from "@/lib/auth";
+import { checkSignedIn } from "@/lib/permissions";
 import { rateLimit } from "@/lib/rate-limit";
 import { toBengali, translationEnabled } from "@/lib/translate";
 
@@ -8,7 +8,7 @@ export type TranslateResult = { ok: true; text: string } | { ok: false; reason: 
 
 /** Admin-only helper behind the "Translate" button next to Bengali fields. */
 export async function translateForAdmin(english: string): Promise<TranslateResult> {
-    await requireAdmin();
+    await checkSignedIn();
     const text = english.trim().slice(0, 4000);
     if (!text) {
         return { ok: false, reason: "Write the English text first." };

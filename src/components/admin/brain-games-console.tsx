@@ -17,6 +17,7 @@ import {
     undoQuestion,
     type QuizActionResult,
 } from "@/actions/admin/brain-games";
+import { useAdminCan } from "@/components/admin/admin-permissions";
 import { FieldTranslateButton } from "@/components/admin/translate-button";
 import { AdminCard } from "@/components/admin/admin-bits";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,7 @@ export function BrainGamesConsole({
     teams: Team[];
     leaderboard: QuizTeamScore[];
 }) {
+    const can = useAdminCan();
     return (
         <Tabs defaultValue={questions.length ? "live" : "setup"} className="gap-6">
             <TabsList>
@@ -72,13 +74,16 @@ export function BrainGamesConsole({
                 <TabsTrigger value="setup">Rounds &amp; questions</TabsTrigger>
             </TabsList>
             <TabsContent value="live">
-                <LivePanel
-                    programmeId={programmeId}
-                    rounds={rounds}
-                    questions={questions}
-                    teams={teams}
-                    leaderboard={leaderboard}
-                />
+                {/* Asking and marking questions changes the programme: needs update. */}
+                <fieldset disabled={!can.update} className="min-w-0">
+                    <LivePanel
+                        programmeId={programmeId}
+                        rounds={rounds}
+                        questions={questions}
+                        teams={teams}
+                        leaderboard={leaderboard}
+                    />
+                </fieldset>
             </TabsContent>
             <TabsContent value="setup">
                 <SetupPanel programmeId={programmeId} rounds={rounds} questions={questions} />
@@ -469,6 +474,7 @@ function SetupPanel({
     rounds: QuizRound[];
     questions: QuizAdminQuestion[];
 }) {
+    const can = useAdminCan();
     return (
         <div className="grid max-w-3xl grid-cols-1 gap-6">
             {rounds.map((round) => (
@@ -479,9 +485,11 @@ function SetupPanel({
                     questions={questions.filter((q) => q.round_id === round.id)}
                 />
             ))}
-            <AdminCard title="Add a round">
-                <RoundForm programmeId={programmeId} />
-            </AdminCard>
+            {can.create && (
+                <AdminCard title="Add a round">
+                    <RoundForm programmeId={programmeId} />
+                </AdminCard>
+            )}
         </div>
     );
 }
@@ -579,6 +587,7 @@ function RoundCard({
 }) {
     const { run, pending } = useRun();
     const [editing, setEditing] = useState(false);
+    const can = useAdminCan();
     return (
         <AdminCard>
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -592,13 +601,18 @@ function RoundCard({
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setEditing((v) => !v)}>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!can.update}
+                        onClick={() => setEditing((v) => !v)}
+                    >
                         {editing ? "Close" : "Edit round"}
                     </Button>
                     <Button
                         size="sm"
                         variant="destructive"
-                        disabled={pending}
+                        disabled={pending || !can.delete}
                         onClick={() => {
                             if (window.confirm(`Delete “${round.name_en}” and its questions?`)) {
                                 run(() => deleteRound(round.id), "Round deleted");
@@ -627,7 +641,7 @@ function RoundCard({
                     <li className="py-2 text-sm text-muted-foreground">No questions yet.</li>
                 )}
             </ul>
-            <QuestionForm programmeId={programmeId} roundId={round.id} />
+            {can.create && <QuestionForm programmeId={programmeId} roundId={round.id} />}
         </AdminCard>
     );
 }
@@ -643,6 +657,7 @@ function QuestionRow({
 }) {
     const { run, pending } = useRun();
     const [editing, setEditing] = useState(false);
+    const can = useAdminCan();
     return (
         <li className="grid grid-cols-1 gap-2 py-3">
             <div className="flex flex-wrap items-start gap-2">
@@ -661,7 +676,7 @@ function QuestionRow({
                 <Button
                     size="sm"
                     variant="ghost"
-                    disabled={question.state !== "hidden"}
+                    disabled={question.state !== "hidden" || !can.update}
                     onClick={() => setEditing((v) => !v)}
                 >
                     {editing ? "Close" : "Edit"}
@@ -669,7 +684,7 @@ function QuestionRow({
                 <Button
                     size="sm"
                     variant="ghost"
-                    disabled={pending}
+                    disabled={pending || !can.delete}
                     onClick={() => {
                         if (window.confirm("Delete this question?")) {
                             run(() => deleteQuestion(question.id), "Question deleted");

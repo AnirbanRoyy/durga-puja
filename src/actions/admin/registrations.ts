@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { checkPermission } from "@/lib/permissions";
 import { parseRegistration } from "@/lib/registration-input";
 import { db } from "@/lib/supabase/server";
 import type { ActionState } from "@/lib/validators";
@@ -16,7 +16,10 @@ export async function adminUpdateRegistration(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    await requireAdmin();
+    await checkPermission("update", {
+        rowOf: "registrations",
+        id: String(formData.get("registrationId") ?? ""),
+    });
     const values: Record<string, string> = {};
     for (const [key, value] of formData.entries()) {
         if (typeof value === "string") {
@@ -87,7 +90,7 @@ export async function adminCreateRegistration(
     _prev: ActionState,
     formData: FormData,
 ): Promise<ActionState> {
-    await requireAdmin();
+    await checkPermission("create", { programmeId: String(formData.get("programmeId") ?? "") });
     const values: Record<string, string> = {};
     for (const [key, value] of formData.entries()) {
         if (typeof value === "string") {

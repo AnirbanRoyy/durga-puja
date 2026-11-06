@@ -8,6 +8,9 @@ import {
     PaintBoardIcon,
     UserGroupIcon,
 } from "@hugeicons/core-free-icons";
+import { AdminPermissions } from "@/components/admin/admin-permissions";
+import { permissionFlags } from "@/lib/access-rules";
+import { checkPermission } from "@/lib/permissions";
 import { AdminCard, AdminTitle } from "@/components/admin/admin-bits";
 import { DeleteProgramme, QuickToggles } from "@/components/admin/programme-actions";
 import { ProgrammeForm } from "@/components/admin/programme-form";
@@ -18,6 +21,9 @@ export const metadata = { title: "Edit programme" };
 
 export default async function EditProgrammePage(props: PageProps<"/admin/programmes/[id]">) {
     const { id } = await props.params;
+    const target = { programmeId: id };
+    const session = await checkPermission("read", target);
+    const can = permissionFlags(session, target);
     const programme = await getProgrammeById(id);
     if (!programme) {
         notFound();
@@ -47,7 +53,7 @@ export default async function EditProgrammePage(props: PageProps<"/admin/program
     ].filter((t) => t.show);
 
     return (
-        <>
+        <AdminPermissions flags={can}>
             <AdminTitle
                 title={programme.title_en}
                 description={`/${programme.slug}`}
@@ -71,13 +77,18 @@ export default async function EditProgrammePage(props: PageProps<"/admin/program
                     </Link>
                 ))}
             </div>
-            <AdminCard className="mb-8">
-                <QuickToggles programme={programme} />
-            </AdminCard>
-            <ProgrammeForm programme={programme} />
-            <div className="mt-12 border-t pt-6">
-                <DeleteProgramme id={programme.id} title={programme.title_en} />
-            </div>
-        </>
+            {/* Without update the settings stay visible but can't be changed. */}
+            <fieldset disabled={!can.update} className="min-w-0">
+                <AdminCard className="mb-8">
+                    <QuickToggles programme={programme} />
+                </AdminCard>
+                <ProgrammeForm programme={programme} />
+            </fieldset>
+            {can.delete && (
+                <div className="mt-12 border-t pt-6">
+                    <DeleteProgramme id={programme.id} title={programme.title_en} />
+                </div>
+            )}
+        </AdminPermissions>
     );
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { deleteFeedback, setFeedbackStatus } from "@/actions/admin/content";
+import { useAdminCan } from "@/components/admin/admin-permissions";
 import { useAdminRun } from "@/components/admin/use-admin-run";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ const NEXT_LABEL: Record<FeedbackStatus, string> = {
 };
 
 export function FeedbackInbox({ items }: { items: Feedback[] }) {
+    const can = useAdminCan();
     const [filter, setFilter] = useState<(typeof FILTERS)[number]>("new");
     const { pending, run } = useAdminRun();
     const visible = items.filter((f) => filter === "all" || f.status === filter);
@@ -71,7 +73,7 @@ export function FeedbackInbox({ items }: { items: Feedback[] }) {
                             <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={pending}
+                                disabled={pending || !can.update}
                                 onClick={() =>
                                     run(
                                         () => setFeedbackStatus(f.id, NEXT[f.status]),
@@ -84,7 +86,7 @@ export function FeedbackInbox({ items }: { items: Feedback[] }) {
                             <Button
                                 size="icon-sm"
                                 variant="ghost"
-                                disabled={pending}
+                                disabled={pending || !can.delete}
                                 onClick={() => {
                                     if (confirm("Delete this feedback?")) {
                                         run(() => deleteFeedback(f.id), "Feedback deleted");

@@ -1,4 +1,7 @@
 import { notFound } from "next/navigation";
+import { AdminPermissions } from "@/components/admin/admin-permissions";
+import { permissionFlags } from "@/lib/access-rules";
+import { checkPermission } from "@/lib/permissions";
 import { AdminTitle } from "@/components/admin/admin-bits";
 import { MusicalChairConsole } from "@/components/admin/musical-chair-console";
 import type { PoolSong } from "@/components/admin/round-player";
@@ -16,6 +19,9 @@ export default async function MusicalChairAdminPage(
     props: Readonly<PageProps<"/admin/programmes/[id]/musical-chair">>,
 ) {
     const { id } = await props.params;
+    const target = { programmeId: id };
+    const session = await checkPermission("read", target);
+    const can = permissionFlags(session, target);
     const programme = await getProgrammeById(id);
     if (programme?.type !== "musical_chair") {
         notFound();
@@ -30,7 +36,7 @@ export default async function MusicalChairAdminPage(
     ]);
 
     return (
-        <>
+        <AdminPermissions flags={can}>
             <AdminTitle
                 title="Musical chair console"
                 description="Connect your laptop to the speakers and press Space to start a round."
@@ -71,6 +77,6 @@ export default async function MusicalChairAdminPage(
                 rounds={rounds}
                 players={players}
             />
-        </>
+        </AdminPermissions>
     );
 }

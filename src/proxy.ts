@@ -1,22 +1,31 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyAdminToken } from "@/lib/session-token";
-import { ADMIN_COOKIE, VISITOR_COOKIE } from "@/constants";
+import { ADMIN_COOKIE, ADMIN_LOGIN_PATH, PATHNAME_HEADER, VISITOR_COOKIE } from "@/constants";
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
+    const isAdminPath = pathname.startsWith("/admin");
 
-    // Optimistic check only; every admin action re-verifies with requireAdmin().
-    if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-        const ok = await verifyAdminToken(request.cookies.get(ADMIN_COOKIE)?.value);
-        if (!ok) {
+    // Optimistic sign-in check only; every admin page and action re-checks with checkPermission().
+    if (isAdminPath && pathname !== ADMIN_LOGIN_PATH) {
+        const subject = await verifyAdminToken(request.cookies.get(ADMIN_COOKIE)?.value);
+        if (!subject) {
             const url = request.nextUrl.clone();
-            url.pathname = "/admin/login";
+            url.pathname = ADMIN_LOGIN_PATH;
             url.search = `?next=${encodeURIComponent(pathname)}`;
             return NextResponse.redirect(url);
         }
     }
 
-    const response = NextResponse.next();
+    // Tell server code which page was asked for (to send people back after signing in). Always
+    // overwritten here, so a client can't supply its own.
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.delete(PATHNAME_HEADER);
+    if (isAdminPath) {
+        requestHeaders.set(PATHNAME_HEADER, pathname);
+    }
+
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
     if (!request.cookies.has(VISITOR_COOKIE)) {
         response.cookies.set(VISITOR_COOKIE, crypto.randomUUID(), {
             httpOnly: true,

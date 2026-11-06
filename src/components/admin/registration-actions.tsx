@@ -7,6 +7,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Delete02Icon, PencilEdit02Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { deleteRegistration } from "@/actions/admin/programmes";
 import { adminCreateRegistration, adminUpdateRegistration } from "@/actions/admin/registrations";
+import { useAdminCan } from "@/components/admin/admin-permissions";
 import { useAdminRun } from "@/components/admin/use-admin-run";
 import { RegistrationForm } from "@/components/programmes/registration-form";
 import {
@@ -29,6 +30,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import type { PermissionFlags } from "@/lib/access-rules";
 import type { ProgrammeType } from "@/lib/database.types";
 import type { TeamSetup } from "@/lib/programme-meta";
 import type { RegistrationWithPhone } from "@/lib/queries";
@@ -38,6 +40,8 @@ export type RegistrationProgramme = {
     title: string;
     type: ProgrammeType;
     team?: TeamSetup;
+    /** What the signed-in user may do on this programme; defaults to the page's permissions. */
+    can?: PermissionFlags;
 };
 
 /** Pencil button that opens the registration in a dialog, with the same form participants use. */
@@ -50,6 +54,10 @@ export function EditRegistrationButton({
 }) {
     const [open, setOpen] = useState(false);
     const router = useRouter();
+    const pageCan = useAdminCan();
+    if (!(programme.can ?? pageCan).update) {
+        return null;
+    }
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -93,6 +101,10 @@ export function EditRegistrationButton({
 export function AddRegistrationButton({ programme }: { programme: RegistrationProgramme }) {
     const [open, setOpen] = useState(false);
     const router = useRouter();
+    const pageCan = useAdminCan();
+    if (!(programme.can ?? pageCan).create) {
+        return null;
+    }
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -126,11 +138,18 @@ export function AddRegistrationButton({ programme }: { programme: RegistrationPr
 export function DeleteRegistrationButton({
     registration,
     programmeTitle,
+    can,
 }: {
     registration: Pick<RegistrationWithPhone, "id" | "name">;
     programmeTitle: string;
+    /** Defaults to the page's permissions. */
+    can?: PermissionFlags;
 }) {
     const { pending, run } = useAdminRun();
+    const pageCan = useAdminCan();
+    if (!(can ?? pageCan).delete) {
+        return null;
+    }
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>

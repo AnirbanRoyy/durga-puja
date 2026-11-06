@@ -14,9 +14,23 @@ import { initialActionState } from "@/lib/validators";
 export function LoginForm({ next }: { next: string }) {
     const [state, action, pending] = useActionState(login, initialActionState);
     useActionToast(state);
+    const username = state.values?.username ?? "";
     return (
         <form action={action} className="mt-6 grid grid-cols-1 gap-4">
             <input type="hidden" name="next" value={next} />
+            <div className="grid grid-cols-1 gap-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                    id="username"
+                    name="username"
+                    autoComplete="username"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    defaultValue={username}
+                    required
+                    autoFocus
+                />
+            </div>
             <div className="grid grid-cols-1 gap-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -25,7 +39,6 @@ export function LoginForm({ next }: { next: string }) {
                     type="password"
                     autoComplete="current-password"
                     required
-                    autoFocus
                 />
             </div>
             <Button type="submit" size="lg" disabled={pending} className="h-10">

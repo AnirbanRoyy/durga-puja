@@ -12,6 +12,7 @@ import {
     updateDrawing,
 } from "@/actions/admin/content";
 import { patchProgramme } from "@/actions/admin/programmes";
+import { useAdminCan } from "@/components/admin/admin-permissions";
 import { UploadButton } from "@/components/admin/upload-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import type { Drawing } from "@/lib/database.types";
 
 function DrawingRow({ drawing }: { drawing: Drawing }) {
     const [pending, startTransition] = useTransition();
+    const can = useAdminCan();
     const [name, setName] = useState(drawing.child_name);
     const [age, setAge] = useState(drawing.age?.toString() ?? "");
     const [title, setTitle] = useState(drawing.title ?? "");
@@ -67,7 +69,7 @@ function DrawingRow({ drawing }: { drawing: Drawing }) {
                     {dirty && (
                         <Button
                             size="sm"
-                            disabled={pending}
+                            disabled={pending || !can.update}
                             onClick={() =>
                                 startTransition(async () => {
                                     try {
@@ -90,7 +92,7 @@ function DrawingRow({ drawing }: { drawing: Drawing }) {
                     <Button
                         size="icon-sm"
                         variant="ghost"
-                        disabled={pending}
+                        disabled={pending || !can.delete}
                         title="Delete drawing"
                         onClick={() => {
                             if (confirm(`Delete ${drawing.child_name}'s drawing and its votes?`)) {
@@ -119,29 +121,32 @@ export function DrawingsManager({
     votingOpen: boolean;
 }) {
     const [pending, startTransition] = useTransition();
+    const can = useAdminCan();
 
     return (
         <div className="space-y-6">
             <div className="flex flex-wrap gap-2">
-                <UploadButton
-                    kind="image"
-                    folder={`drawings/${programmeId}`}
-                    multiple
-                    onUploaded={async (file) => {
-                        await addDrawing(programmeId, {
-                            imageUrl: file.url,
-                            publicId: file.publicId,
-                            width: file.width,
-                            height: file.height,
-                            originalName: file.originalName,
-                        });
-                    }}
-                >
-                    Upload drawings
-                </UploadButton>
+                {can.create && (
+                    <UploadButton
+                        kind="image"
+                        folder={`drawings/${programmeId}`}
+                        multiple
+                        onUploaded={async (file) => {
+                            await addDrawing(programmeId, {
+                                imageUrl: file.url,
+                                publicId: file.publicId,
+                                width: file.width,
+                                height: file.height,
+                                originalName: file.originalName,
+                            });
+                        }}
+                    >
+                        Upload drawings
+                    </UploadButton>
+                )}
                 <Button
                     variant={votingOpen ? "outline" : "default"}
-                    disabled={pending || drawings.length === 0}
+                    disabled={pending || !can.update || drawings.length === 0}
                     onClick={() =>
                         startTransition(async () => {
                             await patchProgramme(programmeId, { voting_open: !votingOpen });
@@ -153,7 +158,7 @@ export function DrawingsManager({
                 </Button>
                 <Button
                     variant="secondary"
-                    disabled={pending || drawings.length === 0}
+                    disabled={pending || !can.update || drawings.length === 0}
                     onClick={() => {
                         if (
                             confirm(

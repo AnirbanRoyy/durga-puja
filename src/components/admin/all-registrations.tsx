@@ -164,6 +164,7 @@ export function AllRegistrations({
                                             <DeleteRegistrationButton
                                                 registration={r}
                                                 programmeTitle={programme.title}
+                                                can={programme.can}
                                             />
                                         </div>
                                     </td>
